@@ -285,18 +285,31 @@ hydraia/
 ├── CONTRIBUTING.md               structure + how to add a bundled skill
 ├── README.md                     this file
 ├── publish.sh                    push a copy to your GitHub
-├── skills/                       ALL skills, bundled + self-contained
-│   ├── hydraia/SKILL.md          the 7-phase pipeline contract (the brain)
-│   └── <36 bundled skills>/      brainstorming, writing-plans, ui-ux-pro-max,
-│                                 security-scan, react/golang/springboot/python-
-│                                 patterns, coding-standards, microservices-
-│                                 architect, caveman, karpathy-guidelines, …
-├── agents/
+├── skills/                       37 skills, all self-contained
+│   ├── hydraia/                   the 7-phase pipeline contract (the brain)
+│   ├── brainstorming/            requesting-code-review/   receiving-code-review/
+│   ├── writing-plans/            executing-plans/          subagent-driven-development/
+│   ├── dispatching-parallel-agents/                        using-git-worktrees/
+│   ├── finishing-a-development-branch/  test-driven-development/  systematic-debugging/
+│   ├── verification-before-completion/  using-superpowers/       writing-skills/
+│   ├── karpathy-guidelines/      coding-standards/         caveman/
+│   ├── react-patterns/          golang-patterns/          springboot-patterns/
+│   ├── python-patterns/         microservices-architect/
+│   ├── security-scan/           security-review/          security-bounty-hunter/
+│   ├── repo-scan/               production-audit/         django-security/
+│   ├── springboot-security/
+│   ├── ui-ux-pro-max/           ui-styling/               design/
+│   ├── design-system/           brand/                    banner-design/
+│   └── slides/
+├── agents/                       18 agents, all self-contained
 │   ├── hydraia-executor.md       per-task executor (Sonnet 5)
 │   ├── hydraia-reviewer.md       whole-branch reviewer (Opus 4.8)
-│   ├── go-reviewer.md            Go reviewer  ·  angular-reviewer.md  Angular
-│   ├── architect.md              system + code architecture advisors
-│   └── <12 ECC reviewers>.md     code-reviewer, security-reviewer, …
+│   ├── architect.md             code-architect.md         (architecture advisors)
+│   ├── code-reviewer.md         security-reviewer.md      silent-failure-hunter.md
+│   ├── go-reviewer.md           angular-reviewer.md       react-reviewer.md
+│   ├── vue-reviewer.md          typescript-reviewer.md    python-reviewer.md
+│   ├── java-reviewer.md         csharp-reviewer.md        database-reviewer.md
+│   └── performance-optimizer.md type-design-analyzer.md
 ├── commands/                     feature, plan, review, graph, doctor, resume
 ├── hooks/
 │   ├── hooks.json                registers preflight on SessionStart
@@ -323,6 +336,8 @@ bash publish.sh my-name public  # public repo, custom name
 
 ## Notes
 
-Bundled third-party skills now live under `skills/` (relocated from the old
-`vendor/`); their licenses are in `LICENSES/` and attribution in `NOTICE` (all
-MIT). They are invoked internally by the pipeline — you only ever call `hydraia`.
+Every skill and agent lives under `skills/` and `agents/` — nothing is fetched at
+runtime. Some are Hydraia's own and some come from MIT-licensed upstreams; the
+per-project license text is in `LICENSES/` and the attribution mapping in
+`NOTICE`, as MIT requires. All of them are invoked internally by the pipeline —
+you only ever call `hydraia`.
