@@ -63,6 +63,25 @@ ONE clarifying question — otherwise proceed.
 Use **brainstorming** then produce a spec. Be exhaustive. Explore alternatives and
 trade-offs. Anchor every decision to what the code graph showed in Phase 0.
 
+**Architecture advice (greenfield / from-scratch work).** When the request builds a
+new system, service, or module from scratch — not a surgical change to existing
+code — first dispatch the architecture agents to propose the shape before the spec:
+`architect` (system design, scalability, trade-offs) and `code-architect`
+(concrete file/interface/data-flow blueprint anchored to existing patterns). If the
+work spans multiple services or a monolith split, also use **microservices-architect**
+(bounded contexts, communication patterns, resilience). Fold the chosen architecture
++ its rejected alternatives (and why) into the spec. Skip this for small changes to
+existing code — it is for genuinely new construction.
+
+**Design adversarial loop (mandatory, before freezing the spec).** After the spec +
+threat model are drafted, run ONE adversarial pass against them: take the opposing
+view and try to break the design — unstated assumptions, simpler approach ignored,
+scalability/failure modes, security holes the threat model missed, spec requirements
+that contradict each other. Revise the spec to close every real gap the pass finds.
+This is the design-time analogue of the Phase 5 double review: catching a design
+flaw here is an order of magnitude cheaper than at review time. One pass only — do
+not loop forever.
+
 **Threat model (mandatory, before planning):** using the code graph's blast
 radius, enumerate the attack surface this change introduces or touches —
 untrusted inputs, authN/authZ boundaries, PII/financial data handled, external
@@ -98,6 +117,12 @@ TDD where the plan calls for it. Commit frequently.
 **ui-ux-pro-max** skill for styles, palettes, typography, and accessibility before
 writing markup.
 
+**Stack best-practices rule:** before writing non-trivial code, the executor
+consults the matching patterns/standards skill so idioms are right the first time —
+**react-patterns** (React), **golang-patterns** (Go), **springboot-patterns**
+(Spring Boot), **python-patterns** (Python), and **coding-standards** (cross-cutting
+naming, structure, and clean-code conventions for any stack).
+
 ## Phase 5 — Double code review (both passes on Opus 4.8)
 
 Run BOTH passes. Do not stop after one.
@@ -106,10 +131,11 @@ Run BOTH passes. Do not stop after one.
    `hydraia-reviewer` subagent (Opus 4.8) against the whole branch.
 2. **Pass 2 — ECC review:** dispatch the ECC reviewer agents (Opus 4.8):
    `code-reviewer`, `security-reviewer`, and `silent-failure-hunter` at minimum;
-   add the language-specific ECC reviewer that matches the stack —
+   add the language-specific reviewer that matches the stack —
    `csharp-reviewer` / `java-reviewer` for .NET & Spring Boot,
-   `typescript-reviewer` for Node & Angular, `react-reviewer` for React,
-   `vue-reviewer` for Vue, `python-reviewer` for Python.
+   `typescript-reviewer` for Node & TypeScript, `react-reviewer` for React,
+   `angular-reviewer` for Angular, `vue-reviewer` for Vue,
+   `python-reviewer` for Python, `go-reviewer` for Go.
 3. **Security gate (mandatory, cross-stack):** run the ECC security skills over the
    diff — **security-scan** (secrets, injection, unsafe patterns, vulnerable deps)
    and **security-review** (OWASP Top 10 semantic pass). These are language-agnostic

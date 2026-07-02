@@ -17,12 +17,20 @@ Bundled skills (skills/):
     Source: Caveman skill — LICENSES/caveman-LICENSE
 - karpathy-guidelines
     Source: Karpathy Guidelines (MIT, declared in the skill's frontmatter)
+- react-patterns, golang-patterns, springboot-patterns, python-patterns,
+  coding-standards
+    Source: ECC skills — LICENSES/ecc-LICENSE
+- microservices-architect
+    Source: fullstack-dev-skills — LICENSES/fullstack-dev-skills-LICENSE
 
 Bundled agents (agents/):
 - code-reviewer, csharp-reviewer, database-reviewer, java-reviewer,
   performance-optimizer, python-reviewer, react-reviewer, security-reviewer,
   silent-failure-hunter, type-design-analyzer, typescript-reviewer, vue-reviewer
     Source: ECC agents — LICENSES/ecc-agents-LICENSE
+- architect, code-architect
+    Source: ECC agents — LICENSES/ecc-LICENSE
 
-Hydraia's own code (skills/hydraia, commands/, agents/hydraia-*, hooks/) is MIT —
+Hydraia's own code (skills/hydraia, commands/, hooks/, and the agents
+hydraia-executor, hydraia-reviewer, go-reviewer, angular-reviewer) is MIT —
 see LICENSE.

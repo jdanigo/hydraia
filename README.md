@@ -286,11 +286,15 @@ hydraia/
 ├── publish.sh                    push a copy to your GitHub
 ├── skills/                       ALL skills, bundled + self-contained
 │   ├── hydraia/SKILL.md          the 7-phase pipeline contract (the brain)
-│   └── <30 bundled skills>/      brainstorming, writing-plans, ui-ux-pro-max,
-│                                 security-scan, caveman, karpathy-guidelines, …
+│   └── <36 bundled skills>/      brainstorming, writing-plans, ui-ux-pro-max,
+│                                 security-scan, react/golang/springboot/python-
+│                                 patterns, coding-standards, microservices-
+│                                 architect, caveman, karpathy-guidelines, …
 ├── agents/
 │   ├── hydraia-executor.md       per-task executor (Sonnet 5)
 │   ├── hydraia-reviewer.md       whole-branch reviewer (Opus 4.8)
+│   ├── go-reviewer.md            Go reviewer  ·  angular-reviewer.md  Angular
+│   ├── architect.md              system + code architecture advisors
 │   └── <12 ECC reviewers>.md     code-reviewer, security-reviewer, …
 ├── commands/                     feature, plan, review, graph, doctor, resume
 ├── hooks/
