@@ -19,10 +19,14 @@ security gates to enforce.
 
 ## Table of contents
 
+- [Why Hydraia](#why-hydraia)
 - [What it does, automatically](#what-it-does-automatically)
+- [Standout capabilities](#standout-capabilities)
 - [Commands](#commands)
 - [Worked examples](#worked-examples)
+- [Plan once, execute anywhere](#plan-once-execute-anywhere)
 - [Use cases](#use-cases)
+- [Getting the most out of Hydraia](#getting-the-most-out-of-hydraia)
 - [How it works under the hood](#how-it-works-under-the-hood)
 - [Security (built in)](#security-built-in)
 - [The one setup step](#the-one-setup-step)
@@ -30,6 +34,32 @@ security gates to enforce.
 - [Install](#install)
 - [Repo layout](#repo-layout)
 - [Notes](#notes)
+
+---
+
+## Why Hydraia
+
+Raw Claude Code is powerful, but hands-on. **You** decide when to plan, when to
+threat-model, which reviewer to run, when to drop to a cheaper model — and you
+carry all of it in one context window that bloats as the task grows. Skip a step
+under time pressure and quality quietly drifts.
+
+Hydraia removes the babysitting. **One command runs a fixed, non-negotiable
+pipeline** — think → design + threat model → plan → execute → double review →
+verify — with every model, skill, and reviewer decision already made. You stay on
+Opus 4.8 and read one line per phase.
+
+The point isn't "an agent that codes." It's the **discipline you'd apply on your
+best day, applied on every run** — the threat model you'd skip when rushed, the
+plan you'd hand-wave, the second reviewer you'd never bother to call, the tests
+you meant to write. Hydraia doesn't let you skip them.
+
+> **Without Hydraia:** pick a model, remember to plan, remember to threat-model,
+> write it, remember to review, remember to run security, remember to test — every
+> step manual, every step skippable.
+>
+> **With Hydraia:** `/hydraia:feature add rate limiting to the public API` — and
+> all of it runs, in order, unattended.
 
 ---
 
@@ -47,6 +77,29 @@ security gates to enforce.
 
 Token discipline (compressed internal comms, `caveman` style) runs in the
 background across all phases — it never touches code, plans, or your summary.
+
+---
+
+## Standout capabilities
+
+The pipeline table above is *what* runs. These are the things that make the
+output different from asking Claude Code to "build a feature" yourself — most of
+them are steps you'd never run by hand on a normal day.
+
+| Capability | Why it matters |
+|-----------|----------------|
+| **Code-graph context, not blind reads** | Every run starts by querying a `codegraph` index — structure, call sites, blast radius — instead of dumping files into context. Cheaper, more accurate, and it knows what a change will break *before* touching it. Query it directly with `/hydraia:graph`. |
+| **Adversarial design loop** | Before the spec freezes, Hydraia red-teams its **own** design: unstated assumptions, a simpler approach it ignored, failure modes, security holes the threat model missed. Catching a design flaw here is ~10× cheaper than at review time. |
+| **Security at three gates, not one** | Threat model at **design** time (before code exists) → cross-stack scan + OWASP review at **code** time → secrets/deps/production audit at **close**. Any high-severity finding blocks the run. |
+| **Self-reviewing plans** | The plan critiques itself (up to 2 passes) for gaps, hidden coupling, missing tests, and over-broad changes — before a single line is written. |
+| **Cost-aware model split** | Opus 4.8 does the judgment work (design, plan, both reviews); mechanical execution is delegated to Sonnet 5 sub-agents. You pay for Opus only where thinking actually matters. |
+| **Fresh sub-agent per task** | Each executor gets only its task + graph context — never your session history. No context poisoning, no drift across a long run. |
+| **Double code review** | A whole-branch reviewer pass, then a panel: 8 stack-specific reviewers (Go, Angular, React, Vue, TS, Python, Java, C#) plus cross-cutting ones (security, silent-failure, performance, types, database). |
+| **Resumable runs** | Every run writes a durable log with a phase checklist. If it's interrupted — crash, closed laptop, killed session — `/hydraia:resume` picks it up exactly where it stopped. |
+| **Persistent artifacts** | Specs and plans are saved under `docs/hydraia/` — reviewable, diff-able, reusable, and auditable after the fact. |
+| **Feed it a PDF** | Point it at a Jira export or a design-doc PDF; `markitdown` converts it to markdown before it enters context. No copy-paste. |
+| **Plain-language trigger** | "add a `--dry-run` flag to the CLI…" auto-runs the whole pipeline — no slash command required. |
+| **Bilingual** | Replies in English or Español (asked once per run). Code, commits, specs, and plans stay English and portable. |
 
 ---
 
@@ -142,6 +195,65 @@ pipeline. `/hydraia:feature` just removes the ambiguity.
 
 ---
 
+## Plan once, execute anywhere
+
+The plan that Phase 3 writes is deliberately **agent-agnostic**: every file to
+touch, the change per file, the tests, and how to verify — written for an
+implementer with *zero* prior context. That makes it a **portable hand-off
+artifact**, not just an internal note. Which unlocks a cost- and speed-optimized
+way of working: spend the expensive model only on judgment, and push the
+token-heavy bulk anywhere you like.
+
+**1 · Plan on Opus (judgment).**
+
+```
+/hydraia:plan add rate limiting to the public REST API — 100 req/min per
+API key, 429 with Retry-After
+```
+
+Stops after Phase 3 with a frozen plan at
+`docs/hydraia/plans/2026-07-02-api-rate-limiting.md` — independent, numbered tasks,
+each self-contained.
+
+**2 · Execute the tasks with whatever is cheapest / fastest.** The plan's tasks
+are independent by design, so fan them out. Each executor needs only its task
+block plus the repo — never the planning context.
+
+| Executor | How you run it | Good for |
+|----------|----------------|----------|
+| Hydraia's own Sonnet sub-agents | run `/hydraia:feature <same request>` — it plans and executes with Sonnet sub-agents automatically | fully hands-off, single session |
+| **Codex CLI** | hand a task block from the plan file to `codex` in another terminal | parallel execution, a different model's strengths |
+| **Gemini** | paste a task block into Gemini | a third model / free-tier capacity |
+| A second **Claude** session (Sonnet) | open another session, give it task 2 while session 1 runs task 1 | true parallelism across independent tasks |
+
+**3 · Review on Opus (judgment again).**
+
+```
+/hydraia:review
+```
+
+Runs Phases 5–6 on the branch — double review + cross-stack security gate + verify
+— **regardless of who wrote the code.** Codex wrote task 3? A Gemini session wrote
+task 5? Doesn't matter; the review and security bar are identical.
+
+**Why this wins:**
+
+- **Token cost.** Opus — the expensive model — only touches the two phases where
+  judgment actually pays off: planning and review. The token-heavy middle
+  (execution) runs on cheaper models, other tools, or free tiers.
+- **Parallelism.** Independent plan tasks run *at the same time* across
+  agents/terminals instead of one-at-a-time inside a single context.
+- **No context bloat.** Every executor starts clean with just its task, so none of
+  them degrade the way one long-running session does.
+- **Model diversity, one quality bar.** Different executors catch different things;
+  the Opus review gate normalizes the result no matter the source.
+
+You don't have to leave Claude to benefit — `/hydraia:feature` already does the
+**Opus-plan → Sonnet-execute → Opus-review** split internally. Going multi-agent
+simply extends that same principle across tools and terminals.
+
+---
+
 ## Use cases
 
 | Situation | Reach for |
@@ -152,6 +264,42 @@ pipeline. `/hydraia:feature` just removes the ambiguity.
 | Estimating scope / deciding if a refactor is safe | `/hydraia:graph` |
 | Security-sensitive code (auth, user input, external calls) where a design-level miss is expensive | any pipeline run — the threat model + 3 security gates are always on |
 | Frontend work | `/hydraia:feature` — executors auto-consult `ui-ux-pro-max` for style, palette, type scale, a11y |
+| Turn a Jira ticket exported as PDF into shipped code | `/hydraia:feature path/to/ticket.pdf …` — it's converted to markdown before planning |
+| Greenfield service/module from scratch | `/hydraia:feature` — Phase 2 dispatches `architect` + `code-architect` (and `microservices-architect` for multi-service splits) before the spec |
+| Big feature where token cost worries you | any pipeline run — the Opus/Sonnet split keeps the expensive model off the mechanical work automatically |
+| Onboarding to a repo you've never seen | `/hydraia:graph` — map structure, call sites, and dependents without reading everything |
+| Enforcing tests across a team's work | `/hydraia:feature` — TDD in Phase 4, spec-conformance + test run in the Phase 6 verify gate |
+| A run got interrupted (crash, closed session) | `/hydraia:resume` — continues from the last incomplete phase |
+| Pre-merge sign-off on someone else's PR branch | `/hydraia:review` — double review + cross-stack security gate, findings ranked by severity |
+| A refactor that might sprawl across the codebase | `/hydraia:graph` first (blast radius), then `/hydraia:plan` to scope it before committing |
+
+---
+
+## Getting the most out of Hydraia
+
+Small habits that meaningfully raise the quality of every run:
+
+1. **Start the session on Opus 4.8.** The only lever you touch. Opus does the
+   design and both reviews; it delegates execution to Sonnet on its own. On a
+   weaker model the pipeline still runs, just with lower ceiling.
+2. **Run `/hydraia:doctor` once.** It installs `codegraph` and `markitdown`. The
+   graph context is where a large share of the value lives — without it, Phase 0
+   falls back to blind reads.
+3. **Write the request like a ticket, not a wish.** Goal + constraints +
+   acceptance criteria. `add rate limiting — 100 req/min per API key, 429 with
+   Retry-After` produces a far sharper spec and threat model than `add rate
+   limiting`. The more concrete the input, the tighter every downstream phase.
+4. **Use `/hydraia:plan` first on anything risky or expensive.** You approve the
+   design and the file-by-file plan before spending a single execution token. Then
+   run `/hydraia:feature` when you're happy.
+5. **Point it at the PDF.** A Jira export or design doc — pass the path instead of
+   copy-pasting. It gets converted and read in full.
+6. **Check blast radius before you commit to a refactor.** `/hydraia:graph what
+   calls X and what breaks if I change it` tells you surgical vs. sprawling in one
+   query.
+7. **Let it finish.** The pipeline is built to run unattended — the value is
+   concentrated in exactly the phases (threat model, adversarial design pass,
+   second review) you'd skip by hand.
 
 ---
 
@@ -238,12 +386,12 @@ auto-installed; `/hydraia:doctor` installs the last two tools for you.
 | Requirement | Used for | Auto-installed by `/hydraia:doctor` |
 |-------------|----------|-------------------------------------|
 | Claude Code | host | — |
-| git | pipeline commits, `publish.sh` | No (prerequisite) |
+| git | pipeline commits | No (prerequisite) |
 | Node.js ≥18 + npm | installing `codegraph` | No (prerequisite) |
 | Python 3.8+ + pip | installing `markitdown` | No (prerequisite) |
 | `codegraph` | code-graph context | **Yes** |
 | `markitdown` | PDF → markdown | **Yes** |
-| `gh` CLI | only for `publish.sh` | No (optional) |
+| `gh` CLI | GitHub PRs from the pipeline | No (optional) |
 
 Platform: macOS/Linux. On Windows, run inside WSL.
 
@@ -284,7 +432,6 @@ hydraia/
 ├── LICENSES/                     upstream licenses (all MIT)
 ├── CONTRIBUTING.md               structure + how to add a skill
 ├── README.md                     this file
-├── publish.sh                    push a copy to your GitHub
 ├── skills/                       37 skills, all self-contained
 │   ├── hydraia/                  the 7-phase pipeline contract (the brain)
 │   ├── process (14)              brainstorming, writing-plans, executing-plans,
@@ -396,17 +543,17 @@ hydraia/
 
 ---
 
-## Maintainer / forking
+## Forking
 
-`publish.sh` is a maintainer helper — it is **not** part of installing Hydraia.
-It pushes a copy of this repo to a GitHub account of your own (handy if you fork
-Hydraia and want to host your own marketplace). Run it locally with `gh`
-authenticated:
+Fork on GitHub, then point `marketplace add` at your fork:
 
 ```bash
-bash publish.sh                 # private repo named "hydraia"
-bash publish.sh my-name public  # public repo, custom name
+claude plugin marketplace add <your-user>/hydraia
+claude plugin install hydraia
 ```
+
+Everything Hydraia uses ships in the repo, so your fork is self-contained — nothing
+else to wire up.
 
 ---
 
