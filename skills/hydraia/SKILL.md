@@ -15,6 +15,16 @@ through the phases, narrating at most one short line per phase.
 
 ## Start-of-run guards (before Phase 0)
 
+**Language gate (first action, before anything else).** Call the
+`AskUserQuestion` tool once to ask which language the user wants **replies** in —
+options: `English` and `Español`. Use the answer for all user-facing communication
+for the rest of the run: narration, the Phase-1 clarifying question, review
+findings, and the final summary. If the user dismisses the question, default to the
+language they wrote their request in. This choice does NOT change code, commit
+messages, spec/plan files, or the credits line — those stay as-is (English,
+portable). Ask this exactly once per run; `/hydraia:resume` inherits the prior
+run's choice if the run log records it, otherwise re-asks.
+
 **Model guard.** Check the model this session is running on. If it is NOT Opus 4.8
 (e.g. Sonnet 5), print this once, then continue anyway — never block:
 
