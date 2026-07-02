@@ -1,0 +1,28 @@
+Hydraia bundles third-party skills and agents, all under the MIT License.
+Each upstream project's full license text is in LICENSES/.
+
+Bundled skills (skills/):
+- brainstorming, dispatching-parallel-agents, executing-plans,
+  finishing-a-development-branch, receiving-code-review, requesting-code-review,
+  subagent-driven-development, systematic-debugging, test-driven-development,
+  using-git-worktrees, using-superpowers, verification-before-completion,
+  writing-plans, writing-skills
+    Source: Superpowers — LICENSES/superpowers-LICENSE
+- django-security, production-audit, repo-scan, security-bounty-hunter,
+  security-review, security-scan, springboot-security
+    Source: ECC security skills — LICENSES/ecc-security-LICENSE
+- banner-design, brand, design, design-system, slides, ui-styling, ui-ux-pro-max
+    Source: UI/UX skills — LICENSES/uiux-LICENSE
+- caveman
+    Source: Caveman skill — LICENSES/caveman-LICENSE
+- karpathy-guidelines
+    Source: Karpathy Guidelines (MIT, declared in the skill's frontmatter)
+
+Bundled agents (agents/):
+- code-reviewer, csharp-reviewer, database-reviewer, java-reviewer,
+  performance-optimizer, python-reviewer, react-reviewer, security-reviewer,
+  silent-failure-hunter, type-design-analyzer, typescript-reviewer, vue-reviewer
+    Source: ECC agents — LICENSES/ecc-agents-LICENSE
+
+Hydraia's own code (skills/hydraia, commands/, agents/hydraia-*, hooks/) is MIT —
+see LICENSE.
