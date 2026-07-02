@@ -280,36 +280,39 @@ hydraia/
 │   ├── plugin.json               plugin manifest
 │   └── marketplace.json          single-plugin marketplace (for `marketplace add`)
 ├── LICENSE                       MIT (Hydraia's own code)
-├── NOTICE                        attribution for bundled skills/agents
+├── NOTICE                        attribution for upstream skills/agents
 ├── LICENSES/                     upstream licenses (all MIT)
-├── CONTRIBUTING.md               structure + how to add a bundled skill
+├── CONTRIBUTING.md               structure + how to add a skill
 ├── README.md                     this file
 ├── publish.sh                    push a copy to your GitHub
 ├── skills/                       37 skills, all self-contained
-│   ├── hydraia/                   the 7-phase pipeline contract (the brain)
-│   ├── brainstorming/            requesting-code-review/   receiving-code-review/
-│   ├── writing-plans/            executing-plans/          subagent-driven-development/
-│   ├── dispatching-parallel-agents/                        using-git-worktrees/
-│   ├── finishing-a-development-branch/  test-driven-development/  systematic-debugging/
-│   ├── verification-before-completion/  using-superpowers/       writing-skills/
-│   ├── karpathy-guidelines/      coding-standards/         caveman/
-│   ├── react-patterns/          golang-patterns/          springboot-patterns/
-│   ├── python-patterns/         microservices-architect/
-│   ├── security-scan/           security-review/          security-bounty-hunter/
-│   ├── repo-scan/               production-audit/         django-security/
-│   ├── springboot-security/
-│   ├── ui-ux-pro-max/           ui-styling/               design/
-│   ├── design-system/           brand/                    banner-design/
-│   └── slides/
+│   ├── hydraia/                  the 7-phase pipeline contract (the brain)
+│   ├── process (14)              brainstorming, writing-plans, executing-plans,
+│   │                            subagent-driven-development, dispatching-parallel-agents,
+│   │                            requesting-code-review, receiving-code-review,
+│   │                            test-driven-development, systematic-debugging,
+│   │                            using-git-worktrees, finishing-a-development-branch,
+│   │                            verification-before-completion, using-superpowers,
+│   │                            writing-skills
+│   ├── stack patterns (7)       react-patterns, golang-patterns, springboot-patterns,
+│   │                            python-patterns, coding-standards, karpathy-guidelines,
+│   │                            microservices-architect
+│   ├── security (7)             security-scan, security-review, security-bounty-hunter,
+│   │                            repo-scan, production-audit, django-security,
+│   │                            springboot-security
+│   ├── ui / ux (7)              ui-ux-pro-max, ui-styling, design, design-system,
+│   │                            brand, banner-design, slides
+│   └── token discipline (1)     caveman
 ├── agents/                       18 agents, all self-contained
 │   ├── hydraia-executor.md       per-task executor (Sonnet 5)
 │   ├── hydraia-reviewer.md       whole-branch reviewer (Opus 4.8)
-│   ├── architect.md             code-architect.md         (architecture advisors)
-│   ├── code-reviewer.md         security-reviewer.md      silent-failure-hunter.md
-│   ├── go-reviewer.md           angular-reviewer.md       react-reviewer.md
-│   ├── vue-reviewer.md          typescript-reviewer.md    python-reviewer.md
-│   ├── java-reviewer.md         csharp-reviewer.md        database-reviewer.md
-│   └── performance-optimizer.md type-design-analyzer.md
+│   ├── architecture (2)          architect, code-architect
+│   ├── language reviewers (8)    go-reviewer, angular-reviewer, react-reviewer,
+│   │                            vue-reviewer, typescript-reviewer, python-reviewer,
+│   │                            java-reviewer, csharp-reviewer
+│   └── cross-cutting (6)         code-reviewer, security-reviewer, silent-failure-hunter,
+│                                database-reviewer, performance-optimizer,
+│                                type-design-analyzer
 ├── commands/                     feature, plan, review, graph, doctor, resume
 ├── hooks/
 │   ├── hooks.json                registers preflight on SessionStart
