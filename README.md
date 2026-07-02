@@ -1,5 +1,8 @@
 # Hydraia
 
+![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)
+![Plugin version](https://img.shields.io/badge/plugin-v0.1.0-blue.svg)
+
 A personal agentic development harness for Claude Code. One command runs the
 entire feature pipeline — no per-step babysitting, no telling it which model or
 skill to use each time.
@@ -23,6 +26,7 @@ security gates to enforce.
 - [How it works under the hood](#how-it-works-under-the-hood)
 - [Security (built in)](#security-built-in)
 - [The one setup step](#the-one-setup-step)
+- [Prerequisites](#prerequisites)
 - [Install](#install)
 - [Repo layout](#repo-layout)
 - [Notes](#notes)
@@ -54,6 +58,8 @@ background across all phases — it never touches code, plans, or your summary.
 | `/hydraia:plan <desc>` | 0–3 | Context + design + threat model + detailed plan (with self-review), then **stop**. Nothing executed. |
 | `/hydraia:review [focus]` | 5–6 | Double code review + security gate on the **current branch**. Code already exists. |
 | `/hydraia:graph <query>` | — | Query the code graph (call sites, blast radius) without running the pipeline. |
+| `/hydraia:doctor` | — | Validate, install, and update external deps (`codegraph`, `markitdown`), with consent. |
+| `/hydraia:resume [run]` | resumes | Continue an interrupted pipeline from the last incomplete phase. |
 
 The `hydraia` skill also **auto-triggers** when you ask to build/add/implement a
 feature in plain language — no slash command required. `/hydraia:feature` is the
@@ -151,9 +157,10 @@ pipeline. `/hydraia:feature` just removes the ambiguity.
 
 ## How it works under the hood
 
-Hydraia is a thin orchestration layer over vendored, battle-tested skills. It
+Hydraia is a thin orchestration layer over bundled, battle-tested skills. It
 holds no business logic of its own — it decides **what runs, in what order, on
-which model.**
+which model.** Every skill and agent it uses ships inside the plugin (`skills/`,
+`agents/`) — nothing external to install except two binaries (see Prerequisites).
 
 **The skill is the contract.** `skills/hydraia/SKILL.md` defines the seven
 non-negotiable phases. It forbids asking the user which model/skill/reviewer to
@@ -174,16 +181,16 @@ judgment-heavy work (think, design, plan, both review passes). Execution is
 *delegated* to Sonnet 5 — the main session never changes its own model, it spawns
 executor subagents whose model is pinned in their frontmatter.
 
-**Vendored skills do the actual thinking** (`vendor/`, all MIT):
+**Bundled skills do the actual thinking** (`skills/`, all MIT, licenses in `LICENSES/`):
 
-| Phase | Vendored skill(s) used |
+| Phase | Bundled skill(s) used |
 |-------|------------------------|
 | 1 Think | `karpathy-guidelines` |
-| 2 Design | `superpowers/brainstorming` |
-| 3 Plan | `superpowers/writing-plans` |
-| 4 Execute | `superpowers/subagent-driven-development`, `superpowers/test-driven-development`, `uiux-skills/ui-ux-pro-max` |
-| 5 Review | `superpowers/requesting-code-review`, `superpowers/receiving-code-review`, `ecc-agents/*` reviewers, `ecc-security/security-scan`, `ecc-security/security-review` |
-| 6 Verify | `superpowers/verification-before-completion`, `ecc-security/repo-scan`, `ecc-security/production-audit` |
+| 2 Design | `brainstorming` |
+| 3 Plan | `writing-plans` |
+| 4 Execute | `subagent-driven-development`, `test-driven-development`, `ui-ux-pro-max` |
+| 5 Review | `requesting-code-review`, `receiving-code-review`, ECC reviewer agents, `security-scan`, `security-review` |
+| 6 Verify | `verification-before-completion`, `repo-scan`, `production-audit` |
 | all | `caveman` — compresses internal/subagent comms only |
 
 **Context comes from the code graph, not blind reads.** `hooks/preflight.sh`
@@ -223,6 +230,25 @@ quality is best on Opus.
 
 ---
 
+## Prerequisites
+
+Have these on your machine **before** installing. `git`, Node, and Python are not
+auto-installed; `/hydraia:doctor` installs the last two tools for you.
+
+| Requirement | Used for | Auto-installed by `/hydraia:doctor` |
+|-------------|----------|-------------------------------------|
+| Claude Code | host | — |
+| git | pipeline commits, `publish.sh` | No (prerequisite) |
+| Node.js ≥18 + npm | installing `codegraph` | No (prerequisite) |
+| Python 3.8+ + pip | installing `markitdown` | No (prerequisite) |
+| `codegraph` | code-graph context | **Yes** |
+| `markitdown` | PDF → markdown | **Yes** |
+| `gh` CLI | only for `publish.sh` | No (optional) |
+
+Platform: macOS/Linux. On Windows, run inside WSL.
+
+---
+
 ## Install
 
 ```bash
@@ -231,17 +257,13 @@ claude plugin marketplace add ./hydraia
 claude plugin install hydraia
 ```
 
-Requires `codegraph` on PATH for graph context:
-```bash
-npm i -g @colbymchenry/codegraph@latest
+Then install the two external tools (validates and updates them too):
+```
+/hydraia:doctor
 ```
 
-And `markitdown` for PDF conversion:
-```bash
-pip install markitdown
-```
-
-Publish your own copy to GitHub (run locally with `gh` authenticated):
+That's it — every skill and agent Hydraia uses ships inside the plugin. Publish
+your own copy to GitHub (run locally with `gh` authenticated):
 ```bash
 bash publish.sh                 # private repo named "hydraia"
 bash publish.sh my-name public  # public repo, custom name
@@ -253,28 +275,35 @@ bash publish.sh my-name public  # public repo, custom name
 
 ```
 hydraia/
-├── .claude-plugin/plugin.json    plugin manifest (name, version, wiring)
+├── .claude-plugin/
+│   ├── plugin.json               plugin manifest
+│   └── marketplace.json          single-plugin marketplace (for `marketplace add`)
+├── LICENSE                       MIT (Hydraia's own code)
+├── NOTICE                        attribution for bundled skills/agents
+├── LICENSES/                     upstream licenses (all MIT)
+├── CONTRIBUTING.md               structure + how to add a bundled skill
 ├── README.md                     this file
 ├── publish.sh                    push a copy to your GitHub
-├── skills/hydraia/SKILL.md       the 7-phase pipeline contract (the brain)
-├── commands/                     slash-command entry points
-│   ├── feature.md                /hydraia:feature — full pipeline
-│   ├── plan.md                   /hydraia:plan    — phases 0–3
-│   ├── review.md                 /hydraia:review  — phases 5–6
-│   └── graph.md                  /hydraia:graph   — code-graph query
+├── skills/                       ALL skills, bundled + self-contained
+│   ├── hydraia/SKILL.md          the 7-phase pipeline contract (the brain)
+│   └── <30 bundled skills>/      brainstorming, writing-plans, ui-ux-pro-max,
+│                                 security-scan, caveman, karpathy-guidelines, …
 ├── agents/
 │   ├── hydraia-executor.md       per-task executor (Sonnet 5)
-│   └── hydraia-reviewer.md       whole-branch reviewer (Opus 4.8)
+│   ├── hydraia-reviewer.md       whole-branch reviewer (Opus 4.8)
+│   └── <12 ECC reviewers>.md     code-reviewer, security-reviewer, …
+├── commands/                     feature, plan, review, graph, doctor, resume
 ├── hooks/
 │   ├── hooks.json                registers preflight on SessionStart
-│   └── preflight.sh              codegraph sync before work
-└── vendor/                       bundled third-party skills (MIT), invoked
-                                  internally — you only ever call hydraia
+│   ├── preflight.sh              codegraph sync + daily dep nudge
+│   └── doctor.sh                 validate / install / update deps
+└── docs/hydraia/                 plans/ and runs/ written by the pipeline
 ```
 
 ---
 
 ## Notes
 
-Bundled third-party skills live under `vendor/` with their original licenses (all
-MIT). They are invoked internally by the pipeline; you only ever call `hydraia`.
+Bundled third-party skills now live under `skills/` (relocated from the old
+`vendor/`); their licenses are in `LICENSES/` and attribution in `NOTICE` (all
+MIT). They are invoked internally by the pipeline — you only ever call `hydraia`.
