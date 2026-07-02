@@ -1,0 +1,280 @@
+# Hydraia
+
+A personal agentic development harness for Claude Code. One command runs the
+entire feature pipeline — no per-step babysitting, no telling it which model or
+skill to use each time.
+
+```
+/hydraia:feature add rate limiting to the public REST API
+```
+
+You stay on Opus 4.8; Hydraia decides everything else — when to brainstorm, when
+to plan, when to drop to Sonnet for execution, which reviewers to run, which
+security gates to enforce.
+
+---
+
+## Table of contents
+
+- [What it does, automatically](#what-it-does-automatically)
+- [Commands](#commands)
+- [Worked examples](#worked-examples)
+- [Use cases](#use-cases)
+- [How it works under the hood](#how-it-works-under-the-hood)
+- [Security (built in)](#security-built-in)
+- [The one setup step](#the-one-setup-step)
+- [Install](#install)
+- [Repo layout](#repo-layout)
+- [Notes](#notes)
+
+---
+
+## What it does, automatically
+
+| Phase | What happens | Model |
+|-------|--------------|-------|
+| 0 · Context | Code graph synced (session hook) + queried; any PDF converted to markdown | Opus 4.8 |
+| 1 · Think | Forced think-before-coding gate (karpathy-guidelines) | Opus 4.8 |
+| 2 · Design | Brainstorm → exhaustive spec + threat model | Opus 4.8 |
+| 3 · Plan | Detailed plan + self-review loop (max 2 passes) | Opus 4.8 |
+| 4 · Execute | Fresh sub-agent per task; UI intelligence on frontend work | Sonnet 5 |
+| 5 · Review | **Pass 1** whole-branch review + **Pass 2** ECC reviewers + security gate | Opus 4.8 |
+| 6 · Verify | Run tests, confirm against spec, secrets/deps scan, summarize | Opus 4.8 |
+
+Token discipline (compressed internal comms, `caveman` style) runs in the
+background across all phases — it never touches code, plans, or your summary.
+
+---
+
+## Commands
+
+| Command | Phases run | What it does |
+|---------|-----------|--------------|
+| `/hydraia:feature <desc>` | 0–6 | Full pipeline: context → think → design+threat-model → plan+self-review → execute (Sonnet 5) → double review + security gate (Opus 4.8) → verify + secrets/deps scan |
+| `/hydraia:plan <desc>` | 0–3 | Context + design + threat model + detailed plan (with self-review), then **stop**. Nothing executed. |
+| `/hydraia:review [focus]` | 5–6 | Double code review + security gate on the **current branch**. Code already exists. |
+| `/hydraia:graph <query>` | — | Query the code graph (call sites, blast radius) without running the pipeline. |
+
+The `hydraia` skill also **auto-triggers** when you ask to build/add/implement a
+feature in plain language — no slash command required. `/hydraia:feature` is the
+explicit, unambiguous entry point.
+
+---
+
+## Worked examples
+
+### 1. Ship a full feature end to end
+
+```
+/hydraia:feature add rate limiting to the public REST API — 100 req/min
+per API key, returning 429 with a Retry-After header
+```
+
+What you'll see, roughly one line per phase:
+
+```
+Running the Hydraia pipeline.
+[0] Graph synced. Queried API middleware chain + route registration.
+[1] Goal restated, assumptions listed, simplest approach chosen
+    (token bucket per key, shared store).
+[2] Spec written. Threat model: bypass via missing/rotated keys,
+    memory exhaustion from unbounded key space, clock skew across nodes.
+    Mitigations folded into spec.
+[3] Plan saved: docs/hydraia/plans/2026-07-02-api-rate-limiting.md
+    Self-review pass A found a missing test for the 429 header → revised.
+[4] Executor #1: token-bucket store. Executor #2: middleware + headers.
+    Executor #3: tests. All committed.
+[5] Pass 1 (branch review) + Pass 2 (typescript-reviewer, security-reviewer,
+    silent-failure-hunter) + security-scan/security-review. 1 material
+    finding fixed.
+[6] Tests green. Spec + mitigations confirmed. repo-scan/production-audit
+    clean. Done.
+```
+
+### 2. Plan only — review the approach before any code is written
+
+Use when you want to sanity-check the design and the file-by-file plan first.
+
+```
+/hydraia:plan migrate the session cache from in-memory to Redis with
+a 30s TTL, keeping the current interface
+```
+
+Stops after Phase 3 with a frozen plan under `docs/hydraia/plans/`. Nothing is
+executed. Run `/hydraia:feature` (or hand the plan to executors) when you're happy.
+
+### 3. Review an existing branch you didn't build with Hydraia
+
+```
+/hydraia:review the auth module
+```
+
+Runs only Phases 5–6 on the current branch: both review passes, the cross-stack
+security gate, and the pre-close secrets/deps scan. Findings ranked by severity;
+high-severity security findings are treated as blockers. The optional focus
+(`the auth module`) narrows attention.
+
+### 4. Understand blast radius before touching anything
+
+```
+/hydraia:graph what calls parseConfig and what would break if I change
+its return type
+```
+
+Pure code-graph query — call sites, dependents, blast radius. No pipeline, no
+edits. Handy before deciding whether a change is surgical or sprawling.
+
+### 5. No slash command at all
+
+```
+add a --dry-run flag to the CLI that prints planned changes without
+writing them
+```
+
+The `hydraia` skill recognizes "add … feature" phrasing and runs the same full
+pipeline. `/hydraia:feature` just removes the ambiguity.
+
+---
+
+## Use cases
+
+| Situation | Reach for |
+|-----------|-----------|
+| New feature, want it planned, built, reviewed, and verified in one shot | `/hydraia:feature` |
+| Risky change — want to lock the design + threat model before committing effort | `/hydraia:plan`, then `/hydraia:feature` |
+| Inherited a branch (yours or a teammate's) and want a rigorous, security-aware review | `/hydraia:review` |
+| Estimating scope / deciding if a refactor is safe | `/hydraia:graph` |
+| Security-sensitive code (auth, user input, external calls) where a design-level miss is expensive | any pipeline run — the threat model + 3 security gates are always on |
+| Frontend work | `/hydraia:feature` — executors auto-consult `ui-ux-pro-max` for style, palette, type scale, a11y |
+
+---
+
+## How it works under the hood
+
+Hydraia is a thin orchestration layer over vendored, battle-tested skills. It
+holds no business logic of its own — it decides **what runs, in what order, on
+which model.**
+
+**The skill is the contract.** `skills/hydraia/SKILL.md` defines the seven
+non-negotiable phases. It forbids asking the user which model/skill/reviewer to
+use, and forbids pausing between phases. This is what makes one command drive the
+whole run.
+
+**Two subagents carry the load:**
+
+- `hydraia-executor` (`model: sonnet`) — dispatched fresh **per task** in Phase 4.
+  Gets only the task + graph context, never session history. Surgical changes,
+  tests, commits. Consults `ui-ux-pro-max` for any UI. Cheaper model where the
+  work is mechanical.
+- `hydraia-reviewer` (`model: opus`) — Phase 5 pass 1. Reviews the **whole branch**
+  against spec, correctness, hidden coupling, test adequacy, over-engineering.
+
+**Model split, restated:** the main session stays on Opus 4.8 for all the
+judgment-heavy work (think, design, plan, both review passes). Execution is
+*delegated* to Sonnet 5 — the main session never changes its own model, it spawns
+executor subagents whose model is pinned in their frontmatter.
+
+**Vendored skills do the actual thinking** (`vendor/`, all MIT):
+
+| Phase | Vendored skill(s) used |
+|-------|------------------------|
+| 1 Think | `karpathy-guidelines` |
+| 2 Design | `superpowers/brainstorming` |
+| 3 Plan | `superpowers/writing-plans` |
+| 4 Execute | `superpowers/subagent-driven-development`, `superpowers/test-driven-development`, `uiux-skills/ui-ux-pro-max` |
+| 5 Review | `superpowers/requesting-code-review`, `superpowers/receiving-code-review`, `ecc-agents/*` reviewers, `ecc-security/security-scan`, `ecc-security/security-review` |
+| 6 Verify | `superpowers/verification-before-completion`, `ecc-security/repo-scan`, `ecc-security/production-audit` |
+| all | `caveman` — compresses internal/subagent comms only |
+
+**Context comes from the code graph, not blind reads.** `hooks/preflight.sh`
+runs `codegraph sync` (or `index` on first run) so Phase 0 can query structure,
+call sites, and blast radius cheaply. PDFs (specs, tickets) are converted with
+`markitdown` before entering context — never raw bytes.
+
+**Plan artifacts persist.** Every plan is written to
+`docs/hydraia/plans/YYYY-MM-DD-<feature>.md` and frozen only after the self-review
+loop converges (max 2 iterations).
+
+---
+
+## Security (built in)
+
+Security is enforced at three points, not just at the end:
+
+- **Design (Phase 2):** threat model over the code graph's blast radius — attack
+  surface, PII/financial data, authN/authZ, OWASP categories — folded into the
+  spec so mitigations become plan tasks, not afterthoughts.
+- **Review (Phase 5):** cross-stack `security-scan` + `security-review` (OWASP,
+  secrets, injection, vulnerable deps) covering Node, C#, React, and Angular; plus
+  `springboot-security` / `django-security` when the stack matches. High-severity
+  findings block the merge.
+- **Close (Phase 6):** `repo-scan` + `production-audit` for hardcoded secrets,
+  vulnerable dependencies, and production-readiness gaps.
+
+---
+
+## The one setup step
+
+Run the **main session on Opus 4.8** (planning + both reviews). Execution drops
+to Sonnet 5 by itself via the executor subagents. That's the only lever you touch.
+
+If the session isn't on Opus, Hydraia tells you once and continues anyway — but
+quality is best on Opus.
+
+---
+
+## Install
+
+```bash
+# from the directory that contains hydraia/
+claude plugin marketplace add ./hydraia
+claude plugin install hydraia
+```
+
+Requires `codegraph` on PATH for graph context:
+```bash
+npm i -g @colbymchenry/codegraph@latest
+```
+
+And `markitdown` for PDF conversion:
+```bash
+pip install markitdown
+```
+
+Publish your own copy to GitHub (run locally with `gh` authenticated):
+```bash
+bash publish.sh                 # private repo named "hydraia"
+bash publish.sh my-name public  # public repo, custom name
+```
+
+---
+
+## Repo layout
+
+```
+hydraia/
+├── .claude-plugin/plugin.json    plugin manifest (name, version, wiring)
+├── README.md                     this file
+├── publish.sh                    push a copy to your GitHub
+├── skills/hydraia/SKILL.md       the 7-phase pipeline contract (the brain)
+├── commands/                     slash-command entry points
+│   ├── feature.md                /hydraia:feature — full pipeline
+│   ├── plan.md                   /hydraia:plan    — phases 0–3
+│   ├── review.md                 /hydraia:review  — phases 5–6
+│   └── graph.md                  /hydraia:graph   — code-graph query
+├── agents/
+│   ├── hydraia-executor.md       per-task executor (Sonnet 5)
+│   └── hydraia-reviewer.md       whole-branch reviewer (Opus 4.8)
+├── hooks/
+│   ├── hooks.json                registers preflight on SessionStart
+│   └── preflight.sh              codegraph sync before work
+└── vendor/                       bundled third-party skills (MIT), invoked
+                                  internally — you only ever call hydraia
+```
+
+---
+
+## Notes
+
+Bundled third-party skills live under `vendor/` with their original licenses (all
+MIT). They are invoked internally by the pipeline; you only ever call `hydraia`.

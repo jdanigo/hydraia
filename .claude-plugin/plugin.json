@@ -1,0 +1,22 @@
+{
+  "name": "hydraia",
+  "version": "0.1.0",
+  "description": "A personal agentic development harness for Claude Code. One command runs the full feature pipeline: context, think, design + threat model, plan with self-review, sub-agent execution, double code review, and security gates.",
+  "author": {
+    "name": "Daniel"
+  },
+  "license": "MIT",
+  "keywords": [
+    "claude-code",
+    "harness",
+    "pipeline",
+    "agents",
+    "code-review",
+    "security",
+    "codegraph"
+  ],
+  "commands": "./commands",
+  "agents": "./agents",
+  "skills": "./skills",
+  "hooks": "./hooks/hooks.json"
+}
