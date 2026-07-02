@@ -321,6 +321,79 @@ hydraia/
 └── docs/hydraia/                 plans/ and runs/ written by the pipeline
 ```
 
+### Skills reference
+
+| Skill | What it does |
+|-------|--------------|
+| `hydraia` | The 7-phase pipeline contract — the brain that drives every run |
+| **Process** | |
+| `brainstorming` | Explore intent, requirements, and design before any build |
+| `writing-plans` | Turn a spec into a step-by-step implementation plan |
+| `executing-plans` | Run a written plan in a fresh session with review checkpoints |
+| `subagent-driven-development` | Execute independent plan tasks via fresh subagents |
+| `dispatching-parallel-agents` | Fan out 2+ independent tasks with no shared state |
+| `requesting-code-review` | Request review when a feature is done or before a merge |
+| `receiving-code-review` | Triage review feedback with rigor, not blind agreement |
+| `test-driven-development` | Write tests before implementation code |
+| `systematic-debugging` | Structured root-cause analysis before proposing fixes |
+| `using-git-worktrees` | Set up an isolated workspace for feature work |
+| `finishing-a-development-branch` | Decide merge / PR / cleanup when work is done |
+| `verification-before-completion` | Run checks and confirm output before claiming done |
+| `using-superpowers` | How to find and invoke the right skill |
+| `writing-skills` | Create, edit, and verify skills |
+| **Stack patterns** | |
+| `react-patterns` | React 18/19 idioms — hooks, RSC boundaries, Suspense, a11y |
+| `golang-patterns` | Idiomatic Go patterns and conventions |
+| `springboot-patterns` | Spring Boot architecture, REST, data-access patterns |
+| `python-patterns` | Pythonic idioms, PEP 8, type hints |
+| `coding-standards` | Cross-project naming, readability, immutability rules |
+| `karpathy-guidelines` | Guardrails against common LLM coding mistakes |
+| `microservices-architect` | Distributed systems, monolith decomposition, DDD, sagas |
+| **Security** | |
+| `security-scan` | Scan `.claude/` config for injection and misconfig risks |
+| `security-review` | Security checklist for auth, input, secrets, APIs |
+| `security-bounty-hunter` | Hunt exploitable, report-worthy vulnerabilities |
+| `repo-scan` | Classify every file, detect embedded third-party libs |
+| `production-audit` | Local production-readiness audit, no external service |
+| `django-security` | Django auth, CSRF, injection, secure deployment |
+| `springboot-security` | Spring Security authn/authz, headers, secrets |
+| **UI / UX** | |
+| `ui-ux-pro-max` | UI/UX intelligence — styles, palettes, fonts, a11y, charts |
+| `ui-styling` | Accessible components with shadcn/ui + Tailwind |
+| `design` | Full design suite — logo, CIP, slides, banners, icons |
+| `design-system` | Design tokens (primitive→semantic→component) + specs |
+| `brand` | Brand voice, visual identity, messaging frameworks |
+| `banner-design` | Banners for social, ads, web heroes, and print |
+| `slides` | Strategic HTML presentations with Chart.js |
+| **Token discipline** | |
+| `caveman` | Compression style for internal reasoning to save tokens |
+
+### Agents reference
+
+| Agent | What it does |
+|-------|--------------|
+| `hydraia-executor` | Runs one plan task — writes code, tests, commits (Sonnet 5) |
+| `hydraia-reviewer` | Whole-branch reviewer, Phase 5 pass 1 (Opus) |
+| **Architecture** | |
+| `architect` | System design, scalability, technical decision-making |
+| `code-architect` | Feature blueprint anchored to existing codebase patterns |
+| **Language reviewers** | |
+| `go-reviewer` | Go — idioms, concurrency, error handling, performance |
+| `angular-reviewer` | Angular — change detection, RxJS, signals, templates |
+| `react-reviewer` | React — hook correctness, render perf, RSC boundaries |
+| `vue-reviewer` | Vue — Composition API, reactivity, template security |
+| `typescript-reviewer` | TS/JS — type safety, async correctness, security |
+| `python-reviewer` | Python — PEP 8, idioms, type hints, security |
+| `java-reviewer` | Java — Spring Boot / Quarkus layered review |
+| `csharp-reviewer` | C# — .NET conventions, async, nullable, security |
+| **Cross-cutting reviewers** | |
+| `code-reviewer` | General quality, security, and maintainability review |
+| `security-reviewer` | OWASP Top 10 — secrets, injection, SSRF, unsafe crypto |
+| `silent-failure-hunter` | Swallowed errors, bad fallbacks, missing propagation |
+| `database-reviewer` | PostgreSQL query, schema, and performance review |
+| `performance-optimizer` | Bottlenecks, memory leaks, bundle size, render perf |
+| `type-design-analyzer` | Type encapsulation, invariants, and enforcement |
+
 ---
 
 ## Maintainer / forking
