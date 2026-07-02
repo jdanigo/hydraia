@@ -251,23 +251,24 @@ Platform: macOS/Linux. On Windows, run inside WSL.
 
 ## Install
 
+Add the marketplace straight from GitHub, then install the plugin:
+
 ```bash
-# from the directory that contains hydraia/
-claude plugin marketplace add ./hydraia
+claude plugin marketplace add jdanigo/hydraia
 claude plugin install hydraia
 ```
+
+`marketplace add` clones the repo; `plugin install` reads
+`.claude-plugin/marketplace.json` from that clone. Updates pull the latest
+`main` (`claude plugin marketplace update hydraia`).
 
 Then install the two external tools (validates and updates them too):
 ```
 /hydraia:doctor
 ```
 
-That's it — every skill and agent Hydraia uses ships inside the plugin. Publish
-your own copy to GitHub (run locally with `gh` authenticated):
-```bash
-bash publish.sh                 # private repo named "hydraia"
-bash publish.sh my-name public  # public repo, custom name
-```
+That's it — every skill and agent Hydraia uses ships inside the plugin, so there
+is nothing else to clone or wire up.
 
 ---
 
@@ -302,6 +303,20 @@ hydraia/
 │   ├── preflight.sh              codegraph sync + daily dep nudge
 │   └── doctor.sh                 validate / install / update deps
 └── docs/hydraia/                 plans/ and runs/ written by the pipeline
+```
+
+---
+
+## Maintainer / forking
+
+`publish.sh` is a maintainer helper — it is **not** part of installing Hydraia.
+It pushes a copy of this repo to a GitHub account of your own (handy if you fork
+Hydraia and want to host your own marketplace). Run it locally with `gh`
+authenticated:
+
+```bash
+bash publish.sh                 # private repo named "hydraia"
+bash publish.sh my-name public  # public repo, custom name
 ```
 
 ---
