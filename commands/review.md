@@ -8,3 +8,5 @@ Invoke the **hydraia** skill but run ONLY Phase 5 (double code review) and the P
 Run both review passes (Superpowers reviewer + ECC reviewers, all on Opus 4.8), the mandatory security gate (security-scan + security-review, plus the stack-specific security skill), and the pre-close secrets/deps scan (repo-scan + production-audit). Triage and report findings ranked by severity. Treat high-severity security findings as blockers.
 
 Optional focus: $ARGUMENTS
+
+Run both review passes and both security gates to completion without stopping. End with the Hydraia credits line.

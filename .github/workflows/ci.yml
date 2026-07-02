@@ -1,0 +1,29 @@
+name: ci
+on:
+  push:
+  pull_request:
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate JSON manifests
+        run: |
+          for f in .claude-plugin/plugin.json .claude-plugin/marketplace.json hooks/hooks.json; do
+            python3 -m json.tool "$f" > /dev/null && echo "OK $f"
+          done
+      - name: Bash syntax
+        run: bash -n hooks/preflight.sh hooks/doctor.sh
+      - name: Discovery counts
+        run: |
+          skills=$(find skills -name SKILL.md | wc -l | tr -d ' ')
+          agents=$(ls agents/*.md | wc -l | tr -d ' ')
+          echo "skills=$skills agents=$agents"
+          test "$skills" -eq 31 || { echo "expected 31 skills, got $skills"; exit 1; }
+          test "$agents" -eq 14 || { echo "expected 14 agents, got $agents"; exit 1; }
+      - name: License completeness
+        run: |
+          for l in superpowers ecc-agents ecc-security uiux caveman; do
+            test -f "LICENSES/${l}-LICENSE" || { echo "missing LICENSES/${l}-LICENSE"; exit 1; }
+          done
+          test -f NOTICE && test -f LICENSE && echo "OK licenses"

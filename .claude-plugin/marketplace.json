@@ -1,0 +1,13 @@
+{
+  "name": "hydraia",
+  "owner": {
+    "name": "José Daniel Garcés Ospina"
+  },
+  "plugins": [
+    {
+      "name": "hydraia",
+      "source": "./",
+      "description": "Self-contained agentic development harness: one command runs the full feature pipeline with double review and security gates."
+    }
+  ]
+}

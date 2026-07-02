@@ -13,6 +13,22 @@ for "should I continue?" between phases.
 Announce once at the start: "Running the Hydraia pipeline." Then proceed silently
 through the phases, narrating at most one short line per phase.
 
+## Start-of-run guards (before Phase 0)
+
+**Model guard.** Check the model this session is running on. If it is NOT Opus 4.8
+(e.g. Sonnet 5), print this once, then continue anyway — never block:
+
+> ⚠️ Hydraia runs best with the **main session on Opus 4.8**. Opus does the
+> planning and both review passes, and is smart enough to delegate execution to
+> Sonnet 5 sub-agents on its own — you don't switch models yourself. Consider
+> restarting the session on Opus 4.8 for full quality. Continuing anyway.
+
+**Continuous execution.** Once the pipeline starts, run every phase to completion
+without pausing. The ONLY permitted stops are: (a) the single clarifying question
+allowed in Phase 1, and (b) a genuine BLOCKER a sub-agent cannot resolve — surface
+it, don't silently spin. Never insert "should I continue?" checkpoints between
+phases and never stop with the plan half-executed.
+
 ## Model policy (already decided — do not surface to the user)
 
 - **This main session must run on Opus 4.8.** It does all analysis, planning,
@@ -65,6 +81,11 @@ security flaw here is far cheaper than at review time.
    - Pass B: repeat once more only if Pass A found substantive issues.
    - Stop after 2 iterations even if minor nits remain. Do not loop forever.
 3. The plan is frozen only after the self-review loop converges.
+4. **Open a run log.** Create `docs/hydraia/runs/YYYY-MM-DD-HHMM-<feature>.md` with
+   the original request, the plan path, and a phase checklist
+   (`- [ ] Phase 0` … `- [ ] Phase 6`). Update it at each phase boundary — check
+   the box as each phase completes — so an interrupted run leaves a durable trail
+   of where it stopped. `/hydraia:resume` reads this file.
 
 ## Phase 4 — Execution (delegated → Sonnet 5)
 
@@ -109,7 +130,13 @@ shipped.
 **Pre-close security gate (mandatory):** run **repo-scan** and **production-audit**
 to confirm no hardcoded secrets, no vulnerable dependencies, and no obvious
 production-readiness gaps were introduced. Do not report done while a high-severity
-item is open. Only then report done.
+item is open. Only then report done. As the very last line of the run summary,
+print the credits exactly:
+
+    — Harness By José Daniel Garcés Ospina | Spec Drive Design First —
+
+(Shown on every completed `feature`, `review`, and `resume` run. Not shown for
+`plan` or `graph`.)
 
 ## Token discipline (background, always on)
 
