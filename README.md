@@ -1,7 +1,7 @@
 # Hydraia
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)
-![Plugin version](https://img.shields.io/badge/plugin-v0.6.0-blue.svg)
+![Plugin version](https://img.shields.io/badge/plugin-v0.7.0-blue.svg)
 
 A personal agentic development harness for Claude Code. One command runs the
 entire feature pipeline: it **collaborates with you on the design** (brainstorm,
@@ -114,6 +114,7 @@ them are steps you'd never run by hand on a normal day.
 | `/hydraia:story <story>` | -1–3 | Product-Owner analysis of a user story (INVEST, ambiguity questions, numbered acceptance criteria) → spec → QA cases + traceability matrix → frozen plan, then **stop**. Nothing executed. |
 | `/hydraia:perf <symptom>` | -1–6 | Measurement-first performance run: baseline → profile-driven diagnosis (`perf-engineer`) → spec with numeric target → implement → **re-measure** in verify. |
 | `/hydraia:db <symptom>` | -1–6 | DB bottleneck run: engine detection, read-only evidence (EXPLAIN, stats, locks), findings by taxonomy, expand-contract migrations — `db-performance-tuner` as primary. |
+| `/hydraia:architect <idea>` | -1–6 | Greenfield: guided elicitation → architecture proposals → confirmed stack → API contract → ADRs → full build pipeline. |
 | `/hydraia:review [focus]` | 5–6 | Double code review + security gate on the **current branch**. Code already exists. |
 | `/hydraia:graph <query>` | — | Query the code graph (call sites, blast radius) without running the pipeline. |
 | `/hydraia:doctor` | — | Validate, install, and update external deps (`codegraph`, `markitdown`), with consent. |
@@ -515,7 +516,7 @@ hydraia/
 ├── LICENSES/                     upstream licenses (all MIT)
 ├── CONTRIBUTING.md               structure + how to add a skill
 ├── README.md                     this file
-├── skills/                       40 skills, all self-contained
+├── skills/                       45 skills, all self-contained
 │   ├── hydraia/                  the 7-phase pipeline contract (the brain)
 │   ├── process (15)              brainstorming, writing-plans, executing-plans,
 │   │                            subagent-driven-development, dispatching-parallel-agents,
@@ -524,10 +525,11 @@ hydraia/
 │   │                            using-git-worktrees, finishing-a-development-branch,
 │   │                            verification-before-completion, using-superpowers,
 │   │                            writing-skills, story-analysis
-│   ├── stack patterns (7)       react-patterns, golang-patterns, springboot-patterns,
+│   ├── stack patterns (9)       react-patterns, golang-patterns, springboot-patterns,
 │   │                            python-patterns, coding-standards, karpathy-guidelines,
-│   │                            microservices-architect
+│   │                            microservices-architect, node-patterns, dotnet-patterns
 │   ├── performance (2)           performance-tuning, db-optimization
+│   ├── architecture (3)          greenfield-architect, api-design, adr
 │   ├── security (7)             security-scan, security-review, security-bounty-hunter,
 │   │                            repo-scan, production-audit, django-security,
 │   │                            springboot-security
@@ -546,7 +548,7 @@ hydraia/
 │   └── cross-cutting (6)         code-reviewer, security-reviewer, silent-failure-hunter,
 │                                database-reviewer, performance-optimizer,
 │                                type-design-analyzer
-├── commands/                     feature, plan, story, perf, db, review, graph, doctor, resume, dashboard
+├── commands/                     feature, plan, story, perf, db, architect, review, graph, doctor, resume, dashboard
 ├── hooks/
 │   ├── hooks.json                registers preflight (SessionStart) + gate (PreToolUse)
 │   ├── preflight.sh              codegraph sync + daily dep nudge
@@ -584,9 +586,15 @@ hydraia/
 | `coding-standards` | Cross-project naming, readability, immutability rules |
 | `karpathy-guidelines` | Guardrails against common LLM coding mistakes |
 | `microservices-architect` | Distributed systems, monolith decomposition, DDD, sagas |
+| `node-patterns` | Node/TS backend playbook — async discipline, config, errors, DI, testing |
+| `dotnet-patterns` | C#/.NET playbook — DI lifetimes, async/cancellation, EF Core, ProblemDetails |
 | **Performance** | |
 | `performance-tuning` | Measurement-first perf methodology — baseline, numeric target, re-measure |
 | `db-optimization` | DB playbook — EXPLAIN-first, index design, N+1, expand-contract migrations |
+| **Architecture** | |
+| `greenfield-architect` | From-scratch design — elicitation, architecture, stack, contract, ADRs |
+| `api-design` | Contract-first APIs — OpenAPI 3.1 / GraphQL SDL / gRPC proto3 |
+| `adr` | Architecture Decision Records under docs/hydraia/adr/ |
 | **Security** | |
 | `security-scan` | Scan `.claude/` config for injection and misconfig risks |
 | `security-review` | Security checklist for auth, input, secrets, APIs |

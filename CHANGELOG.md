@@ -6,6 +6,25 @@ All notable changes to Hydraia are documented here. Format follows
 
 ## [Unreleased]
 
+## 0.7.0 — 2026-07-03
+
+Engineering-team expansion, wave 1C: greenfield architecture + contract-first APIs.
+
+- **greenfield-architect skill:** interactive from-scratch design — one-question-
+  at-a-time elicitation (problem, honest scale, team, non-functionals),
+  architecture proposals via the architect agents (monolith default,
+  microservices only with evidence), confirmed stack, anti-overengineering rules.
+- **api-design skill:** contract-first REST/GraphQL/gRPC — OpenAPI 3.1, RFC 9457
+  errors, cursor pagination, per-operation auth in the contract, Phase 6 drift
+  check.
+- **adr skill:** MADR-lite decision records under `docs/hydraia/adr/` with
+  supersede lifecycle; every load-bearing decision recorded.
+- **node-patterns and dotnet-patterns skills:** builder playbooks giving TS/Node
+  and C#/.NET the same prevention-side coverage React/Go/Spring/Python had.
+- **/hydraia:architect command**; greenfield route in Phase -1 upgraded; Phase 4
+  stack rule extended.
+- Design spec: `docs/hydraia/specs/2026-07-03-greenfield-architect-design.md`.
+
 ## 0.6.0 — 2026-07-03
 
 Engineering-team expansion, wave 1B: measurement-first performance + DB tuning.
