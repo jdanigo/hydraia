@@ -127,7 +127,9 @@ both. The hooks already enforce the deterministic toggles (agent caps, spec-driv
 mode, telemetry, run summary, codegraph auto). YOU honor the prompt-level ones:
 `autoInstallDeps` (false → skip the install offer below), `reviewMode`
 (`single` → run only the Superpowers review pass in Phase 5, not both),
-`selfReviewPasses` (Phase 3 plan self-review count), `securityGates` (false → the
+`selfReviewPasses` (Phase 3 plan self-review count), `qaFunctional` (false → skip
+the qa-functional dispatch in Phase 3, drop the AC-coverage freeze check, and skip
+qa-automation in Phases 4 and 6), `securityGates` (false → the
 human disabled threat model / security scans; note it, do not silently assume they
 ran), `pdfConversion` (false → skip markitdown), `cavemanInternal`. Defaults apply
 when a key is absent.
@@ -281,10 +283,22 @@ security flaw here is far cheaper than at review time.
    task correctly with no judgment calls left open — exact paths, exact signatures,
    exact test commands. If a task would require the executor to infer intent or make
    a design decision, it is under-specified — push that decision up into the plan.
+
+   **QA cases (parallel, when `qaFunctional` is on and the run has acceptance
+   criteria).** While writing the plan, dispatch the `qa-functional` agent
+   (Sonnet) with: the spec path, the story artifact path if one exists, and the
+   output path `docs/hydraia/qa/YYYY-MM-DD-<slug>-cases.md`. It returns
+   Given/When/Then cases per AC plus a traceability matrix (`AC → Cases → Test
+   ref`, refs start as `pending`) and a GAPS section. Surface every GAP to the
+   human BEFORE freezing the plan — gaps are design questions, never things to
+   guess around. The plan must contain the test tasks that implement these
+   cases (see the Phase 4 QA automation rule).
 2. **Self-review the plan (always TWO passes):**
    - Pass A: critique your own plan hard. **Reject and revise if ANY task lacks
      exact `Files:` paths, `Interfaces:`, or independently testable steps**, or says
-     vaguely "edit the code / update the component". Also hunt gaps, hidden coupling
+     vaguely "edit the code / update the component". When `qaFunctional` is on,
+     also reject if any acceptance criterion lacks BOTH a QA case (in the
+     qa-functional doc) and an implementing task in the plan. Also hunt gaps, hidden coupling
      (check the graph), missing tests, unstated assumptions, over-broad changes, and
      drift from the spec. Revise.
    - Pass B: run a **second full pass regardless** — even if Pass A found nothing,
@@ -294,7 +308,8 @@ security flaw here is far cheaper than at review time.
    - Both passes always run. Stop after the two even if minor nits remain — do not
      loop forever.
 3. The plan is frozen only after the self-review loop converges AND every task has
-   file-level detail. If it does not, it is not frozen.
+   file-level detail AND — when `qaFunctional` is on and ACs exist — every AC maps
+   to at least one QA case and one plan task. If it does not, it is not frozen.
 4. **Open a run log.** Create `docs/hydraia/runs/YYYY-MM-DD-HHMM-<feature>.md` with
    the original request, the plan path, and a phase checklist
    (`- [ ] Phase 0` … `- [ ] Phase 6`). Update it at each phase boundary — check
@@ -338,6 +353,14 @@ consults the matching patterns/standards skill so idioms are right the first tim
 (Spring Boot), **python-patterns** (Python), and **coding-standards** (cross-cutting
 naming, structure, and clean-code conventions for any stack).
 
+**QA automation rule:** plan tasks that implement QA cases are dispatched to the
+`qa-automation` agent (mode: implement) instead of a generic executor. It detects
+the repo's existing test framework from evidence (config files, existing tests) —
+if none exists it reports BLOCKED, because choosing a framework is a plan-level
+decision. It names every test with its case ID (e.g. `TC-1.1`) and fills the
+matrix `Test ref` column with `path/to/test:line` per case, or
+`manual — <reason>` for cases that cannot be automated.
+
 ## Phase 5 — Double code review (both passes on Opus 4.8)
 
 Run BOTH passes. Do not stop after one.
@@ -371,6 +394,12 @@ verification — if a build/test command exists, you must run it and report the 
 result. Confirm the feature meets the spec from Phase 2 (including the threat-model
 mitigations), and summarize what shipped. If a build or test fails, the run is not
 done — fix and re-run.
+
+**QA matrix check (when `qaFunctional` is on and a QA case doc exists):**
+dispatch `qa-automation` (mode: verify) against the case doc. Every case must be
+either automated — its `Test ref` points at a real test that ran green in the
+build above — or explicitly `manual — <reason>`. Any `pending`, missing ref, or
+red case means the run is NOT done: fix and re-verify before closing.
 
 **Disarm the gate.** Once the run is verified and done, remove the active-plan
 marker so a later unrelated edit is gated again: `rm -f docs/hydraia/.active-plan`.
