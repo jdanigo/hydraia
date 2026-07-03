@@ -40,14 +40,37 @@ it, don't silently spin. Never insert "should I continue?" checkpoints between
 phases and never stop with the plan half-executed.
 
 **No proportionality escape (non-negotiable).** Token cost, change size, or "this
-looks trivial / it's just a mirror of existing code" are NEVER reasons to skip,
-compress, or inline a phase. Whether a change is small enough to bypass the
-pipeline is the **human's** decision, expressed only via the `HYDRAIA_ALLOW_DIRECT`
-bypass — never yours. If you are running the pipeline, run it in full: write the
-spec, write the plan, delegate execution, run both review passes, run the real
-build/tests. A runtime gate enforces this — editing source code before Phase 3
-freezes a plan is blocked — so "compressing the ceremony" does not save effort, it
-just fails the gate.
+looks trivial / it's just a mirror of existing code" are NEVER reasons for YOU to
+skip, compress, or inline a phase on your own. Whether a change is small enough to
+skip the ceremony is the **human's** decision — never yours to make unilaterally. If
+you are running the pipeline, run it in full: write the spec, write the plan,
+delegate execution, run both review passes, run the real build/tests. A runtime gate
+(`hooks/gate.sh`) enforces this — editing source code before Phase 3 freezes a plan
+is blocked — so "compressing the ceremony" does not save effort, it just fails the
+gate. The two sanctioned ways to skip are the human bypass and Quick-mode below.
+
+**Quick-mode (human-gated shortcut, opt-in per change).** When a change is genuinely
+trivial you MAY *offer* to skip the design ceremony — but the human decides, not you.
+
+- **Eligibility (ALL must hold, else do NOT offer — run the full pipeline):** no new
+  business logic; no new file; small, localized diff; a mirror of behavior that
+  already exists and works; and it does **NOT** touch any security surface
+  (authN/authZ, PII/financial data, untrusted/external input, secrets). If security
+  surface is touched, Quick-mode is never eligible — the threat model is not
+  skippable.
+- **Ask, honestly.** Call `AskUserQuestion` once with a neutral pro/con:
+  *"Found a simple, low-risk fix. Skip the spec/plan/double-review ceremony?"* —
+  options `Run full pipeline` and `Quick-mode`. State plainly: **pro** — far fewer
+  tokens, faster; **con** — no spec-drive record, no double review. Do not lead with
+  the token savings or nudge toward skipping.
+- **On `Run full pipeline` (or dismissal):** run Phases 0–6 normally. Default to this
+  whenever unsure.
+- **On `Quick-mode`:** write the approval marker with a one-line reason
+  (`printf 'reason\n' > docs/hydraia/.quick-approved`), make the edit, then — always,
+  non-negotiable — **run the project's real build/tests** and confirm they pass, and
+  **commit with a clear message**. Remove the marker afterward
+  (`rm -f docs/hydraia/.quick-approved`). Never write this marker without an explicit
+  human "yes".
 
 ## Model policy (already decided — do not surface to the user)
 

@@ -380,12 +380,21 @@ literally cannot write code before the spec and plan exist.
   directory). Markdown and the pipeline's own artifacts (specs, plans, run logs) are
   exempt, so writing the plan is never blocked.
 - **The decision to skip is yours, not the model's.** Token cost or "this looks
-  trivial" is never a valid reason for the model to bypass the pipeline. If *you*
-  decide a change doesn't warrant the full run, set the bypass in your shell:
+  trivial" is never a valid reason for the model to bypass the pipeline on its own.
+  There are exactly two sanctioned ways to skip:
 
-  ```bash
-  export HYDRAIA_ALLOW_DIRECT=1   # allow direct edits; unset to re-arm the gate
-  ```
+  1. **Hard bypass (you, up front).** Set an env var in your shell — un-forgeable by
+     the model, since it can't change the process environment the hook runs in:
+
+     ```bash
+     export HYDRAIA_ALLOW_DIRECT=1   # allow direct edits; unset to re-arm the gate
+     ```
+
+  2. **Quick-mode (per change, human-approved).** On a genuinely trivial change (no
+     new logic, no new file, no security surface), the model may *ask you* via a
+     prompt — "skip the ceremony? pro: fewer tokens; con: no spec-drive record, no
+     double review." Only if **you** approve does it proceed, and even then it still
+     runs the real build/tests. The model can never approve its own shortcut.
 
 This closes the most common failure mode of prompt-only pipelines: a model that
 rationalizes its way past the process on a change it judges "small."
