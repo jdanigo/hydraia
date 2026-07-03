@@ -33,11 +33,25 @@ run's choice if the run log records it, otherwise re-asks.
 > Sonnet 5 sub-agents on its own — you don't switch models yourself. Consider
 > restarting the session on Opus 4.8 for full quality. Continuing anyway.
 
-**Continuous execution.** Once the pipeline starts, run every phase to completion
-without pausing. The ONLY permitted stops are: (a) the single clarifying question
-allowed in Phase 1, and (b) a genuine BLOCKER a sub-agent cannot resolve — surface
-it, don't silently spin. Never insert "should I continue?" checkpoints between
-phases and never stop with the plan half-executed.
+**Two modes: design dialogue, then continuous execution.** The pipeline has a
+conversational half and an autonomous half, split at the frozen plan.
+
+- **Phases 1–3 (think → design → plan) are INTERACTIVE.** This is where design
+  happens, so interaction is expected — not a violation. Run brainstorming as a real
+  dialogue: ask clarifying questions (one at a time), propose 2–3 approaches with a
+  recommendation, present the design, and get the user's approval before writing the
+  spec. Do not compress this into a single question or skip it to "get to the code" —
+  a design reached without dialogue is the exact failure this pipeline exists to
+  prevent.
+- **Phases 4–6 (execute → review → verify) are CONTINUOUS.** Once the plan is frozen,
+  run every remaining phase to completion **without pausing**. Never insert "should I
+  continue?" checkpoints between execution phases, never stop with the plan
+  half-executed. The ONLY permitted stop here is a genuine BLOCKER a sub-agent cannot
+  resolve — surface it, don't silently spin.
+
+In short: **pause to get the design right; never pause once you're building it.**
+(`/hydraia:plan` stops at the boundary — after Phase 3 — so you can review before the
+autonomous half begins.)
 
 **No proportionality escape (non-negotiable).** Token cost, change size, or "this
 looks trivial / it's just a mirror of existing code" are NEVER reasons for YOU to
@@ -98,15 +112,23 @@ trivial you MAY *offer* to skip the design ceremony — but the human decides, n
 Apply the **karpathy-guidelines** skill. Do not write any code yet. Force the
 analysis: restate the goal in your own words, list assumptions, name the simplest
 approach that could work, and identify what could go wrong. Surgical changes over
-broad rewrites. If the goal is ambiguous in a way that blocks correct design, ask
-ONE clarifying question — otherwise proceed.
+broad rewrites. Ask clarifying questions if the goal is ambiguous — you are in the
+interactive half of the pipeline (see "Two modes"), so a real back-and-forth here is
+correct; the deeper design dialogue continues in Phase 2.
 
 ## Phase 2 — Design + threat model (Superpowers, this session = Opus 4.8)
 
-Use **brainstorming**. This phase produces a **written design spec — a real file, not
-inline reasoning**. Skipping the written spec, or collapsing design into the plan, is
-a violation of the pipeline. Be exhaustive; explore alternatives and trade-offs;
-anchor every decision to what the code graph showed in Phase 0.
+Use **brainstorming**, and run it as a **real interactive dialogue** (this is the
+interactive half — see "Two modes"). Do the actual brainstorming flow: ask clarifying
+questions one at a time (purpose, constraints, success criteria), propose 2–3
+approaches with trade-offs and your recommendation, then present the design and get
+the user's approval. Do NOT jump straight from the prompt to a spec or to code —
+design without dialogue is the failure this phase exists to prevent.
+
+This phase produces a **written design spec — a real file, not inline reasoning**.
+Skipping the written spec, or collapsing design into the plan, is a violation of the
+pipeline. Be exhaustive; explore alternatives and trade-offs; anchor every decision to
+what the code graph showed in Phase 0.
 
 **Write the spec to a file (mandatory artifact).** Save the design spec to
 `docs/hydraia/specs/YYYY-MM-DD-<topic>-design.md` and commit it. Phase 3 MUST NOT
@@ -121,12 +143,13 @@ start until this file exists. The spec MUST contain, at minimum:
   any acceptance criteria, with exact values.
 - **Threat model + mitigations** — see below; folded in so they become plan tasks.
 
-**Human-approval note (autonomy trade-off).** Superpowers' `brainstorming` HARD-GATE
-normally pauses for the user to approve the design and review the spec. The autonomous
-pipeline does not pause — so the **written spec artifact + the mandatory adversarial
-self-review below stand in for that human gate**. The artifact is never optional. If
-you want the human checkpoint back, that is exactly what `/hydraia:plan` is for: it
-runs Phases 0–3, writes the spec and plan, and stops for you to review before any code.
+**Design approval (interactive gate, mandatory).** Present the design to the user and
+get their approval BEFORE writing the spec file — this is `brainstorming`'s HARD-GATE
+and it is honored, not skipped. Only pausing to "get to the code faster" defeats the
+pipeline. The written spec + the adversarial self-review below are *in addition to*
+the human approval, not a replacement for it. (Note: this human gate lives entirely in
+the interactive half; once the plan is frozen and Phase 4 begins, the pipeline runs
+autonomously to the end.)
 
 **Architecture advice (greenfield / from-scratch work).** When the request builds a
 new system, service, or module from scratch — not a surgical change to existing

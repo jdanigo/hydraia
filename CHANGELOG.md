@@ -25,6 +25,14 @@ All notable changes to Hydraia are documented here. Format follows
 - `SKILL.md` hardened: token cost / change size are explicitly forbidden as reasons
   to skip a phase; Phase 6 must run the real build/tests (not inline reasoning);
   Phase 3 arms and Phase 6 disarms the gate marker.
+- **Two modes: design dialogue, then continuous execution.** "Never pause" was
+  over-scoped — it capped the whole run to a single clarifying question, which
+  strangled brainstorming and made the pipeline jump straight from prompt to code.
+  Now Phases 1–3 (think → design → plan) are **interactive**: real brainstorming
+  dialogue, approaches, and a mandatory design-approval gate before the spec is
+  written. "Continuous execution / never pause" applies only to Phases 4–6
+  (execute → review → verify), once the plan is frozen. `feature.md` and `plan.md`
+  updated to match.
 - **Design-first restored.** Phase 2 now requires a **written** design spec
   (`docs/hydraia/specs/`) — goal, chosen vs rejected approaches, code-graph anchors,
   global constraints, threat model — as a mandatory artifact, not inline reasoning;

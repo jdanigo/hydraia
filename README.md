@@ -4,8 +4,9 @@
 ![Plugin version](https://img.shields.io/badge/plugin-v0.1.0-blue.svg)
 
 A personal agentic development harness for Claude Code. One command runs the
-entire feature pipeline — no per-step babysitting, no telling it which model or
-skill to use each time.
+entire feature pipeline: it **collaborates with you on the design** (brainstorm,
+approaches, spec), then **builds autonomously** — plan, execute, double-review, and
+verify with no per-step babysitting and no telling it which model or skill to use.
 
 ```
 /hydraia:feature add rate limiting to the public REST API
