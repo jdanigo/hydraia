@@ -37,6 +37,7 @@ const DEFAULTS = {
   telemetryRetentionDays: 90,
   reviewMode: 'double',         // double | single
   selfReviewPasses: 2,
+  qaFunctional: true,
   securityGates: true,
   pdfConversion: true,
   cavemanInternal: true,
