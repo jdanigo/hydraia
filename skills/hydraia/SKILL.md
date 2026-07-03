@@ -20,7 +20,8 @@ Explicit commands skip classification and force their route
 (`/hydraia:feature` → feature · `/hydraia:story` → user story ·
 `/hydraia:plan` → feature, stopping after Phase 3 · `/hydraia:review` →
 review · `/hydraia:perf` → performance · `/hydraia:db` → performance,
-DB-shaped). Plain-language requests are classified by signals:
+DB-shaped · `/hydraia:architect` → greenfield). Plain-language requests
+are classified by signals:
 
 | Intent | Signals | Route |
 |---|---|---|
@@ -28,7 +29,7 @@ DB-shaped). Plain-language requests are classified by signals:
 | User story | "As a … I want … so that …", acceptance-criteria lists, ticket text or a Jira/PDF export | Run the **story-analysis** skill FIRST (interactive PO pass → story artifact with numbered ACs), then Phases 0–3 with that artifact as the primary design input; continue into 4–6 only when the entry point runs the full pipeline |
 | Bug / unexpected behavior | "fails / broken / error / regression / used to work" | **systematic-debugging** skill first — root cause before any fix. Enter the pipeline only if the fix requires new design/behavior; a surgical fix proceeds under that skill's rules (the spec-drive gate still applies) |
 | Performance / DB symptom | "slow / timeout / high CPU / memory climbing / query takes …" | Run the **performance-tuning** skill flow: measured baseline FIRST, dispatch `perf-engineer` (and `db-performance-tuner` when the symptom is DB-shaped, per **db-optimization**), spec carries baseline + numeric target, Phase 6 re-measures against it |
-| New app / greenfield | "from scratch / new app / new service / greenfield" | Offer the architect UP FRONT: tell the user Phase 2 will dispatch `architect` + `code-architect` (plus `microservices-architect` if multi-service) before the spec, then run Phases 0–6 |
+| New app / greenfield | "from scratch / new app / new service / greenfield" | Run the **greenfield-architect** skill: elicitation → architecture proposals (`architect` + `code-architect`, microservices only with evidence) → confirmed stack → **api-design** contract when an API exists → **adr** records per decision — then Phases 0–6 |
 | Review / audit | "review / audit this branch / this PR" | Phases 5–6 only |
 | Ambiguous | none of the above clearly | `AskUserQuestion` listing the plausible routes — never assume |
 
@@ -232,8 +233,11 @@ code — first dispatch the architecture agents to propose the shape before the 
 (concrete file/interface/data-flow blueprint anchored to existing patterns). If the
 work spans multiple services or a monolith split, also use **microservices-architect**
 (bounded contexts, communication patterns, resilience). Fold the chosen architecture
-+ its rejected alternatives (and why) into the spec. Skip this for small changes to
-existing code — it is for genuinely new construction.
++ its rejected alternatives (and why) into the spec. For a FULL greenfield run
+(routed by Phase -1 or `/hydraia:architect`), the **greenfield-architect** skill
+drives this entire step — elicitation, these same agents, the api-design contract,
+and ADRs. Skip this for small changes to existing code — it is for genuinely new
+construction.
 
 **Design adversarial loop (mandatory, before freezing the spec).** After the spec +
 threat model are drafted, run ONE adversarial pass against them: take the opposing
@@ -351,7 +355,8 @@ writing markup.
 **Stack best-practices rule:** before writing non-trivial code, the executor
 consults the matching patterns/standards skill so idioms are right the first time —
 **react-patterns** (React), **golang-patterns** (Go), **springboot-patterns**
-(Spring Boot), **python-patterns** (Python), and **coding-standards** (cross-cutting
+(Spring Boot), **python-patterns** (Python), **node-patterns** (Node/TypeScript
+backends), **dotnet-patterns** (C#/.NET), and **coding-standards** (cross-cutting
 naming, structure, and clean-code conventions for any stack).
 
 **QA automation rule:** plan tasks that implement QA cases are dispatched to the
