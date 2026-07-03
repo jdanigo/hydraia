@@ -6,6 +6,26 @@ All notable changes to Hydraia are documented here. Format follows
 
 ## [Unreleased]
 
+## 0.6.0 — 2026-07-03
+
+Engineering-team expansion, wave 1B: measurement-first performance + DB tuning.
+
+- **perf-engineer agent (Opus):** baseline-or-bust diagnosis — profile, rank
+  bottlenecks by measured contribution (USE/RED), hypotheses with expected
+  gains and blast radius; read-only.
+- **db-performance-tuner agent (Opus):** evidence-first DB tuning across
+  PostgreSQL, MySQL/MariaDB, MongoDB, Redis — EXPLAIN plans, index design,
+  N+1, locking, pooling; write-shaped changes become plan tasks.
+- **performance-tuning skill:** the perf route contract — no optimization
+  without a baseline, numeric target in the spec, Phase 6 re-measures with
+  the same commands; one isolated change per task.
+- **db-optimization skill:** EXPLAIN-first playbook — index design guidance,
+  N+1 fix families, pooling sizing, expand-contract migration protocol,
+  online-DDL variants per engine.
+- **/hydraia:perf and /hydraia:db commands**; Phase -1 wave-B placeholder
+  replaced with the live route.
+- Design spec: `docs/hydraia/specs/2026-07-03-perf-db-tuning-design.md`.
+
 ## 0.5.0 — 2026-07-03
 
 Engineering-team expansion, wave 1A: product + QA + intent routing.

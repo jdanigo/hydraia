@@ -1,7 +1,7 @@
 # Hydraia
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)
-![Plugin version](https://img.shields.io/badge/plugin-v0.5.0-blue.svg)
+![Plugin version](https://img.shields.io/badge/plugin-v0.6.0-blue.svg)
 
 A personal agentic development harness for Claude Code. One command runs the
 entire feature pipeline: it **collaborates with you on the design** (brainstorm,
@@ -112,6 +112,8 @@ them are steps you'd never run by hand on a normal day.
 | `/hydraia:feature <desc>` | 0–6 | Full pipeline: context → think → design+threat-model → plan+self-review → execute (Sonnet 5) → double review + security gate (Opus 4.8) → verify + secrets/deps scan |
 | `/hydraia:plan <desc>` | 0–3 | Context + design + threat model + detailed plan (with self-review), then **stop**. Nothing executed. |
 | `/hydraia:story <story>` | -1–3 | Product-Owner analysis of a user story (INVEST, ambiguity questions, numbered acceptance criteria) → spec → QA cases + traceability matrix → frozen plan, then **stop**. Nothing executed. |
+| `/hydraia:perf <symptom>` | -1–6 | Measurement-first performance run: baseline → profile-driven diagnosis (`perf-engineer`) → spec with numeric target → implement → **re-measure** in verify. |
+| `/hydraia:db <symptom>` | -1–6 | DB bottleneck run: engine detection, read-only evidence (EXPLAIN, stats, locks), findings by taxonomy, expand-contract migrations — `db-performance-tuner` as primary. |
 | `/hydraia:review [focus]` | 5–6 | Double code review + security gate on the **current branch**. Code already exists. |
 | `/hydraia:graph <query>` | — | Query the code graph (call sites, blast radius) without running the pipeline. |
 | `/hydraia:doctor` | — | Validate, install, and update external deps (`codegraph`, `markitdown`), with consent. |
@@ -513,7 +515,7 @@ hydraia/
 ├── LICENSES/                     upstream licenses (all MIT)
 ├── CONTRIBUTING.md               structure + how to add a skill
 ├── README.md                     this file
-├── skills/                       38 skills, all self-contained
+├── skills/                       40 skills, all self-contained
 │   ├── hydraia/                  the 7-phase pipeline contract (the brain)
 │   ├── process (15)              brainstorming, writing-plans, executing-plans,
 │   │                            subagent-driven-development, dispatching-parallel-agents,
@@ -525,24 +527,26 @@ hydraia/
 │   ├── stack patterns (7)       react-patterns, golang-patterns, springboot-patterns,
 │   │                            python-patterns, coding-standards, karpathy-guidelines,
 │   │                            microservices-architect
+│   ├── performance (2)           performance-tuning, db-optimization
 │   ├── security (7)             security-scan, security-review, security-bounty-hunter,
 │   │                            repo-scan, production-audit, django-security,
 │   │                            springboot-security
 │   ├── ui / ux (7)              ui-ux-pro-max, ui-styling, design, design-system,
 │   │                            brand, banner-design, slides
 │   └── token discipline (1)     caveman
-├── agents/                       20 agents, all self-contained
+├── agents/                       22 agents, all self-contained
 │   ├── hydraia-executor.md       per-task executor (Sonnet 5)
 │   ├── hydraia-reviewer.md       whole-branch reviewer (Opus 4.8)
 │   ├── architecture (2)          architect, code-architect
 │   ├── qa (2)                    qa-functional, qa-automation
+│   ├── performance (2)           perf-engineer, db-performance-tuner
 │   ├── language reviewers (8)    go-reviewer, angular-reviewer, react-reviewer,
 │   │                            vue-reviewer, typescript-reviewer, python-reviewer,
 │   │                            java-reviewer, csharp-reviewer
 │   └── cross-cutting (6)         code-reviewer, security-reviewer, silent-failure-hunter,
 │                                database-reviewer, performance-optimizer,
 │                                type-design-analyzer
-├── commands/                     feature, plan, story, review, graph, doctor, resume, dashboard
+├── commands/                     feature, plan, story, perf, db, review, graph, doctor, resume, dashboard
 ├── hooks/
 │   ├── hooks.json                registers preflight (SessionStart) + gate (PreToolUse)
 │   ├── preflight.sh              codegraph sync + daily dep nudge
@@ -580,6 +584,9 @@ hydraia/
 | `coding-standards` | Cross-project naming, readability, immutability rules |
 | `karpathy-guidelines` | Guardrails against common LLM coding mistakes |
 | `microservices-architect` | Distributed systems, monolith decomposition, DDD, sagas |
+| **Performance** | |
+| `performance-tuning` | Measurement-first perf methodology — baseline, numeric target, re-measure |
+| `db-optimization` | DB playbook — EXPLAIN-first, index design, N+1, expand-contract migrations |
 | **Security** | |
 | `security-scan` | Scan `.claude/` config for injection and misconfig risks |
 | `security-review` | Security checklist for auth, input, secrets, APIs |
@@ -611,6 +618,9 @@ hydraia/
 | **QA** | |
 | `qa-functional` | Derives Given/When/Then cases + traceability matrix from the spec (Sonnet) |
 | `qa-automation` | Implements QA cases in the repo's test framework; verifies matrix coverage (Sonnet) |
+| **Performance** | |
+| `perf-engineer` | Profile-driven diagnosis: baseline, ranked bottlenecks, hypotheses (Opus) |
+| `db-performance-tuner` | Multi-engine DB tuning: EXPLAIN, indexes, N+1, locks, pooling (Opus) |
 | **Language reviewers** | |
 | `go-reviewer` | Go — idioms, concurrency, error handling, performance |
 | `angular-reviewer` | Angular — change detection, RxJS, signals, templates |
