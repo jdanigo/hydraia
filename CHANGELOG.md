@@ -6,6 +6,17 @@ All notable changes to Hydraia are documented here. Format follows
 
 ## [Unreleased]
 
+## [0.2.1] — 2026-07-03
+
+### Fixed
+- **Duplicate hooks file error on load.** `plugin.json` declared
+  `"hooks": "./hooks/hooks.json"`, but Claude Code already auto-loads the standard
+  `hooks/hooks.json` by convention — so the manifest reference loaded it a second
+  time and the plugin failed with "Duplicate hooks file detected." Removed the
+  `hooks` key from the manifest; the standard hooks file (SessionStart, PreToolUse,
+  Stop) still loads automatically. The `manifest.hooks` field is only for
+  *additional* hook files.
+
 ## [0.2.0] — 2026-07-03
 
 Spec-drive, enforced. This release makes "never skip a phase" a runtime guarantee
@@ -93,5 +104,6 @@ verify) with security gates throughout.
   in `LICENSES/`, `CONTRIBUTING.md`, and a CI workflow validating manifests, bash
   syntax, discovery counts, and license completeness.
 
+[0.2.1]: https://github.com/jdanigo/hydraia/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/jdanigo/hydraia/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/jdanigo/hydraia/releases/tag/v0.1.0
