@@ -25,6 +25,14 @@ All notable changes to Hydraia are documented here. Format follows
 - `SKILL.md` hardened: token cost / change size are explicitly forbidden as reasons
   to skip a phase; Phase 6 must run the real build/tests (not inline reasoning);
   Phase 3 arms and Phase 6 disarms the gate marker.
+- **Design-first restored.** Phase 2 now requires a **written** design spec
+  (`docs/hydraia/specs/`) — goal, chosen vs rejected approaches, code-graph anchors,
+  global constraints, threat model — as a mandatory artifact, not inline reasoning;
+  Phase 3 cannot start and the gate cannot be armed until it exists. Phase 3 now
+  restates the full `writing-plans` structure (per-task `Files:` with exact
+  paths/line-ranges, `Interfaces:`, bite-sized TDD steps) and the self-review
+  rejects any plan whose tasks lack file-level detail. Closes the regression where
+  autonomous runs collapsed design into a thin plan.
 - README: added "Why Hydraia", "Standout capabilities", and "Plan once, execute
   anywhere" (multi-agent cost/parallelism workflow); expanded use cases; removed the
   one-time `publish.sh` bootstrap in favor of GitHub fork + `marketplace add`.

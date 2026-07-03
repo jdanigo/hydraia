@@ -499,7 +499,7 @@ hydraia/
 │   ├── preflight.sh              codegraph sync + daily dep nudge
 │   ├── gate.sh                   spec-drive gate: blocks code edits before a plan is frozen
 │   └── doctor.sh                 validate / install / update deps
-└── docs/hydraia/                 plans/ and runs/ written by the pipeline
+└── docs/hydraia/                 specs/, plans/, and runs/ written by the pipeline
 ```
 
 ### Skills reference

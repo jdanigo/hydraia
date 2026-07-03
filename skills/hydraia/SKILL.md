@@ -103,8 +103,30 @@ ONE clarifying question — otherwise proceed.
 
 ## Phase 2 — Design + threat model (Superpowers, this session = Opus 4.8)
 
-Use **brainstorming** then produce a spec. Be exhaustive. Explore alternatives and
-trade-offs. Anchor every decision to what the code graph showed in Phase 0.
+Use **brainstorming**. This phase produces a **written design spec — a real file, not
+inline reasoning**. Skipping the written spec, or collapsing design into the plan, is
+a violation of the pipeline. Be exhaustive; explore alternatives and trade-offs;
+anchor every decision to what the code graph showed in Phase 0.
+
+**Write the spec to a file (mandatory artifact).** Save the design spec to
+`docs/hydraia/specs/YYYY-MM-DD-<topic>-design.md` and commit it. Phase 3 MUST NOT
+start until this file exists. The spec MUST contain, at minimum:
+
+- **Goal** — one or two sentences on what this builds and why.
+- **Chosen approach + rejected alternatives** — the 2–3 approaches considered, their
+  trade-offs, and why the chosen one won. Not just the winner.
+- **Code-graph anchors** — the existing structure, call sites, and blast radius from
+  Phase 0 that the design must respect (name the real symbols/files).
+- **Global constraints** — version floors, naming/copy rules, platform limits, and
+  any acceptance criteria, with exact values.
+- **Threat model + mitigations** — see below; folded in so they become plan tasks.
+
+**Human-approval note (autonomy trade-off).** Superpowers' `brainstorming` HARD-GATE
+normally pauses for the user to approve the design and review the spec. The autonomous
+pipeline does not pause — so the **written spec artifact + the mandatory adversarial
+self-review below stand in for that human gate**. The artifact is never optional. If
+you want the human checkpoint back, that is exactly what `/hydraia:plan` is for: it
+runs Phases 0–3, writes the spec and plan, and stops for you to review before any code.
 
 **Architecture advice (greenfield / from-scratch work).** When the request builds a
 new system, service, or module from scratch — not a surgical change to existing
@@ -134,26 +156,49 @@ security flaw here is far cheaper than at review time.
 
 ## Phase 3 — Plan + self-review loop (the "todo bien hechesito" gate)
 
-1. Use **writing-plans** to write the implementation plan. Assume the implementer
-   has zero prior context: name every file to touch, the change per file, tests,
-   and how to verify. Save to `docs/hydraia/plans/YYYY-MM-DD-<feature>.md`.
+0. **Precondition:** the Phase 2 spec file must already exist. If it does not, go
+   back and write it — do not plan without a spec.
+1. Use **writing-plans** to write the implementation plan, saved to
+   `docs/hydraia/plans/YYYY-MM-DD-<feature>.md`. Follow the writing-plans structure
+   in FULL — a thin plan is a failed plan. The plan MUST contain:
+   - **A header:** Goal, Architecture (2–3 sentences), Tech Stack, the path of the
+     Phase 2 spec it derives from, and a **Global Constraints** block (exact values
+     copied from the spec).
+   - **A File Structure map:** every file to be created or modified and its single
+     responsibility, before the tasks.
+   - **Per-task blocks**, each with:
+     - `Files:` — `Create: exact/path`, `Modify: exact/path:line-range`,
+       `Test: exact/path`. Exact paths, never "the relevant file".
+     - `Interfaces:` — Consumes (signatures it uses from earlier tasks) and Produces
+       (exact function names, parameter and return types later tasks rely on).
+     - **Bite-sized TDD steps** (2–5 min each): write failing test → run it, expect
+       fail → minimal implementation → run, expect pass → commit. With the exact
+       test command and expected result per step.
+   Assume the implementer has zero prior context and cannot see the spec or your
+   session — everything they need is in their task block.
 2. **Self-review the plan (loop, max 2 iterations):**
-   - Pass A: critique your own plan hard — gaps, hidden coupling (check the graph),
-     missing tests, unstated assumptions, over-broad changes. Revise.
+   - Pass A: critique your own plan hard. **Reject and revise if ANY task lacks
+     exact `Files:` paths, `Interfaces:`, or independently testable steps**, or says
+     vaguely "edit the code / update the component". Also hunt gaps, hidden coupling
+     (check the graph), missing tests, unstated assumptions, over-broad changes, and
+     drift from the spec. Revise.
    - Pass B: repeat once more only if Pass A found substantive issues.
    - Stop after 2 iterations even if minor nits remain. Do not loop forever.
-3. The plan is frozen only after the self-review loop converges.
+3. The plan is frozen only after the self-review loop converges AND every task has
+   file-level detail. If it does not, it is not frozen.
 4. **Open a run log.** Create `docs/hydraia/runs/YYYY-MM-DD-HHMM-<feature>.md` with
    the original request, the plan path, and a phase checklist
    (`- [ ] Phase 0` … `- [ ] Phase 6`). Update it at each phase boundary — check
    the box as each phase completes — so an interrupted run leaves a durable trail
    of where it stopped. `/hydraia:resume` reads this file.
-5. **Arm the spec-drive gate.** The moment the plan is frozen (and NOT before),
-   write the frozen plan's path into the marker file `docs/hydraia/.active-plan`
+5. **Arm the spec-drive gate.** Only after BOTH the Phase 2 spec file and the frozen
+   plan exist (and NOT before), write the frozen plan's path into the marker file
+   `docs/hydraia/.active-plan`
    (e.g. `printf '%s\n' "docs/hydraia/plans/<file>.md" > docs/hydraia/.active-plan`).
    The `gate.sh` hook blocks all source-code edits until this marker exists — which
-   is exactly why no code can be written before Phases 2–3 complete. (`/hydraia:plan`
-   stops here and does NOT arm the marker — planning must never authorize edits.)
+   is exactly why no code can be written before Phases 2–3 complete. Do not arm the
+   marker if the spec is missing. (`/hydraia:plan` stops here and does NOT arm the
+   marker — planning must never authorize edits.)
 
 ## Phase 4 — Execution (delegated → Sonnet 5)
 
