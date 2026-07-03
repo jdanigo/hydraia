@@ -2,9 +2,10 @@
 # Hydraia run summary (Stop hook).
 #
 # Prints a real, transcript-derived summary at the end of a completed pipeline
-# run: how many sub-agents were dispatched, which models ran, and the token
-# usage. Numbers come from the session transcript (message.usage / message.model)
-# — never from the model self-reporting, which would hallucinate counts.
+# run: how many sub-agents were dispatched, which skills and models ran, and the
+# token usage. Numbers come from the session transcript (message.usage /
+# message.model / Skill+Task tool_use blocks) — never from the model
+# self-reporting, which would hallucinate counts.
 #
 # The Stop hook fires at the end of EVERY assistant turn, so it must stay quiet
 # unless a pipeline actually just finished. Phase 6 writes a one-shot marker
@@ -81,6 +82,7 @@ def h(n):
 models = {}          # short name -> usage dict
 agents = {}          # subagent_type -> count
 n_agents = 0
+skills = {}          # skill name (prefix-stripped) -> invocation count
 
 with open(path) as fh:
     for line in fh:
@@ -102,10 +104,17 @@ with open(path) as fh:
         content = msg.get("content")
         if isinstance(content, list):
             for b in content:
-                if isinstance(b, dict) and b.get("type") == "tool_use" and b.get("name") == "Task":
+                if not (isinstance(b, dict) and b.get("type") == "tool_use"):
+                    continue
+                if b.get("name") == "Task":
                     n_agents += 1
                     st = (b.get("input") or {}).get("subagent_type") or "agent"
                     agents[st] = agents.get(st, 0) + 1
+                elif b.get("name") == "Skill":
+                    sk = (b.get("input") or {}).get("skill") or ""
+                    if sk:
+                        sk = sk.split(":")[-1]   # drop plugin prefix for display
+                        skills[sk] = skills.get(sk, 0) + 1
 
 if not models:
     sys.exit(0)
@@ -127,6 +136,9 @@ lines = [
     f"Agents:  {agent_line}",
     f"Tokens:  {h(tot_in)} in · {h(tot_out)} out · {h(tot_cr)} cache-read",
 ]
+if skills:
+    skill_list = ", ".join(k for k, _ in sorted(skills.items(), key=lambda x: (-x[1], x[0])))
+    lines.append(f"Skills:  {skill_list}")
 # per-model line when more than one model ran (shows the Opus/Sonnet split)
 if len(models) > 1:
     for name in sorted(models):

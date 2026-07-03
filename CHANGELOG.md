@@ -16,7 +16,8 @@ All notable changes to Hydraia are documented here. Format follows
   for a trivial change is the human's, set as an env var — never the model's.
 - **Run summary** (`hooks/summary.sh`, Stop hook): at the end of a completed
   pipeline run, prints a transcript-derived summary — sub-agents dispatched (with
-  their types), models used, and real token usage (input/output/cache-read).
+  their types), skills invoked, models used, and real token usage
+  (input/output/cache-read).
   Numbers come from the session transcript (`message.usage` / `message.model`),
   never from the model self-reporting, which would hallucinate counts. Gated on a
   one-shot `docs/hydraia/.run-complete` marker written by Phase 6, so it fires only
