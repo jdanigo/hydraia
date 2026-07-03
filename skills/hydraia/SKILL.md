@@ -198,7 +198,12 @@ security flaw here is far cheaper than at review time.
        fail → minimal implementation → run, expect pass → commit. With the exact
        test command and expected result per step.
    Assume the implementer has zero prior context and cannot see the spec or your
-   session — everything they need is in their task block.
+   session — everything they need is in their task block. **Write to the weakest
+   plausible executor:** the plan must be detailed enough that a cheaper or weaker
+   model (Sonnet 5, or an external agent like Codex or Gemini) can implement each
+   task correctly with no judgment calls left open — exact paths, exact signatures,
+   exact test commands. If a task would require the executor to infer intent or make
+   a design decision, it is under-specified — push that decision up into the plan.
 2. **Self-review the plan (loop, max 2 iterations):**
    - Pass A: critique your own plan hard. **Reject and revise if ANY task lacks
      exact `Files:` paths, `Interfaces:`, or independently testable steps**, or says
