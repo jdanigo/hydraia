@@ -69,6 +69,7 @@ you meant to write. Hydraia doesn't let you skip them.
 
 | Phase | What happens | Model |
 |-------|--------------|-------|
+| -1 · Triage | Intent detected and routed: feature · user story (PO) · bug · perf/DB · greenfield · review; ambiguous asks, never assumes | Opus 4.8 |
 | 0 · Context | Code graph synced (session hook) + queried; any PDF converted to markdown | Opus 4.8 |
 | 1 · Think | Forced think-before-coding gate (karpathy-guidelines) | Opus 4.8 |
 | 2 · Design | Brainstorm → exhaustive spec + threat model | Opus 4.8 |
@@ -266,6 +267,12 @@ simply extends that same principle across tools and terminals.
 | Situation | Reach for |
 |-----------|-----------|
 | New feature, want it planned, built, reviewed, and verified in one shot | `/hydraia:feature` |
+| A user story or ticket that needs PO-grade analysis before building — INVEST, acceptance criteria, QA cases traced to each AC | `/hydraia:story`, then `/hydraia:feature` |
+| An endpoint or job got slow and you want it fixed with proof, not guesses | `/hydraia:perf` — baseline first, numeric target, re-measured in verify |
+| Slow queries, lock timeouts, connection exhaustion, or an index question | `/hydraia:db` — EXPLAIN-first evidence, expand-contract migrations |
+| A brand-new app or service, designed before the first line of code | `/hydraia:architect` — elicitation, architecture options, stack, API contract, ADRs |
+| An API surface that should be designed before implementing | `api-design` runs inside greenfield/feature runs — contract-first OpenAPI/GraphQL/gRPC |
+| Test coverage you can trace: every acceptance criterion → case → test file | on by default (`qaFunctional`) — the plan cannot freeze with an uncovered AC |
 | Risky change — want to lock the design + threat model before committing effort | `/hydraia:plan`, then `/hydraia:feature` |
 | Inherited a branch (yours or a teammate's) and want a rigorous, security-aware review | `/hydraia:review` |
 | Estimating scope / deciding if a refactor is safe | `/hydraia:graph` |
