@@ -204,14 +204,18 @@ security flaw here is far cheaper than at review time.
    task correctly with no judgment calls left open — exact paths, exact signatures,
    exact test commands. If a task would require the executor to infer intent or make
    a design decision, it is under-specified — push that decision up into the plan.
-2. **Self-review the plan (loop, max 2 iterations):**
+2. **Self-review the plan (always TWO passes):**
    - Pass A: critique your own plan hard. **Reject and revise if ANY task lacks
      exact `Files:` paths, `Interfaces:`, or independently testable steps**, or says
      vaguely "edit the code / update the component". Also hunt gaps, hidden coupling
      (check the graph), missing tests, unstated assumptions, over-broad changes, and
      drift from the spec. Revise.
-   - Pass B: repeat once more only if Pass A found substantive issues.
-   - Stop after 2 iterations even if minor nits remain. Do not loop forever.
+   - Pass B: run a **second full pass regardless** — even if Pass A found nothing,
+     re-audit the whole plan against the same checklist with fresh eyes (Pass A can
+     miss on the first read, and its own revisions introduce new gaps). Revise again
+     if it finds anything.
+   - Both passes always run. Stop after the two even if minor nits remain — do not
+     loop forever.
 3. The plan is frozen only after the self-review loop converges AND every task has
    file-level detail. If it does not, it is not frozen.
 4. **Open a run log.** Create `docs/hydraia/runs/YYYY-MM-DD-HHMM-<feature>.md` with
