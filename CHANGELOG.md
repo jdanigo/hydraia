@@ -6,6 +6,13 @@ All notable changes to Hydraia are documented here. Format follows
 
 ## [Unreleased]
 
+## [0.2.0] — 2026-07-03
+
+Spec-drive, enforced. This release makes "never skip a phase" a runtime guarantee
+(not just a prompt), restores design-first with a written spec, splits the pipeline
+into an interactive design half and an autonomous execution half, and adds a
+transcript-derived run summary at close.
+
 ### Added
 - **Spec-drive gate** (`hooks/gate.sh`, PreToolUse on `Edit`/`Write`/`MultiEdit`):
   blocks source-code edits until Phase 3 freezes a plan (`docs/hydraia/.active-plan`
@@ -86,4 +93,5 @@ verify) with security gates throughout.
   in `LICENSES/`, `CONTRIBUTING.md`, and a CI workflow validating manifests, bash
   syntax, discovery counts, and license completeness.
 
+[0.2.0]: https://github.com/jdanigo/hydraia/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/jdanigo/hydraia/releases/tag/v0.1.0
