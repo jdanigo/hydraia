@@ -1,6 +1,6 @@
 ---
 name: hydraia
-description: Use whenever the user asks to build, add, implement, or change a feature or functionality. Runs the complete non-negotiable development pipeline end to end — deep analysis and planning, sub-agent execution, and a double code-review loop — without asking the user which model, skill, or step to use. This is the default way features get built.
+description: Use whenever the user asks to build, add, implement, or change a feature or functionality — or brings a user story or ticket to analyze, reports a bug or unexpected behavior, asks for a branch review, or wants a new app or service designed from scratch. Phase -1 triages the intent and routes it. Runs the complete non-negotiable development pipeline end to end — deep analysis and planning, sub-agent execution, and a double code-review loop — without asking the user which model, skill, or step to use. This is the default way features get built.
 ---
 
 # Hydraia — Agentic Development Pipeline
@@ -12,6 +12,28 @@ for "should I continue?" between phases.
 
 Announce once at the start: "Running the Hydraia pipeline." Then proceed silently
 through the phases, narrating at most one short line per phase.
+
+## Phase -1 — Intent triage (before everything)
+
+Classify the request into exactly ONE route before any other guard runs.
+Explicit commands skip classification and force their route
+(`/hydraia:feature` → feature · `/hydraia:story` → user story ·
+`/hydraia:plan` → feature, stopping after Phase 3 · `/hydraia:review` →
+review). Plain-language requests are classified by signals:
+
+| Intent | Signals | Route |
+|---|---|---|
+| Feature / change | "add / build / implement / change X" | Phases 0–6 as written below |
+| User story | "As a … I want … so that …", acceptance-criteria lists, ticket text or a Jira/PDF export | Run the **story-analysis** skill FIRST (interactive PO pass → story artifact with numbered ACs), then Phases 0–3 with that artifact as the primary design input; continue into 4–6 only when the entry point runs the full pipeline |
+| Bug / unexpected behavior | "fails / broken / error / regression / used to work" | **systematic-debugging** skill first — root cause before any fix. Enter the pipeline only if the fix requires new design/behavior; a surgical fix proceeds under that skill's rules (the spec-drive gate still applies) |
+| Performance / DB symptom | "slow / timeout / high CPU / memory climbing / query takes …" | Dedicated perf/DB route not built yet (wave B): run the normal pipeline and note in the run log that the specialized route was unavailable |
+| New app / greenfield | "from scratch / new app / new service / greenfield" | Offer the architect UP FRONT: tell the user Phase 2 will dispatch `architect` + `code-architect` (plus `microservices-architect` if multi-service) before the spec, then run Phases 0–6 |
+| Review / audit | "review / audit this branch / this PR" | Phases 5–6 only |
+| Ambiguous | none of the above clearly | `AskUserQuestion` listing the plausible routes — never assume |
+
+Triage is ONE classification step, not a conversation — at most a single
+routing question, and only when genuinely ambiguous. Route chosen, proceed
+to the start-of-run guards below.
 
 ## Start-of-run guards (before Phase 0)
 
