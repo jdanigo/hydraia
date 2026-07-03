@@ -1,7 +1,7 @@
 # Hydraia
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)
-![Plugin version](https://img.shields.io/badge/plugin-v0.1.0-blue.svg)
+![Plugin version](https://img.shields.io/badge/plugin-v0.5.0-blue.svg)
 
 A personal agentic development harness for Claude Code. One command runs the
 entire feature pipeline: it **collaborates with you on the design** (brainstorm,
@@ -111,6 +111,7 @@ them are steps you'd never run by hand on a normal day.
 |---------|-----------|--------------|
 | `/hydraia:feature <desc>` | 0–6 | Full pipeline: context → think → design+threat-model → plan+self-review → execute (Sonnet 5) → double review + security gate (Opus 4.8) → verify + secrets/deps scan |
 | `/hydraia:plan <desc>` | 0–3 | Context + design + threat model + detailed plan (with self-review), then **stop**. Nothing executed. |
+| `/hydraia:story <story>` | -1–3 | Product-Owner analysis of a user story (INVEST, ambiguity questions, numbered acceptance criteria) → spec → QA cases + traceability matrix → frozen plan, then **stop**. Nothing executed. |
 | `/hydraia:review [focus]` | 5–6 | Double code review + security gate on the **current branch**. Code already exists. |
 | `/hydraia:graph <query>` | — | Query the code graph (call sites, blast radius) without running the pipeline. |
 | `/hydraia:doctor` | — | Validate, install, and update external deps (`codegraph`, `markitdown`), with consent. |
@@ -512,15 +513,15 @@ hydraia/
 ├── LICENSES/                     upstream licenses (all MIT)
 ├── CONTRIBUTING.md               structure + how to add a skill
 ├── README.md                     this file
-├── skills/                       37 skills, all self-contained
+├── skills/                       38 skills, all self-contained
 │   ├── hydraia/                  the 7-phase pipeline contract (the brain)
-│   ├── process (14)              brainstorming, writing-plans, executing-plans,
+│   ├── process (15)              brainstorming, writing-plans, executing-plans,
 │   │                            subagent-driven-development, dispatching-parallel-agents,
 │   │                            requesting-code-review, receiving-code-review,
 │   │                            test-driven-development, systematic-debugging,
 │   │                            using-git-worktrees, finishing-a-development-branch,
 │   │                            verification-before-completion, using-superpowers,
-│   │                            writing-skills
+│   │                            writing-skills, story-analysis
 │   ├── stack patterns (7)       react-patterns, golang-patterns, springboot-patterns,
 │   │                            python-patterns, coding-standards, karpathy-guidelines,
 │   │                            microservices-architect
@@ -530,17 +531,18 @@ hydraia/
 │   ├── ui / ux (7)              ui-ux-pro-max, ui-styling, design, design-system,
 │   │                            brand, banner-design, slides
 │   └── token discipline (1)     caveman
-├── agents/                       18 agents, all self-contained
+├── agents/                       20 agents, all self-contained
 │   ├── hydraia-executor.md       per-task executor (Sonnet 5)
 │   ├── hydraia-reviewer.md       whole-branch reviewer (Opus 4.8)
 │   ├── architecture (2)          architect, code-architect
+│   ├── qa (2)                    qa-functional, qa-automation
 │   ├── language reviewers (8)    go-reviewer, angular-reviewer, react-reviewer,
 │   │                            vue-reviewer, typescript-reviewer, python-reviewer,
 │   │                            java-reviewer, csharp-reviewer
 │   └── cross-cutting (6)         code-reviewer, security-reviewer, silent-failure-hunter,
 │                                database-reviewer, performance-optimizer,
 │                                type-design-analyzer
-├── commands/                     feature, plan, review, graph, doctor, resume
+├── commands/                     feature, plan, story, review, graph, doctor, resume, dashboard
 ├── hooks/
 │   ├── hooks.json                registers preflight (SessionStart) + gate (PreToolUse)
 │   ├── preflight.sh              codegraph sync + daily dep nudge
@@ -569,6 +571,7 @@ hydraia/
 | `verification-before-completion` | Run checks and confirm output before claiming done |
 | `using-superpowers` | How to find and invoke the right skill |
 | `writing-skills` | Create, edit, and verify skills |
+| `story-analysis` | Product-Owner pass — INVEST, ambiguity hunt, numbered acceptance criteria |
 | **Stack patterns** | |
 | `react-patterns` | React 18/19 idioms — hooks, RSC boundaries, Suspense, a11y |
 | `golang-patterns` | Idiomatic Go patterns and conventions |
@@ -605,6 +608,9 @@ hydraia/
 | **Architecture** | |
 | `architect` | System design, scalability, technical decision-making |
 | `code-architect` | Feature blueprint anchored to existing codebase patterns |
+| **QA** | |
+| `qa-functional` | Derives Given/When/Then cases + traceability matrix from the spec (Sonnet) |
+| `qa-automation` | Implements QA cases in the repo's test framework; verifies matrix coverage (Sonnet) |
 | **Language reviewers** | |
 | `go-reviewer` | Go — idioms, concurrency, error handling, performance |
 | `angular-reviewer` | Angular — change detection, RxJS, signals, templates |

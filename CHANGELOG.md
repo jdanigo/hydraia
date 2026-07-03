@@ -6,6 +6,29 @@ All notable changes to Hydraia are documented here. Format follows
 
 ## [Unreleased]
 
+## 0.5.0 — 2026-07-03
+
+Engineering-team expansion, wave 1A: product + QA + intent routing.
+
+- **Phase -1 intent triage** in the pipeline contract: plain-language requests are
+  classified (feature · user story · bug · perf/DB · greenfield · review) and
+  routed; ambiguous intent asks instead of assuming. Explicit commands force
+  their route.
+- **story-analysis skill (Product Owner):** INVEST check, epic splitting,
+  one-at-a-time ambiguity questions, numbered acceptance criteria (AC-n), story
+  artifact under `docs/hydraia/stories/`.
+- **qa-functional agent (Sonnet):** Given/When/Then cases per AC + traceability
+  matrix under `docs/hydraia/qa/`; spec gaps reported, never guessed. Plan
+  cannot freeze while an AC lacks a case and a task.
+- **qa-automation agent (Sonnet):** implements cases in the repo's existing test
+  framework (Phase 4) and verifies full matrix coverage in Phase 6 — any
+  uncovered case fails the run.
+- **/hydraia:story command:** story → PO analysis → spec → QA cases → frozen
+  plan, then stop (mirror of /hydraia:plan).
+- **qaFunctional config key** (default on) honored by the pipeline and editable
+  from the dashboard.
+- Design spec: `docs/hydraia/specs/2026-07-03-product-qa-router-design.md`.
+
 ## [0.4.1] — 2026-07-03
 
 ### Changed
