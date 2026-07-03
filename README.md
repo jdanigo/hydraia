@@ -29,6 +29,7 @@ security gates to enforce.
 - [Getting the most out of Hydraia](#getting-the-most-out-of-hydraia)
 - [How it works under the hood](#how-it-works-under-the-hood)
 - [Security (built in)](#security-built-in)
+- [Spec-drive, enforced](#spec-drive-enforced)
 - [The one setup step](#the-one-setup-step)
 - [Prerequisites](#prerequisites)
 - [Install](#install)
@@ -368,6 +369,29 @@ Security is enforced at three points, not just at the end:
 
 ---
 
+## Spec-drive, enforced
+
+"Never skip a phase" is not just a prompt Hydraia hopes the model obeys — it's a
+**runtime gate**. A `PreToolUse` hook (`hooks/gate.sh`) blocks any source-code edit
+until Phase 3 freezes a plan. Design-before-code stops being aspirational: the model
+literally cannot write code before the spec and plan exist.
+
+- **Scope.** Only enforced in repos that use Hydraia (those with a `docs/hydraia/`
+  directory). Markdown and the pipeline's own artifacts (specs, plans, run logs) are
+  exempt, so writing the plan is never blocked.
+- **The decision to skip is yours, not the model's.** Token cost or "this looks
+  trivial" is never a valid reason for the model to bypass the pipeline. If *you*
+  decide a change doesn't warrant the full run, set the bypass in your shell:
+
+  ```bash
+  export HYDRAIA_ALLOW_DIRECT=1   # allow direct edits; unset to re-arm the gate
+  ```
+
+This closes the most common failure mode of prompt-only pipelines: a model that
+rationalizes its way past the process on a change it judges "small."
+
+---
+
 ## The one setup step
 
 Run the **main session on Opus 4.8** (planning + both reviews). Execution drops
@@ -462,8 +486,9 @@ hydraia/
 │                                type-design-analyzer
 ├── commands/                     feature, plan, review, graph, doctor, resume
 ├── hooks/
-│   ├── hooks.json                registers preflight on SessionStart
+│   ├── hooks.json                registers preflight (SessionStart) + gate (PreToolUse)
 │   ├── preflight.sh              codegraph sync + daily dep nudge
+│   ├── gate.sh                   spec-drive gate: blocks code edits before a plan is frozen
 │   └── doctor.sh                 validate / install / update deps
 └── docs/hydraia/                 plans/ and runs/ written by the pipeline
 ```

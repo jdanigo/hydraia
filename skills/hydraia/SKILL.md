@@ -39,6 +39,16 @@ allowed in Phase 1, and (b) a genuine BLOCKER a sub-agent cannot resolve — sur
 it, don't silently spin. Never insert "should I continue?" checkpoints between
 phases and never stop with the plan half-executed.
 
+**No proportionality escape (non-negotiable).** Token cost, change size, or "this
+looks trivial / it's just a mirror of existing code" are NEVER reasons to skip,
+compress, or inline a phase. Whether a change is small enough to bypass the
+pipeline is the **human's** decision, expressed only via the `HYDRAIA_ALLOW_DIRECT`
+bypass — never yours. If you are running the pipeline, run it in full: write the
+spec, write the plan, delegate execution, run both review passes, run the real
+build/tests. A runtime gate enforces this — editing source code before Phase 3
+freezes a plan is blocked — so "compressing the ceremony" does not save effort, it
+just fails the gate.
+
 ## Model policy (already decided — do not surface to the user)
 
 - **This main session must run on Opus 4.8.** It does all analysis, planning,
@@ -115,6 +125,12 @@ security flaw here is far cheaper than at review time.
    (`- [ ] Phase 0` … `- [ ] Phase 6`). Update it at each phase boundary — check
    the box as each phase completes — so an interrupted run leaves a durable trail
    of where it stopped. `/hydraia:resume` reads this file.
+5. **Arm the spec-drive gate.** The moment the plan is frozen (and NOT before),
+   write the frozen plan's path into the marker file `docs/hydraia/.active-plan`
+   (e.g. `printf '%s\n' "docs/hydraia/plans/<file>.md" > docs/hydraia/.active-plan`).
+   The `gate.sh` hook blocks all source-code edits until this marker exists — which
+   is exactly why no code can be written before Phases 2–3 complete. (`/hydraia:plan`
+   stops here and does NOT arm the marker — planning must never authorize edits.)
 
 ## Phase 4 — Execution (delegated → Sonnet 5)
 
@@ -159,9 +175,18 @@ Run BOTH passes. Do not stop after one.
 
 ## Phase 6 — Verify & close
 
-Use **verification-before-completion**: run the tests, confirm the feature meets
-the spec from Phase 2 (including the threat-model mitigations), and summarize what
-shipped.
+Use **verification-before-completion**: actually **run** the project's real build
+and test commands (e.g. `ng build`, `npm test`, `go build ./...`, `pytest`) and
+read their output. Reviewing logic "inline" or "checking the math by hand" is NOT
+verification — if a build/test command exists, you must run it and report the real
+result. Confirm the feature meets the spec from Phase 2 (including the threat-model
+mitigations), and summarize what shipped. If a build or test fails, the run is not
+done — fix and re-run.
+
+**Disarm the gate.** Once the run is verified and done, remove the active-plan
+marker so a later unrelated edit is gated again: `rm -f docs/hydraia/.active-plan`.
+On a genuine blocker that ends the run early, leave the marker so `/hydraia:resume`
+can continue without re-arming.
 
 **Pre-close security gate (mandatory):** run **repo-scan** and **production-audit**
 to confirm no hardcoded secrets, no vulnerable dependencies, and no obvious
@@ -178,4 +203,7 @@ print the credits exactly:
 
 Internal reasoning and subagent instructions use the **caveman** compression style
 to save tokens. This NEVER applies to code, commit messages, specs, plans, or the
-final summary to the user — those stay clear and complete.
+final summary to the user — those stay clear and complete. It is purely a wording
+style for internal comms; it is NOT a mandate to save tokens by skipping,
+compressing, or inlining any phase. Phase completeness always wins over token
+economy (see "No proportionality escape").

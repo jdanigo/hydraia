@@ -4,6 +4,25 @@ All notable changes to Hydraia are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning is
 [SemVer](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+- **Spec-drive gate** (`hooks/gate.sh`, PreToolUse on `Edit`/`Write`/`MultiEdit`):
+  blocks source-code edits until Phase 3 freezes a plan (`docs/hydraia/.active-plan`
+  marker), making "never skip a phase" a runtime guarantee instead of a prompt the
+  model can rationalize past. Enforced only in repos that use Hydraia (a
+  `docs/hydraia/` directory); markdown and pipeline artifacts are exempt.
+- **Human-only bypass** `HYDRAIA_ALLOW_DIRECT=1`: the decision to skip the pipeline
+  for a trivial change is the human's, set as an env var — never the model's.
+
+### Changed
+- `SKILL.md` hardened: token cost / change size are explicitly forbidden as reasons
+  to skip a phase; Phase 6 must run the real build/tests (not inline reasoning);
+  Phase 3 arms and Phase 6 disarms the gate marker.
+- README: added "Why Hydraia", "Standout capabilities", and "Plan once, execute
+  anywhere" (multi-agent cost/parallelism workflow); expanded use cases; removed the
+  one-time `publish.sh` bootstrap in favor of GitHub fork + `marketplace add`.
+
 ## [0.1.0] — 2026-07-02
 
 First public release. Hydraia is a self-contained agentic development harness for
