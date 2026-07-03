@@ -21,7 +21,7 @@ jobs:
           skills=$(find skills -name SKILL.md | wc -l | tr -d ' ')
           agents=$(ls agents/*.md | wc -l | tr -d ' ')
           echo "skills=$skills agents=$agents"
-          test "$skills" -eq 37 || { echo "expected 37 skills, got $skills"; exit 1; }
+          test "$skills" -eq 38 || { echo "expected 38 skills, got $skills"; exit 1; }
           test "$agents" -eq 20 || { echo "expected 20 agents, got $agents"; exit 1; }
       - name: License completeness
         run: |
