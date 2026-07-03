@@ -312,10 +312,53 @@ holds no business logic of its own — it decides **what runs, in what order, on
 which model.** Every skill and agent it uses ships inside the plugin (`skills/`,
 `agents/`) — nothing external to install except two binaries (see Prerequisites).
 
-**The skill is the contract.** `skills/hydraia/SKILL.md` defines the seven
-non-negotiable phases. It forbids asking the user which model/skill/reviewer to
-use, and forbids pausing between phases. This is what makes one command drive the
-whole run.
+### The circuit, per command
+
+Every run splits at the frozen plan: an **interactive half** where design happens
+with you, and an **autonomous half** that builds without interruption.
+
+```
+/hydraia:feature <desc>          full pipeline
+   Language gate · Model guard
+   ┌─ INTERACTIVE (pauses allowed — this is where design happens) ─┐
+   0 Context   codegraph query + PDF→md
+   1 Think     karpathy gate · clarifying questions
+   2 Design    brainstorm (questions → 2-3 approaches → present →
+               YOUR approval) → write spec  docs/hydraia/specs/…
+               + threat model + adversarial pass
+   3 Plan      writing-plans (exact Files, Interfaces, TDD steps)
+               → self-review (rejects thin plans) → freeze plan
+               → ARM gate (.active-plan)   ← needs spec + plan
+   └─ AUTONOMOUS (never pause; only a real blocker stops it) ───────┐
+   4 Execute   fresh hydraia-executor (Sonnet) per task
+   5 Review    branch review (Opus) + reviewer panel + security gate
+   6 Verify    run REAL build/tests · repo-scan/prod-audit
+               → DISARM gate · print credits
+
+/hydraia:plan <desc>     Phases 0→3 only, then STOP
+   writes spec + frozen plan, does NOT arm the gate, writes no code.
+   The human review point before building. Then run /hydraia:feature.
+
+/hydraia:review [focus]  Phases 5→6 on the current branch
+   double review + cross-stack security gate + verify — no matter who
+   (or what agent) wrote the code. Touches no earlier phase.
+
+/hydraia:graph <query>   codegraph only — call sites, dependents, blast
+   radius. No pipeline, no edits.
+
+/hydraia:doctor          validate / install / update codegraph + markitdown
+/hydraia:resume [run]    read run log → continue from the last incomplete phase
+```
+
+**The spec-drive gate** (`hooks/gate.sh`, any repo with a `docs/hydraia/`) sits
+across all of it — a source-code edit is blocked unless a plan is frozen
+(`.active-plan`), a quick edit was human-approved (`.quick-approved`), or you set
+`HYDRAIA_ALLOW_DIRECT=1`. Markdown and pipeline artifacts are exempt.
+
+**The skill is the contract.** `skills/hydraia/SKILL.md` defines the phases and the
+two modes: it forbids asking the user which model/skill/reviewer to use, requires a
+real design dialogue in Phases 1–3, and forbids pausing once execution starts
+(Phases 4–6). This is what makes one command drive the whole run.
 
 **Two subagents carry the load:**
 
