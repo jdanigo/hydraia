@@ -25,10 +25,18 @@ All notable changes to Hydraia are documented here. Format follows
   - **verifies** what actually landed and prints a machine-readable
     `RESULT codegraph=… markitdown=…` (`ok` / `installed` / `missing`). Phase 0 reads
     it and never re-offers a completed install nor loops on a failed one.
+- **Cache dir created before the installers use it.** On a fresh `HOME`,
+  `~/.cache/hydraia` did not exist when `install_codegraph` redirected npm's stderr
+  to a log there, so npm never ran and codegraph came out `missing`. `mkdir -p` up
+  front.
 - **CI now proves it.** A new `install-e2e` matrix job runs the real installer on
   `ubuntu-latest`, `macos-latest`, and `windows-latest` on every push and fails if
-  either tool ends up `missing` — the cross-platform guarantee is enforced, not
-  assumed.
+  either tool ends up `missing`.
+
+Verified end-to-end: **macOS** (`RESULT codegraph=ok markitdown=ok`) and **Linux**
+(Ubuntu 24.04, PEP 668 externally-managed → `codegraph=ok markitdown=installed`,
+both resolving in a fresh shell). Windows is covered by the same code paths and the
+CI matrix; run the matrix to confirm on that OS.
 
 ## [0.3.0] — 2026-07-03
 
