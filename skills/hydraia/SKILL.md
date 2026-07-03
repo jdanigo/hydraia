@@ -288,6 +288,14 @@ marker so a later unrelated edit is gated again: `rm -f docs/hydraia/.active-pla
 On a genuine blocker that ends the run early, leave the marker so `/hydraia:resume`
 can continue without re-arming.
 
+**Emit the run summary.** As the final close step, drop the one-shot marker that
+tells the Stop hook to print the transcript-derived run summary (agents dispatched,
+models used, real token usage): `printf 'done\n' > docs/hydraia/.run-complete`.
+The hook (`hooks/summary.sh`) reads the numbers straight from the session
+transcript and removes the marker after emitting — do NOT hand-write token or agent
+counts yourself; they would be guesses. Skip this only for `plan`/`graph`, which do
+not complete a build.
+
 **Pre-close security gate (mandatory):** run **repo-scan** and **production-audit**
 to confirm no hardcoded secrets, no vulnerable dependencies, and no obvious
 production-readiness gaps were introduced. Do not report done while a high-severity

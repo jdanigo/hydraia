@@ -14,6 +14,14 @@ All notable changes to Hydraia are documented here. Format follows
   `docs/hydraia/` directory); markdown and pipeline artifacts are exempt.
 - **Human-only bypass** `HYDRAIA_ALLOW_DIRECT=1`: the decision to skip the pipeline
   for a trivial change is the human's, set as an env var — never the model's.
+- **Run summary** (`hooks/summary.sh`, Stop hook): at the end of a completed
+  pipeline run, prints a transcript-derived summary — sub-agents dispatched (with
+  their types), models used, and real token usage (input/output/cache-read).
+  Numbers come from the session transcript (`message.usage` / `message.model`),
+  never from the model self-reporting, which would hallucinate counts. Gated on a
+  one-shot `docs/hydraia/.run-complete` marker written by Phase 6, so it fires only
+  when a run actually finishes — not after every turn. No cost estimate by design;
+  tokens, agents, and models only.
 - **Quick-mode** (`docs/hydraia/.quick-approved`, 30-min single-burst marker): on a
   strictly trivial change (no new logic/file, no security surface), the model may
   ask via `AskUserQuestion` whether to skip the design ceremony. Only an explicit
