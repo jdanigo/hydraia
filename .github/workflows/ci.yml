@@ -22,7 +22,7 @@ jobs:
           agents=$(ls agents/*.md | wc -l | tr -d ' ')
           echo "skills=$skills agents=$agents"
           test "$skills" -eq 38 || { echo "expected 38 skills, got $skills"; exit 1; }
-          test "$agents" -eq 20 || { echo "expected 20 agents, got $agents"; exit 1; }
+          test "$agents" -eq 22 || { echo "expected 22 agents, got $agents"; exit 1; }
       - name: License completeness
         run: |
           for l in superpowers ecc-agents ecc-security ecc uiux caveman fullstack-dev-skills; do
