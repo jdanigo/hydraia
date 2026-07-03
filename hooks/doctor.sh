@@ -120,6 +120,10 @@ if [ "$ASSUME_YES" -ne 1 ]; then
   exit 0
 fi
 
+# Ensure the cache dir exists BEFORE the installers use it (e.g. for the npm error
+# log) — on a fresh HOME it does not exist yet.
+mkdir -p "$CACHE_DIR" 2>/dev/null || true
+
 # codegraph via npm global. On a permission error (system-owned node prefix) retry
 # with a user-owned prefix — never sudo, never interactive.
 install_codegraph() {
