@@ -6,6 +6,25 @@ All notable changes to Hydraia are documented here. Format follows
 
 ## [Unreleased]
 
+## [0.2.3] — 2026-07-03
+
+### Fixed
+- **Code graph never bootstrapped on a fresh project.** The session-start hook ran
+  `codegraph index .` when no index existed, but `index` requires an initialized
+  project — so `.codegraph/` was never created and the graph silently stayed empty
+  (the pipeline then ran on blind file reads). `hooks/preflight.sh` now keys on the
+  `.codegraph/` directory: **absent → `codegraph init <repo-root>`** (initialize +
+  build the initial index, recursively covering every subfolder), **present →
+  `codegraph sync <repo-root>`** (fast incremental). The initial index runs in the
+  background so session start is never blocked, and it targets the git repo root so
+  one index covers all subfolders (never one per subfolder).
+- **Phase 0 no longer assumes the graph exists.** `SKILL.md` claimed the pre-flight
+  sync had already run and told the model to query the graph unconditionally — false
+  on a machine without codegraph or during a first-run index. Phase 0 now degrades
+  gracefully: use the graph when available, otherwise fall back to targeted file
+  reads and suggest `/hydraia:doctor` once. codegraph is an accelerator, not a hard
+  requirement.
+
 ## [0.2.2] — 2026-07-03
 
 ### Added
@@ -125,6 +144,7 @@ verify) with security gates throughout.
   in `LICENSES/`, `CONTRIBUTING.md`, and a CI workflow validating manifests, bash
   syntax, discovery counts, and license completeness.
 
+[0.2.3]: https://github.com/jdanigo/hydraia/compare/v0.2.2...v0.2.3
 [0.2.2]: https://github.com/jdanigo/hydraia/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/jdanigo/hydraia/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/jdanigo/hydraia/compare/v0.1.0...v0.2.0

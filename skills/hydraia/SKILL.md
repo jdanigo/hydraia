@@ -98,11 +98,16 @@ trivial you MAY *offer* to skip the design ceremony — but the human decides, n
 
 ## Phase 0 — Context (always first)
 
-1. The session-start hook already ran a codegraph pre-flight sync. Do not ask the
-   user to sync anything.
-2. Query the code graph to understand existing structure, call sites, and blast
-   radius before proposing anything. Prefer graph queries over blind file reads to
-   save tokens.
+1. The session-start hook already bootstrapped the code graph — `codegraph init` the
+   first time in a project (initialize + index, in the background), or `codegraph
+   sync` on later sessions. Do not ask the user to sync anything.
+2. If `codegraph` is available, query the code graph to understand existing
+   structure, call sites, and blast radius before proposing anything — prefer graph
+   queries over blind file reads to save tokens. If the graph is unavailable
+   (codegraph not installed, or a first-run index still building), do NOT assume it
+   or invent results: fall back to targeted, minimal file reads for exactly the code
+   you need, and suggest `/hydraia:doctor` once so it is ready next time. codegraph
+   is an accelerator, never a hard requirement — the pipeline runs without it.
 3. If the request references a PDF (spec, ticket export, design doc), convert it
    with markitdown first (`markitdown <file>`), and work from the markdown. Never
    dump raw PDF bytes into context.

@@ -8,12 +8,19 @@ CACHE_DIR="${HOME}/.cache/hydraia"
 CACHE_FILE="${CACHE_DIR}/deps-check"
 STALE_SECS=86400
 
-# --- 1. Code graph sync (belt-and-suspenders; daemon usually handles it) ---
+# --- 1. Code graph bootstrap/sync ---
+# First time in a project (no .codegraph/): `codegraph init` — it initializes AND
+# builds the initial index, recursively covering every subfolder, so one init at the
+# project root is enough (never init per-subfolder — that would scatter indexes).
+# Afterwards: `codegraph sync` (fast, incremental). The initial index can be slow on
+# a large repo, so run init in the BACKGROUND — session start must never block on it.
 if command -v codegraph >/dev/null 2>&1; then
-  if codegraph status >/dev/null 2>&1; then
-    codegraph sync . --quiet 2>/dev/null || true
+  root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+  if [ -d "$root/.codegraph" ]; then
+    codegraph sync "$root" --quiet 2>/dev/null || true
   else
-    codegraph index . --quiet 2>/dev/null || true
+    # detach so a long initial index does not hold up the session
+    ( nohup codegraph init "$root" >/dev/null 2>&1 & ) 2>/dev/null || true
   fi
 fi
 
