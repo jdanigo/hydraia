@@ -6,6 +6,27 @@ All notable changes to Hydraia are documented here. Format follows
 
 ## [Unreleased]
 
+## [0.2.2] — 2026-07-03
+
+### Added
+- **Agent budget** (`hooks/agents.sh`, PreToolUse on `Task` + SubagentStop): bounds
+  the blast radius of Phase 4 so a plan with many tasks cannot fan out into an
+  unbounded swarm of sub-agents and burn a usage window. Two runtime caps, enforced
+  only during an active run (fresh `docs/hydraia/.active-plan`) in Hydraia repos:
+  - **Total per run** — `HYDRAIA_MAX_AGENTS` (default 30). The hard guarantee: every
+    dispatch is counted under a portable `mkdir` lock, so even a same-turn burst of
+    100+ `Task` calls is serialized and cut off at the ceiling. A blocked dispatch
+    is not counted (so it cannot poison the in-flight tally).
+  - **Concurrent in flight** — `HYDRAIA_MAX_CONCURRENT` (default 6). Best-effort
+    throttle: `in_flight = dispatched − finished`, finished counted from
+    SubagentStop. If that completion signal never arrives, the concurrency check
+    self-disables so a run can never deadlock — the total cap still bounds it.
+
+  Ceilings are the human's to raise (`export HYDRAIA_MAX_AGENTS=50`), never the
+  model's; `HYDRAIA_ALLOW_DIRECT=1` lifts both. `SKILL.md` Phase 4 now dispatches in
+  bounded waves and Phase 3 requires right-sized (consolidated) tasks so plans stay
+  well under the ceiling by design.
+
 ## [0.2.1] — 2026-07-03
 
 ### Fixed
@@ -104,6 +125,7 @@ verify) with security gates throughout.
   in `LICENSES/`, `CONTRIBUTING.md`, and a CI workflow validating manifests, bash
   syntax, discovery counts, and license completeness.
 
+[0.2.2]: https://github.com/jdanigo/hydraia/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/jdanigo/hydraia/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/jdanigo/hydraia/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/jdanigo/hydraia/releases/tag/v0.1.0

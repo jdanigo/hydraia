@@ -13,7 +13,7 @@ jobs:
             python3 -m json.tool "$f" > /dev/null && echo "OK $f"
           done
       - name: Bash syntax
-        run: bash -n hooks/preflight.sh hooks/doctor.sh hooks/gate.sh hooks/summary.sh
+        run: bash -n hooks/preflight.sh hooks/doctor.sh hooks/gate.sh hooks/summary.sh hooks/agents.sh
       - name: Discovery counts
         run: |
           skills=$(find skills -name SKILL.md | wc -l | tr -d ' ')

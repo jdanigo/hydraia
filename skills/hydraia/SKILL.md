@@ -189,6 +189,12 @@ security flaw here is far cheaper than at review time.
      copied from the spec).
    - **A File Structure map:** every file to be created or modified and its single
      responsibility, before the tasks.
+   - **Right-sized tasks:** each task is a coherent, independently shippable unit of
+     work — not one micro-edit. Consolidate trivially-related edits into one task.
+     A plan with dozens upon dozens of atomic tasks will fan out into just as many
+     sub-agents in Phase 4 and multiply token cost; the agent-budget cap
+     (`HYDRAIA_MAX_AGENTS`, default 30) will hard-stop it. Aim well under that
+     ceiling by design.
    - **Per-task blocks**, each with:
      - `Files:` — `Create: exact/path`, `Modify: exact/path:line-range`,
        `Test: exact/path`. Exact paths, never "the relevant file".
@@ -238,6 +244,18 @@ Use **subagent-driven-development**. Dispatch a fresh `hydraia-executor` subagen
 per task (these run on Sonnet 5). Give each exactly the context it needs from the
 plan and the graph — never your session history. Execute all tasks continuously.
 TDD where the plan calls for it. Commit frequently.
+
+**Dispatch in bounded waves — never fan out the whole plan at once.** Each subagent
+loads its own context, so N parallel agents multiply token cost by ~N. Send at most
+`HYDRAIA_MAX_CONCURRENT` (default 6) executors at a time; as they finish, send the
+next wave. A whole run is also capped at `HYDRAIA_MAX_AGENTS` (default 30) total
+dispatches. These limits are enforced at runtime by the agent-budget hook
+(`hooks/agents.sh`) — a `Task` call past the cap is BLOCKED, not throttled silently,
+so respect the waves rather than firing 100 tasks and retrying blocked ones. If a
+plan truly needs more than the ceiling, that is the human's call to raise
+(`export HYDRAIA_MAX_AGENTS=…`), never a reason to loop on blocked dispatches. This
+is also why Phase 3 plans use coarse, consolidated tasks — a plan of 100+ atomic
+tasks is a planning smell, not a parallelism win.
 
 **Frontend rule:** if a task creates or changes UI, the executor MUST consult the
 **ui-ux-pro-max** skill for styles, palettes, typography, and accessibility before
