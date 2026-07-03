@@ -114,6 +114,7 @@ them are steps you'd never run by hand on a normal day.
 | `/hydraia:review [focus]` | 5–6 | Double code review + security gate on the **current branch**. Code already exists. |
 | `/hydraia:graph <query>` | — | Query the code graph (call sites, blast radius) without running the pipeline. |
 | `/hydraia:doctor` | — | Validate, install, and update external deps (`codegraph`, `markitdown`), with consent. |
+| `/hydraia:dashboard [port]` | — | Launch a local (127.0.0.1) web dashboard: plugin status, usage telemetry, and editable run modes. Zero-dependency Node server; all data stays on your machine. |
 | `/hydraia:resume [run]` | resumes | Continue an interrupted pipeline from the last incomplete phase. |
 
 The `hydraia` skill also **auto-triggers** when you ask to build/add/implement a

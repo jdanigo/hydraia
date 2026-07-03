@@ -52,11 +52,28 @@ marker="$repo/docs/hydraia/.run-complete"
 [ -f "$marker" ] || exit 0        # no completed run this turn → stay silent
 rm -f "$marker" 2>/dev/null || true   # one-shot: consume it so we emit once
 
-# --- Build the summary from the transcript ----------------------------------
-summary="$(printf '%s' "$transcript_path" | python3 -c '
-import sys, json
+# --- Config: whether to print the summary and/or record telemetry -----------
+# shellcheck source=/dev/null
+. "$(dirname "$0")/config.sh" 2>/dev/null || true
+RUN_SUMMARY="true"; TELEMETRY="true"
+if command -v hy_config >/dev/null 2>&1; then
+  RUN_SUMMARY="$(hy_config runSummary true)"
+  TELEMETRY="$(hy_config telemetry true)"
+fi
+TELEM_FILE=""
+if [ "$TELEMETRY" = "true" ]; then
+  mkdir -p "${HOME}/.cache/hydraia" 2>/dev/null && TELEM_FILE="${HOME}/.cache/hydraia/telemetry.jsonl"
+fi
+NOW="$(date +%s)"
+
+# --- Build the summary from the transcript (and append telemetry) ------------
+summary="$(printf '%s' "$transcript_path" | HY_REPO="$repo" HY_TELEM="$TELEM_FILE" HY_NOW="$NOW" python3 -c '
+import sys, json, os
 
 path = sys.stdin.read().strip()
+repo = os.environ.get("HY_REPO", "")
+telem = os.environ.get("HY_TELEM", "")
+now = os.environ.get("HY_NOW", "")
 
 def short(model):
     if not model or model == "<synthetic>":
@@ -123,6 +140,24 @@ tot_in  = sum(d["in"]  for d in models.values())
 tot_out = sum(d["out"] for d in models.values())
 tot_cr  = sum(d["cr"]  for d in models.values())
 
+# Persist one local telemetry record per completed run (never transmitted).
+if telem:
+    try:
+        rec = {
+            "ts": int(now) if now.isdigit() else 0,
+            "repo": os.path.basename(repo) if repo else "",
+            "agents": n_agents,
+            "agentsByType": agents,
+            "skills": skills,
+            "models": {k: {"in": v["in"], "out": v["out"], "cr": v["cr"], "cc": v["cc"]}
+                       for k, v in models.items()},
+            "tokensIn": tot_in, "tokensOut": tot_out, "cacheRead": tot_cr,
+        }
+        with open(telem, "a") as tf:
+            tf.write(json.dumps(rec) + "\n")
+    except Exception:
+        pass
+
 model_names = ", ".join(sorted(models))
 if agents:
     breakdown = ", ".join(f"{c} {k}" for k, c in sorted(agents.items()))
@@ -151,6 +186,9 @@ print("\n".join(lines))
 ' 2>/dev/null || true)"
 
 [ -n "$summary" ] || exit 0
+
+# Telemetry is recorded above regardless; only the on-screen summary is optional.
+[ "$RUN_SUMMARY" = "true" ] || exit 0
 
 # Surface to the user. systemMessage is the version-stable channel for a hook to
 # show text; also echo to stderr so it appears in the transcript regardless.

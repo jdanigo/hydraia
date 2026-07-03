@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hydraia Dashboard</title>
+<style>
+  :root{--bg:#0d1117;--panel:#161b22;--border:#30363d;--fg:#e6edf3;--muted:#8b949e;--accent:#58a6ff;--good:#3fb950;--bad:#f85149;--warn:#d29922}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  header{padding:16px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  header h1{font-size:18px;margin:0;font-weight:600}
+  .badge{font-size:12px;color:var(--muted);border:1px solid var(--border);border-radius:999px;padding:2px 10px}
+  .local{color:var(--good);border-color:var(--good)}
+  nav{display:flex;gap:4px;padding:0 24px;border-bottom:1px solid var(--border);background:var(--panel)}
+  nav button{background:none;border:none;color:var(--muted);padding:12px 16px;cursor:pointer;font-size:14px;border-bottom:2px solid transparent}
+  nav button.active{color:var(--fg);border-bottom-color:var(--accent)}
+  main{padding:24px;max-width:1000px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:16px}
+  .card h3{margin:0 0 4px;font-size:13px;color:var(--muted);font-weight:500;text-transform:uppercase;letter-spacing:.04em}
+  .stat{font-size:28px;font-weight:600}
+  .row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border)}
+  .row:last-child{border-bottom:none}
+  .pill{font-size:12px;padding:1px 8px;border-radius:999px;border:1px solid var(--border)}
+  .ok{color:var(--good);border-color:var(--good)} .no{color:var(--bad);border-color:var(--bad)}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:top}
+  th{color:var(--muted);font-weight:500}
+  .desc{color:var(--muted);font-size:12px}
+  .bar{height:10px;background:var(--accent);border-radius:3px;min-width:2px}
+  .barlabel{display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px}
+  form .field{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--border);gap:16px}
+  form label{font-weight:500} form .field small{display:block;color:var(--muted);font-weight:400;margin-top:2px}
+  input[type=number],select{background:var(--bg);border:1px solid var(--border);color:var(--fg);border-radius:6px;padding:6px 8px;min-width:110px}
+  input[type=checkbox]{width:18px;height:18px;accent-color:var(--accent)}
+  .actions{margin-top:16px;display:flex;gap:10px;align-items:center}
+  button.primary{background:var(--accent);color:#0d1117;border:none;border-radius:6px;padding:8px 16px;font-weight:600;cursor:pointer}
+  .saved{color:var(--good)} .muted{color:var(--muted)}
+  .empty{color:var(--muted);padding:24px;text-align:center}
+  .warnbox{background:rgba(210,153,34,.1);border:1px solid var(--warn);color:var(--warn);border-radius:6px;padding:8px 12px;font-size:12px;margin-top:8px}
+</style>
+</head>
+<body>
+<header>
+  <h1>⬡ Hydraia</h1>
+  <span class="badge" id="version">v…</span>
+  <span class="badge local">● local only · 127.0.0.1</span>
+</header>
+<nav>
+  <button data-tab="status" class="active">Status</button>
+  <button data-tab="telemetry">Telemetry</button>
+  <button data-tab="config">Config</button>
+</nav>
+<main>
+  <section id="status"></section>
+  <section id="telemetry" hidden></section>
+  <section id="config" hidden></section>
+</main>
+<script>
+const $ = (s, r=document) => r.querySelector(s);
+const el = (t, a={}, ...kids) => { const n=document.createElement(t); for(const k in a){ if(k==='class')n.className=a[k]; else if(k==='html')n.innerHTML=a[k]; else n.setAttribute(k,a[k]); } for(const c of kids) n.append(c.nodeType?c:document.createTextNode(c)); return n; };
+const fmt = n => n>=1e6 ? (n/1e6).toFixed(1)+'M' : n>=1e3 ? Math.round(n/1e3)+'k' : ''+n;
+
+async function get(p){ const r = await fetch(p); return r.json(); }
+
+function tab(name){
+  for(const b of document.querySelectorAll('nav button')) b.classList.toggle('active', b.dataset.tab===name);
+  for(const s of ['status','telemetry','config']) $('#'+s).hidden = s!==name;
+}
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{tab(b.dataset.tab); render(b.dataset.tab);});
+
+async function renderStatus(){
+  const s = await get('/api/status');
+  $('#version').textContent = 'v'+s.version;
+  const root = $('#status'); root.innerHTML='';
+  const depRow = (k,v)=>el('div',{class:'row'}, el('span',{},k), el('span',{class:'pill '+(v?'ok':'no')}, v?'installed':'missing'));
+  root.append(
+    el('div',{class:'grid'},
+      el('div',{class:'card'}, el('h3',{},'Plugin'), el('div',{class:'stat'}, 'v'+s.version)),
+      el('div',{class:'card'}, el('h3',{},'Skills'), el('div',{class:'stat'}, ''+s.skillCount)),
+      el('div',{class:'card'}, el('h3',{},'Agents'), el('div',{class:'stat'}, ''+s.agentCount)),
+      el('div',{class:'card'}, el('h3',{},'Hook events'), el('div',{class:'stat'}, ''+(s.hookEvents.length))),
+    ),
+    el('div',{class:'grid',style:'margin-top:12px'},
+      el('div',{class:'card'}, el('h3',{},'Dependencies'),
+        depRow('codegraph',s.deps.codegraph), depRow('markitdown',s.deps.markitdown),
+        depRow('node',s.deps.node), depRow('python',s.deps.python3), depRow('git',s.deps.git)),
+      el('div',{class:'card'}, el('h3',{},'MCP servers'),
+        s.mcpServers.length ? el('div',{}, ...s.mcpServers.map(m=>el('div',{class:'row'},el('span',{},m)))) : el('div',{class:'desc'},'none detected in Claude Code config')),
+      el('div',{class:'card'}, el('h3',{},'Hook events'),
+        ...s.hookEvents.map(h=>el('div',{class:'row'},el('span',{},h)))),
+    )
+  );
+  const mk = (title, items) => { const c = el('div',{class:'card',style:'margin-top:12px'}, el('h3',{},title));
+    const t = el('table',{}, el('tr',{}, el('th',{},'name'), el('th',{},'description')));
+    for(const i of items) t.append(el('tr',{}, el('td',{},i.name), el('td',{class:'desc'}, i.desc||'—')));
+    c.append(t); return c; };
+  root.append(mk('Skills ('+s.skillCount+')', s.skills), mk('Agents ('+s.agentCount+')', s.agents));
+}
+
+async function renderTelemetry(){
+  const d = await get('/api/telemetry');
+  const root = $('#telemetry'); root.innerHTML='';
+  if(!d.totals.runs){ root.append(el('div',{class:'empty'},'No runs recorded yet. Telemetry is local-only and fills in as you run /hydraia:feature.')); return; }
+  const t = d.totals;
+  root.append(el('div',{class:'grid'},
+    el('div',{class:'card'}, el('h3',{},'Runs'), el('div',{class:'stat'}, ''+t.runs)),
+    el('div',{class:'card'}, el('h3',{},'Agents dispatched'), el('div',{class:'stat'}, ''+t.agents)),
+    el('div',{class:'card'}, el('h3',{},'Tokens in'), el('div',{class:'stat'}, fmt(t.tokensIn))),
+    el('div',{class:'card'}, el('h3',{},'Tokens out'), el('div',{class:'stat'}, fmt(t.tokensOut))),
+  ));
+  const bars = (title, obj, val) => {
+    const entries = Object.entries(obj); if(!entries.length) return el('span');
+    const max = Math.max(...entries.map(([,v])=>val(v)));
+    const c = el('div',{class:'card',style:'margin-top:12px'}, el('h3',{},title));
+    for(const [k,v] of entries.sort((a,b)=>val(b[1])-val(a[1]))){
+      const n = val(v);
+      c.append(el('div',{style:'margin:8px 0'},
+        el('div',{class:'barlabel'}, el('span',{},k), el('span',{class:'muted'}, fmt(n))),
+        el('div',{class:'bar',style:`width:${Math.max(2,100*n/max)}%`})));
+    }
+    return c;
+  };
+  root.append(bars('Tokens by model (in)', d.byModel, v=>v.in));
+  root.append(bars('Skills used', d.bySkill, v=>v));
+  root.append(bars('Runs by day', d.byDay, v=>v.runs));
+  const rc = el('div',{class:'card',style:'margin-top:12px'}, el('h3',{},'Recent runs'));
+  const tb = el('table',{}, el('tr',{}, el('th',{},'when'), el('th',{},'repo'), el('th',{},'agents'), el('th',{},'in'), el('th',{},'out'), el('th',{},'models')));
+  for(const r of d.recent){
+    const when = r.ts ? new Date(r.ts*1000).toLocaleString() : '—';
+    tb.append(el('tr',{}, el('td',{},when), el('td',{},r.repo||'—'), el('td',{},''+(r.agents||0)),
+      el('td',{},fmt(r.tokensIn||0)), el('td',{},fmt(r.tokensOut||0)),
+      el('td',{class:'desc'}, Object.keys(r.models||{}).join(', '))));
+  }
+  rc.append(tb); root.append(rc);
+}
+
+const FIELDS = [
+  ['maxConcurrentAgents','number','Max concurrent agents','Sub-agents running at once (token multiplier).'],
+  ['maxTotalAgents','number','Max agents per run','Hard ceiling on dispatches per pipeline run.'],
+  ['specDrive','select:strict,relaxed,off','Spec-drive gate','strict blocks edits without a plan; relaxed warns; off disables.'],
+  ['quickMode','bool','Quick-mode','Allow the human-approved trivial-change shortcut.'],
+  ['autoInstallDeps','bool','Auto-install deps','Offer to install codegraph/markitdown on first run.'],
+  ['codegraphAuto','bool','Code-graph auto init/sync','Bootstrap and keep the code graph fresh at session start.'],
+  ['runSummary','bool','Run summary','Print the agents/models/tokens summary at run close.'],
+  ['telemetry','bool','Telemetry (local)','Record each run locally. Never transmitted.'],
+  ['telemetryRetentionDays','number','Telemetry retention (days)','How long to keep local records.'],
+  ['reviewMode','select:double,single','Review rigor','double = Superpowers + ECC passes; single = one pass.'],
+  ['selfReviewPasses','number','Plan self-review passes','How many times Phase 3 re-audits the plan.'],
+  ['securityGates','bool','Security gates','Threat model + security scans. Turning off is discouraged.'],
+  ['pdfConversion','bool','PDF → markdown','Convert PDFs via markitdown before context.'],
+  ['cavemanInternal','bool','Caveman internal style','Token-saving compression for internal reasoning only.'],
+  ['dashboardPort','number','Dashboard port','Port this dashboard binds on 127.0.0.1.'],
+];
+
+async function renderConfig(){
+  const cfg = await get('/api/config');
+  const root = $('#config'); root.innerHTML='';
+  const form = el('form',{});
+  for(const [key,type,label,help] of FIELDS){
+    let input;
+    if(type==='bool'){ input = el('input',{type:'checkbox'}); input.checked = !!cfg[key]; }
+    else if(type.startsWith('select:')){ input = el('select',{}); for(const o of type.slice(7).split(',')){ const opt=el('option',{value:o},o); if(cfg[key]===o)opt.selected=true; input.append(opt);} }
+    else { input = el('input',{type:'number'}); input.value = cfg[key]; }
+    input.dataset.key = key; input.dataset.type = type;
+    const f = el('div',{class:'field'}, el('div',{}, el('label',{},label), el('small',{},help)), input);
+    form.append(f);
+    if(key==='securityGates'){ f.after(el('div',{class:'warnbox',id:'secwarn',hidden:'hidden'}, '⚠ Security gates off — threat model and security scans will be skipped.')); }
+  }
+  const status = el('span',{class:'muted'});
+  const save = el('button',{class:'primary',type:'button'},'Save');
+  save.onclick = async () => {
+    const body = {};
+    for(const i of form.querySelectorAll('[data-key]')){
+      const k=i.dataset.key, t=i.dataset.type;
+      body[k] = t==='bool' ? i.checked : t==='number' ? Number(i.value) : i.value;
+    }
+    status.textContent='saving…';
+    const r = await fetch('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    status.textContent = r.ok ? '✓ saved (applies to new sessions)' : '✗ error';
+    status.className = r.ok ? 'saved' : 'no';
+  };
+  const secToggle = () => { const w=$('#secwarn'); const c=form.querySelector('[data-key=securityGates]'); if(w) w.hidden = c.checked; };
+  form.addEventListener('change', secToggle); setTimeout(secToggle,0);
+  form.append(el('div',{class:'actions'}, save, status));
+  root.append(form);
+}
+
+function render(name){ ({status:renderStatus,telemetry:renderTelemetry,config:renderConfig}[name])(); }
+render('status');
+</script>
+</body>
+</html>

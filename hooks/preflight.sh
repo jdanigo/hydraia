@@ -23,7 +23,12 @@ mkdir -p "$CACHE_DIR" 2>/dev/null || true
 # project root is enough (never init per-subfolder — that would scatter indexes).
 # Afterwards: `codegraph sync` (fast, incremental). The initial index can be slow on
 # a large repo, so run init in the BACKGROUND — session start must never block on it.
-if command -v codegraph >/dev/null 2>&1; then
+# Honors the codegraphAuto config toggle (dashboard-editable).
+# shellcheck source=/dev/null
+. "$(dirname "$0")/config.sh" 2>/dev/null || true
+CODEGRAPH_AUTO="true"
+command -v hy_config >/dev/null 2>&1 && CODEGRAPH_AUTO="$(hy_config codegraphAuto true)"
+if [ "$CODEGRAPH_AUTO" = "true" ] && command -v codegraph >/dev/null 2>&1; then
   root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
   if [ -d "$root/.codegraph" ]; then
     codegraph sync "$root" --quiet 2>/dev/null || true

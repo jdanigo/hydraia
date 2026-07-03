@@ -26,8 +26,18 @@
 # On any internal error this hook ALLOWS (fail-open) — it must never wedge a run.
 set -uo pipefail
 
-MAX_TOTAL="${HYDRAIA_MAX_AGENTS:-30}"
-MAX_CONCURRENT="${HYDRAIA_MAX_CONCURRENT:-6}"
+# shellcheck source=/dev/null
+. "$(dirname "$0")/config.sh" 2>/dev/null || true
+if command -v hy_config >/dev/null 2>&1; then
+  MAX_TOTAL="$(hy_config maxTotalAgents 30 HYDRAIA_MAX_AGENTS)"
+  MAX_CONCURRENT="$(hy_config maxConcurrentAgents 6 HYDRAIA_MAX_CONCURRENT)"
+else
+  MAX_TOTAL="${HYDRAIA_MAX_AGENTS:-30}"
+  MAX_CONCURRENT="${HYDRAIA_MAX_CONCURRENT:-6}"
+fi
+# Guard against a non-numeric config value.
+case "$MAX_TOTAL" in ''|*[!0-9]*) MAX_TOTAL=30 ;; esac
+case "$MAX_CONCURRENT" in ''|*[!0-9]*) MAX_CONCURRENT=6 ;; esac
 FRESH_SECS=43200   # 12h — a stale .active-plan does not gate anything
 
 payload="$(cat 2>/dev/null || true)"

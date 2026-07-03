@@ -18,6 +18,9 @@
 # On any internal error the gate ALLOWS (fail-open) — it must never wedge editing.
 set -uo pipefail
 
+# shellcheck source=/dev/null
+. "$(dirname "$0")/config.sh" 2>/dev/null || true
+
 FRESH_SECS=43200   # 12h — a stale .active-plan from an old run won't authorize edits
 QUICK_SECS=1800    # 30m — a human-approved quick edit is a short, single-burst window
 
@@ -56,6 +59,12 @@ repo="$(git -C "$dir" rev-parse --show-toplevel 2>/dev/null || true)"
 # Opt-in: only enforce in repos that use Hydraia.
 [ -d "$repo/docs/hydraia" ] || exit 0
 
+# Spec-drive mode (config): off = never gate; relaxed = warn but allow;
+# strict (default) = block. Env HYDRAIA_SPEC_DRIVE overrides the file.
+SPEC_DRIVE="strict"
+command -v hy_config >/dev/null 2>&1 && SPEC_DRIVE="$(hy_config specDrive strict HYDRAIA_SPEC_DRIVE)"
+[ "$SPEC_DRIVE" = "off" ] && exit 0
+
 # Exempt non-code artifacts: markdown (specs, plans, run logs, docs) and anything
 # under docs/hydraia/ (the pipeline's own writes must never be blocked).
 case "$file_path" in
@@ -82,8 +91,14 @@ fresh "$repo/docs/hydraia/.active-plan" "$FRESH_SECS" && exit 0
 # edit — it is a convenience channel, not the hard bypass (that is the env var).
 fresh "$repo/docs/hydraia/.quick-approved" "$QUICK_SECS" && exit 0
 
-# Otherwise block. Exit 2 tells Claude Code to reject the tool call and feed stderr
-# back to the model, which can then recover via the pipeline or quick-mode.
+# Relaxed mode: note the missing plan but allow the edit (no block).
+if [ "$SPEC_DRIVE" = "relaxed" ]; then
+  echo "[hydraia] note: editing source before a frozen plan (spec-drive=relaxed). Consider /hydraia:feature." >&2
+  exit 0
+fi
+
+# Otherwise (strict) block. Exit 2 tells Claude Code to reject the tool call and feed
+# stderr back to the model, which can then recover via the pipeline or quick-mode.
 cat >&2 <<EOF
 [hydraia] BLOCKED: spec-drive gate.
 

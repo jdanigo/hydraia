@@ -98,6 +98,18 @@ trivial you MAY *offer* to skip the design ceremony — but the human decides, n
 
 ## Phase 0 — Context (always first)
 
+**Honor the effective config.** Read `docs/hydraia/config.json` (per-repo) and
+`~/.config/hydraia/config.json` (global) if present — the dashboard
+(`/hydraia:dashboard`) writes these. Per-repo overrides global; an env var overrides
+both. The hooks already enforce the deterministic toggles (agent caps, spec-drive
+mode, telemetry, run summary, codegraph auto). YOU honor the prompt-level ones:
+`autoInstallDeps` (false → skip the install offer below), `reviewMode`
+(`single` → run only the Superpowers review pass in Phase 5, not both),
+`selfReviewPasses` (Phase 3 plan self-review count), `securityGates` (false → the
+human disabled threat model / security scans; note it, do not silently assume they
+ran), `pdfConversion` (false → skip markitdown), `cavemanInternal`. Defaults apply
+when a key is absent.
+
 0. **Dependency check + one-click install (do this once, silently if all present).**
    The user should never have to run install commands by hand. Detect what is
    available: `command -v codegraph`, `command -v markitdown`, `command -v npm`,

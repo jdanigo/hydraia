@@ -6,6 +6,33 @@ All notable changes to Hydraia are documented here. Format follows
 
 ## [Unreleased]
 
+## [0.4.0] — 2026-07-03
+
+### Added
+- **Local dashboard** (`/hydraia:dashboard`, `dashboard/server.js` +
+  `dashboard/index.html`). A zero-dependency Node server (built-ins only) bound to
+  **`127.0.0.1`** — never exposed to the network, all data stays on the machine.
+  Three tabs:
+  - **Status** — plugin version, every installed skill and agent (with
+    descriptions), hook events, detected MCP servers, and dependency health.
+  - **Telemetry** — usage recorded **locally** per completed run (runs, agents,
+    tokens in/out, tokens by model, skills used, runs by day, recent-runs table).
+    Charts are hand-rolled inline; nothing is ever transmitted.
+  - **Config** — edit the run modes in a form and save; writes
+    `~/.config/hydraia/config.json`.
+- **Local usage telemetry.** The run-summary Stop hook now appends one JSON record
+  per completed run to `~/.cache/hydraia/telemetry.jsonl` (transcript-derived: agents,
+  models, real tokens, skills). Local-only, on by default, and disableable from the
+  dashboard.
+- **Config system** (`hooks/config.sh`). Hooks now resolve run modes with the
+  precedence **env override > per-repo `docs/hydraia/config.json` > global
+  `~/.config/hydraia/config.json` > built-in default**. Enforced deterministically by
+  the hooks: agent caps (`maxConcurrentAgents`, `maxTotalAgents`), `specDrive`
+  (`strict`/`relaxed`/`off`), `telemetry`, `runSummary`, `codegraphAuto`. Prompt-level
+  modes (`autoInstallDeps`, `reviewMode`, `selfReviewPasses`, `securityGates`,
+  `pdfConversion`, `cavemanInternal`) are read and honored in Phase 0. The
+  un-forgeable `HYDRAIA_ALLOW_DIRECT` bypass is deliberately **not** file-configurable.
+
 ## [0.3.1] — 2026-07-03
 
 ### Fixed
@@ -195,6 +222,7 @@ verify) with security gates throughout.
   in `LICENSES/`, `CONTRIBUTING.md`, and a CI workflow validating manifests, bash
   syntax, discovery counts, and license completeness.
 
+[0.4.0]: https://github.com/jdanigo/hydraia/compare/v0.3.1...v0.4.0
 [0.3.1]: https://github.com/jdanigo/hydraia/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/jdanigo/hydraia/compare/v0.2.3...v0.3.0
 [0.2.3]: https://github.com/jdanigo/hydraia/compare/v0.2.2...v0.2.3
