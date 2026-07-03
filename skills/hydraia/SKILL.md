@@ -114,11 +114,22 @@ trivial you MAY *offer* to skip the design ceremony — but the human decides, n
      [ -n "$ROOT" ] || ROOT="$(ls -d "${HOME}/.claude/plugins/cache/hydraia/hydraia/"*/ 2>/dev/null | sort -V | tail -1)"
      "$ROOT/hooks/doctor.sh" --install --yes
      ```
-     Then report what installed. On **Skip**, continue and do not ask again this run.
+     The installer is non-interactive and never uses sudo (no hangs). Its **last
+     line is machine-readable** — `RESULT codegraph=<state> markitdown=<state>` where
+     state is `ok` (usable now), `installed` (present, ready in a NEW session after a
+     PATH refresh), or `missing` (failed — the installer printed the exact recovery
+     command above it). **Read that line and act on it:**
+     - `ok` → use the tool this run.
+     - `installed` → tell the user it is ready next session; treat as unavailable for
+       THIS run (degrade to file reads / skip PDF conversion). Do NOT re-offer.
+     - `missing` → surface the one recovery command the installer printed. Do NOT
+       loop or retry the install.
+     On **Skip**, continue and do not ask again this run.
    - If an **installer itself** is missing (`npm`/`pip` absent, or `node`/`python3`/
      `git`), these are system runtimes a plugin must not auto-install — run
-     `"$ROOT/hooks/doctor.sh" --check` and show the user its per-OS install hints,
-     then continue degraded. Never block the pipeline on a missing dependency.
+     `"$ROOT/hooks/doctor.sh" --check` and show the user its per-OS install hints
+     (`brew`/`apt`/`dnf`/`winget`), then continue degraded. Never block the pipeline
+     on a missing dependency.
 1. The session-start hook already bootstrapped the code graph — `codegraph init` the
    first time in a project (initialize + index, in the background), or `codegraph
    sync` on later sessions. Do not ask the user to sync anything.

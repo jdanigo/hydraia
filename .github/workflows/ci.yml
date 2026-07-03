@@ -27,3 +27,27 @@ jobs:
             test -f "LICENSES/${l}-LICENSE" || { echo "missing LICENSES/${l}-LICENSE"; exit 1; }
           done
           test -f NOTICE && test -f LICENSE && echo "OK licenses"
+
+  # End-to-end proof that the zero-touch dependency install actually lands
+  # codegraph + markitdown on macOS, Linux, and Windows — no manual steps, no sudo.
+  install-e2e:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Auto-install (no sudo, non-interactive)
+        shell: bash
+        run: bash hooks/doctor.sh --install --yes | tee out.log
+      - name: Assert both tools installed (never 'missing')
+        shell: bash
+        run: |
+          res="$(grep '^RESULT' out.log | tail -1)"
+          echo "on ${{ matrix.os }}: $res"
+          test -n "$res" || { echo "no RESULT line — installer did not finish"; exit 1; }
+          case "$res" in
+            *missing*) echo "FAIL: a managed tool did not install on ${{ matrix.os }}"; exit 1 ;;
+            *) echo "PASS: codegraph + markitdown both ok/installed" ;;
+          esac

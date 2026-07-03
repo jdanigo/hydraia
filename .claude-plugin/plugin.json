@@ -1,6 +1,6 @@
 {
   "name": "hydraia",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "A self-contained agentic development harness for Claude Code. One command runs the full feature pipeline: context, think, design + threat model, plan with self-review, sub-agent execution, double code review, and security gates. Bundles every skill and agent it needs.",
   "author": {
     "name": "José Daniel Garcés Ospina"

@@ -6,6 +6,30 @@ All notable changes to Hydraia are documented here. Format follows
 
 ## [Unreleased]
 
+## [0.3.1] — 2026-07-03
+
+### Fixed
+- **Auto-install hardened to work end-to-end on macOS, Linux, and Windows** — the
+  0.3.0 offer could silently no-op on common real-world setups. `doctor.sh --install`
+  now:
+  - resolves Python across platforms (`python3` / `python` / the Windows `py -3`
+    launcher) and installs via `python -m pip`, not a bare `pip` that may not exist;
+  - installs **markitdown with pipx** (isolated CLI, non-interactive `ensurepath`
+    fixes PATH itself), bootstrapping pipx when absent, and falls back to
+    `pip --user` with a `--break-system-packages` retry for **PEP 668
+    "externally-managed"** environments (Homebrew Python, Debian 12+, Ubuntu 23+,
+    Fedora) where the old `pip install` hard-failed;
+  - installs **codegraph with npm**, retrying in a **user-owned prefix** on an
+    `EACCES` permission error instead of failing — **never uses sudo**, so it can't
+    hang on a password prompt;
+  - **verifies** what actually landed and prints a machine-readable
+    `RESULT codegraph=… markitdown=…` (`ok` / `installed` / `missing`). Phase 0 reads
+    it and never re-offers a completed install nor loops on a failed one.
+- **CI now proves it.** A new `install-e2e` matrix job runs the real installer on
+  `ubuntu-latest`, `macos-latest`, and `windows-latest` on every push and fails if
+  either tool ends up `missing` — the cross-platform guarantee is enforced, not
+  assumed.
+
 ## [0.3.0] — 2026-07-03
 
 ### Changed
@@ -163,6 +187,7 @@ verify) with security gates throughout.
   in `LICENSES/`, `CONTRIBUTING.md`, and a CI workflow validating manifests, bash
   syntax, discovery counts, and license completeness.
 
+[0.3.1]: https://github.com/jdanigo/hydraia/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/jdanigo/hydraia/compare/v0.2.3...v0.3.0
 [0.2.3]: https://github.com/jdanigo/hydraia/compare/v0.2.2...v0.2.3
 [0.2.2]: https://github.com/jdanigo/hydraia/compare/v0.2.1...v0.2.2
