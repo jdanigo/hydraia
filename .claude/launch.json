@@ -1,0 +1,6 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    { "name": "hydraia-dashboard", "runtimeExecutable": "node", "runtimeArgs": ["dashboard/server.js", "7799"], "port": 7799 }
+  ]
+}

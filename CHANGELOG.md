@@ -6,6 +6,19 @@ All notable changes to Hydraia are documented here. Format follows
 
 ## [Unreleased]
 
+## [0.4.1] — 2026-07-03
+
+### Changed
+- **Dashboard redesigned to a premium, AI-dev-tool aesthetic** (via the
+  `ui-ux-pro-max` design system: Dark Mode OLED, green accent, Inter-style system
+  stack — still zero external fonts/CDN). Left sidebar navigation with inline SVG
+  icons (no emoji), KPI cards with colored icon chips, status pills with check/x
+  glyphs (never color-only), a token-volume sparkline, gradient bar charts, tabular
+  figures, custom toggle switches, visible focus rings, loading skeletons, a
+  `prefers-reduced-motion` guard, and a responsive sidebar→top-bar collapse. All
+  existing data bindings and the config POST are unchanged. Verified in-browser
+  across all three tabs with no console errors.
+
 ## [0.4.0] — 2026-07-03
 
 ### Added
@@ -222,6 +235,7 @@ verify) with security gates throughout.
   in `LICENSES/`, `CONTRIBUTING.md`, and a CI workflow validating manifests, bash
   syntax, discovery counts, and license completeness.
 
+[0.4.1]: https://github.com/jdanigo/hydraia/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/jdanigo/hydraia/compare/v0.3.1...v0.4.0
 [0.3.1]: https://github.com/jdanigo/hydraia/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/jdanigo/hydraia/compare/v0.2.3...v0.3.0

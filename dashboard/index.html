@@ -5,190 +5,358 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Hydraia Dashboard</title>
 <style>
-  :root{--bg:#0d1117;--panel:#161b22;--border:#30363d;--fg:#e6edf3;--muted:#8b949e;--accent:#58a6ff;--good:#3fb950;--bad:#f85149;--warn:#d29922}
+  :root{
+    --bg:#0a0f1c; --surface:#111a2e; --surface-2:#0d1424; --elev:#16203a;
+    --border:#1e2a44; --border-strong:#2c3b5c;
+    --fg:#f4f7fb; --muted:#8ea0bd; --faint:#5f7a9e;
+    --accent:#22c55e; --accent-2:#16a34a; --accent-dim:rgba(34,197,94,.12); --accent-glow:rgba(34,197,94,.35);
+    --blue:#38bdf8; --violet:#a78bfa; --amber:#fbbf24; --danger:#f87171;
+    --radius:14px; --radius-sm:9px;
+    --ease:cubic-bezier(.32,.72,0,1);
+    --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
   *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
-  header{padding:16px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-  header h1{font-size:18px;margin:0;font-weight:600}
-  .badge{font-size:12px;color:var(--muted);border:1px solid var(--border);border-radius:999px;padding:2px 10px}
-  .local{color:var(--good);border-color:var(--good)}
-  nav{display:flex;gap:4px;padding:0 24px;border-bottom:1px solid var(--border);background:var(--panel)}
-  nav button{background:none;border:none;color:var(--muted);padding:12px 16px;cursor:pointer;font-size:14px;border-bottom:2px solid transparent}
-  nav button.active{color:var(--fg);border-bottom-color:var(--accent)}
-  main{padding:24px;max-width:1000px}
-  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
-  .card{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:16px}
-  .card h3{margin:0 0 4px;font-size:13px;color:var(--muted);font-weight:500;text-transform:uppercase;letter-spacing:.04em}
-  .stat{font-size:28px;font-weight:600}
-  .row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border)}
+  html,body{height:100%}
+  body{margin:0;background:
+      radial-gradient(1200px 600px at 15% -10%, rgba(34,197,94,.06), transparent 60%),
+      radial-gradient(900px 500px at 110% 0%, rgba(56,189,248,.05), transparent 55%),
+      var(--bg);
+    color:var(--fg);font:14px/1.6 var(--sans);-webkit-font-smoothing:antialiased;
+    font-variant-numeric:tabular-nums}
+  ::selection{background:var(--accent-glow);color:#fff}
+  a{color:inherit}
+  .num{font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1}
+
+  /* ---- shell ---- */
+  .app{display:grid;grid-template-columns:248px 1fr;min-height:100dvh}
+  aside{position:sticky;top:0;height:100dvh;background:linear-gradient(180deg,var(--surface-2),var(--bg));
+    border-right:1px solid var(--border);padding:22px 16px;display:flex;flex-direction:column;gap:6px}
+  .brand{display:flex;align-items:center;gap:11px;padding:6px 8px 20px}
+  .brand .logo{width:34px;height:34px;flex:none;filter:drop-shadow(0 0 10px var(--accent-glow))}
+  .brand b{font-size:16px;font-weight:650;letter-spacing:-.01em}
+  .brand .ver{font:11px/1 var(--mono);color:var(--accent);background:var(--accent-dim);
+    border:1px solid rgba(34,197,94,.25);padding:3px 7px;border-radius:999px}
+  nav{display:flex;flex-direction:column;gap:3px}
+  .navitem{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:var(--radius-sm);
+    color:var(--muted);cursor:pointer;border:none;background:none;font:500 14px/1 var(--sans);
+    width:100%;text-align:left;position:relative;transition:.18s var(--ease)}
+  .navitem svg{width:18px;height:18px;flex:none;stroke-width:1.9}
+  .navitem:hover{color:var(--fg);background:var(--surface)}
+  .navitem.active{color:var(--fg);background:linear-gradient(90deg,var(--accent-dim),transparent)}
+  .navitem.active::before{content:"";position:absolute;left:-16px;top:8px;bottom:8px;width:3px;
+    background:var(--accent);border-radius:0 3px 3px 0;box-shadow:0 0 12px var(--accent-glow)}
+  aside .foot{margin-top:auto;display:flex;align-items:center;gap:8px;padding:10px 12px;
+    color:var(--muted);font-size:12px;border-top:1px solid var(--border)}
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px var(--accent-glow);
+    animation:pulse 2.4s var(--ease) infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+
+  main{padding:34px 40px 60px;max-width:1160px}
+  .head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:26px}
+  .head h1{margin:0;font-size:23px;font-weight:650;letter-spacing:-.02em}
+  .head p{margin:4px 0 0;color:var(--muted);font-size:13px}
+  .head .refresh{display:flex;align-items:center;gap:7px;color:var(--muted);font-size:12px;
+    border:1px solid var(--border);background:var(--surface);padding:7px 12px;border-radius:999px;
+    cursor:pointer;transition:.18s var(--ease)}
+  .head .refresh:hover{color:var(--fg);border-color:var(--border-strong)}
+  .head .refresh svg{width:14px;height:14px}
+
+  /* ---- cards ---- */
+  .grid{display:grid;gap:14px}
+  .g4{grid-template-columns:repeat(4,1fr)} .g3{grid-template-columns:repeat(3,1fr)} .g2{grid-template-columns:repeat(2,1fr)}
+  .card{background:linear-gradient(180deg,var(--surface),var(--surface-2));border:1px solid var(--border);
+    border-radius:var(--radius);padding:18px;position:relative;overflow:hidden;transition:.2s var(--ease)}
+  .card:hover{border-color:var(--border-strong)}
+  .card h3{margin:0 0 3px;font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.08em}
+  .stat{font-size:30px;font-weight:680;letter-spacing:-.02em;line-height:1.15}
+  .stat .u{font-size:13px;color:var(--muted);font-weight:500;margin-left:4px}
+  .kpi{display:flex;align-items:center;gap:13px}
+  .kpi .ic{width:40px;height:40px;flex:none;display:grid;place-items:center;border-radius:11px;
+    background:var(--accent-dim);color:var(--accent)}
+  .kpi .ic svg{width:20px;height:20px;stroke-width:1.9}
+  .kpi.blue .ic{background:rgba(56,189,248,.12);color:var(--blue)}
+  .kpi.violet .ic{background:rgba(167,139,250,.12);color:var(--violet)}
+  .kpi.amber .ic{background:rgba(251,191,36,.12);color:var(--amber)}
+
+  .panel{background:linear-gradient(180deg,var(--surface),var(--surface-2));border:1px solid var(--border);
+    border-radius:var(--radius);padding:20px}
+  .panel > .ph{display:flex;align-items:center;gap:9px;margin-bottom:14px}
+  .panel > .ph svg{width:16px;height:16px;color:var(--muted);stroke-width:1.9}
+  .panel > .ph h2{margin:0;font-size:14px;font-weight:600;letter-spacing:-.01em}
+  .panel > .ph .count{margin-left:auto;font:12px/1 var(--mono);color:var(--muted);
+    background:var(--elev);border:1px solid var(--border);padding:4px 9px;border-radius:999px}
+
+  .row{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border)}
   .row:last-child{border-bottom:none}
-  .pill{font-size:12px;padding:1px 8px;border-radius:999px;border:1px solid var(--border)}
-  .ok{color:var(--good);border-color:var(--good)} .no{color:var(--bad);border-color:var(--bad)}
+  .pill{font:11px/1 var(--mono);padding:4px 9px;border-radius:999px;border:1px solid var(--border);color:var(--muted);
+    display:inline-flex;align-items:center;gap:6px}
+  .pill svg{width:12px;height:12px;stroke-width:2.4}
+  .pill.ok{color:var(--accent);border-color:rgba(34,197,94,.3);background:var(--accent-dim)}
+  .pill.no{color:var(--danger);border-color:rgba(248,113,113,.3);background:rgba(248,113,113,.1)}
+  .tag{font:11px/1 var(--mono);color:var(--blue);background:rgba(56,189,248,.1);
+    border:1px solid rgba(56,189,248,.22);padding:4px 9px;border-radius:7px}
+
   table{width:100%;border-collapse:collapse;font-size:13px}
-  th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:top}
-  th{color:var(--muted);font-weight:500}
-  .desc{color:var(--muted);font-size:12px}
-  .bar{height:10px;background:var(--accent);border-radius:3px;min-width:2px}
-  .barlabel{display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px}
-  form .field{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--border);gap:16px}
-  form label{font-weight:500} form .field small{display:block;color:var(--muted);font-weight:400;margin-top:2px}
-  input[type=number],select{background:var(--bg);border:1px solid var(--border);color:var(--fg);border-radius:6px;padding:6px 8px;min-width:110px}
-  input[type=checkbox]{width:18px;height:18px;accent-color:var(--accent)}
-  .actions{margin-top:16px;display:flex;gap:10px;align-items:center}
-  button.primary{background:var(--accent);color:#0d1117;border:none;border-radius:6px;padding:8px 16px;font-weight:600;cursor:pointer}
-  .saved{color:var(--good)} .muted{color:var(--muted)}
-  .empty{color:var(--muted);padding:24px;text-align:center}
-  .warnbox{background:rgba(210,153,34,.1);border:1px solid var(--warn);color:var(--warn);border-radius:6px;padding:8px 12px;font-size:12px;margin-top:8px}
+  th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:top}
+  thead th{color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.06em;
+    position:sticky;top:0;background:var(--surface-2)}
+  tbody tr{transition:.15s var(--ease)} tbody tr:hover{background:rgba(255,255,255,.02)}
+  td.name{font-weight:550} td.desc{color:var(--muted);font-size:12px;max-width:560px}
+  td.mono,.mono{font-family:var(--mono);font-size:12px}
+
+  /* ---- charts ---- */
+  .barrow{margin:11px 0}
+  .barhead{display:flex;justify-content:space-between;align-items:baseline;font-size:12px;margin-bottom:5px}
+  .barhead b{font-weight:550;color:var(--fg)} .barhead span{color:var(--muted);font-family:var(--mono);font-size:11px}
+  .track{height:8px;background:var(--elev);border-radius:6px;overflow:hidden}
+  .fill{height:100%;border-radius:6px;background:linear-gradient(90deg,var(--accent-2),var(--accent));
+    box-shadow:0 0 14px var(--accent-glow);transform-origin:left;animation:grow .7s var(--ease) both}
+  .fill.blue{background:linear-gradient(90deg,#0ea5e9,var(--blue));box-shadow:0 0 14px rgba(56,189,248,.35)}
+  .fill.violet{background:linear-gradient(90deg,#8b5cf6,var(--violet));box-shadow:0 0 14px rgba(167,139,250,.35)}
+  @keyframes grow{from{transform:scaleX(0);opacity:.3}to{transform:scaleX(1);opacity:1}}
+  .spark{width:100%;height:64px;display:block}
+
+  /* ---- config form ---- */
+  form .field{display:flex;justify-content:space-between;align-items:center;gap:20px;padding:15px 0;border-bottom:1px solid var(--border)}
+  form .field:last-of-type{border-bottom:none}
+  form label{font-weight:550;font-size:14px} form .field small{display:block;color:var(--muted);font-weight:400;margin-top:3px;font-size:12px}
+  input[type=number],select{background:var(--surface-2);border:1px solid var(--border-strong);color:var(--fg);
+    border-radius:9px;padding:9px 11px;min-width:130px;font:500 13px/1 var(--sans);transition:.15s var(--ease)}
+  input[type=number]:focus,select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-dim)}
+  select{cursor:pointer}
+  /* switch */
+  .sw{position:relative;width:46px;height:26px;flex:none;cursor:pointer}
+  .sw input{position:absolute;opacity:0;width:100%;height:100%;margin:0;cursor:pointer}
+  .sw .track2{position:absolute;inset:0;background:var(--elev);border:1px solid var(--border-strong);border-radius:999px;transition:.2s var(--ease)}
+  .sw .knob{position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:var(--muted);transition:.2s var(--ease)}
+  .sw input:checked ~ .track2{background:var(--accent-dim);border-color:var(--accent)}
+  .sw input:checked ~ .knob{left:23px;background:var(--accent);box-shadow:0 0 10px var(--accent-glow)}
+  .sw input:focus-visible ~ .track2{box-shadow:0 0 0 3px var(--accent-dim)}
+  .actions{margin-top:20px;display:flex;gap:14px;align-items:center}
+  button.primary{background:linear-gradient(180deg,var(--accent),var(--accent-2));color:#04220f;border:none;
+    border-radius:10px;padding:10px 20px;font:650 14px/1 var(--sans);cursor:pointer;
+    box-shadow:0 6px 20px -6px var(--accent-glow);transition:.18s var(--ease)}
+  button.primary:hover{filter:brightness(1.08);transform:translateY(-1px)}
+  button.primary:active{transform:translateY(0)}
+  .saved{color:var(--accent);font-size:13px} .errtxt{color:var(--danger);font-size:13px}
+  .warnbox{display:flex;gap:9px;align-items:center;background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.3);
+    color:var(--amber);border-radius:9px;padding:9px 13px;font-size:12px;margin-top:6px}
+  .warnbox svg{width:15px;height:15px;flex:none}
+
+  .empty{color:var(--muted);padding:52px 20px;text-align:center;border:1px dashed var(--border-strong);border-radius:var(--radius)}
+  .empty svg{width:34px;height:34px;color:var(--faint);margin-bottom:10px;stroke-width:1.6}
+  .skel{background:linear-gradient(90deg,var(--elev),var(--surface),var(--elev));background-size:200% 100%;
+    animation:sh 1.3s infinite;border-radius:8px}
+  @keyframes sh{0%{background-position:200% 0}100%{background-position:-200% 0}}
+  .mt{margin-top:14px}
+
+  @media(max-width:900px){
+    .app{grid-template-columns:1fr}
+    aside{position:static;height:auto;flex-direction:row;align-items:center;overflow-x:auto;
+      border-right:none;border-bottom:1px solid var(--border);padding:12px 16px;gap:8px}
+    .brand{padding:0 10px 0 4px} .brand .ver{display:none} aside .foot{display:none}
+    nav{flex-direction:row;gap:4px} .navitem{padding:9px 12px}
+    .navitem.active::before{left:0;right:0;top:auto;bottom:-12px;width:auto;height:2px;border-radius:2px}
+    main{padding:22px 18px 50px}
+    .g4,.g3,.g2{grid-template-columns:1fr 1fr}
+    .head{flex-direction:column;align-items:flex-start}
+  }
+  @media(max-width:560px){.g4,.g3,.g2{grid-template-columns:1fr}}
+  @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
 <body>
-<header>
-  <h1>⬡ Hydraia</h1>
-  <span class="badge" id="version">v…</span>
-  <span class="badge local">● local only · 127.0.0.1</span>
-</header>
-<nav>
-  <button data-tab="status" class="active">Status</button>
-  <button data-tab="telemetry">Telemetry</button>
-  <button data-tab="config">Config</button>
-</nav>
-<main>
-  <section id="status"></section>
-  <section id="telemetry" hidden></section>
-  <section id="config" hidden></section>
-</main>
+<div class="app">
+  <aside>
+    <div class="brand">
+      <svg class="logo" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+        <path d="M16 2 28 9v14L16 30 4 23V9L16 2Z" stroke="#22c55e" stroke-width="1.6" fill="rgba(34,197,94,.08)"/>
+        <path d="M11 20V12l5 3 5-3v8" stroke="#22c55e" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <b>Hydraia</b>
+      <span class="ver num" id="version">v…</span>
+    </div>
+    <nav id="nav"></nav>
+    <div class="foot"><span class="dot"></span> local only · 127.0.0.1</div>
+  </aside>
+  <main>
+    <div class="head">
+      <div>
+        <h1 id="ptitle">Status</h1>
+        <p id="psub">Plugin health, skills, agents & dependencies</p>
+      </div>
+      <button class="refresh" id="refresh" aria-label="Refresh">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.4M21 3v6h-6"/></svg>
+        Refresh
+      </button>
+    </div>
+    <section id="view"></section>
+  </main>
+</div>
 <script>
-const $ = (s, r=document) => r.querySelector(s);
-const el = (t, a={}, ...kids) => { const n=document.createElement(t); for(const k in a){ if(k==='class')n.className=a[k]; else if(k==='html')n.innerHTML=a[k]; else n.setAttribute(k,a[k]); } for(const c of kids) n.append(c.nodeType?c:document.createTextNode(c)); return n; };
-const fmt = n => n>=1e6 ? (n/1e6).toFixed(1)+'M' : n>=1e3 ? Math.round(n/1e3)+'k' : ''+n;
+const ICONS = {
+  status:'<path d="M3 12h4l3 8 4-16 3 8h4"/>',
+  telemetry:'<path d="M3 3v18h18"/><rect x="7" y="12" width="3" height="6"/><rect x="12" y="8" width="3" height="10"/><rect x="17" y="5" width="3" height="13"/>',
+  config:'<line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/>',
+  box:'<path d="M21 16V8a2 2 0 0 0-1-1.7l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.7l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5M12 22V12"/>',
+  cpu:'<rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 1v3M15 1v3M9 20v3M15 20v3M20 9h3M20 14h3M1 9h3M1 14h3"/>',
+  layers:'<path d="m12 2 10 5-10 5L2 7l10-5Z"/><path d="m2 17 10 5 10-5M2 12l10 5 10-5"/>',
+  hook:'<path d="M18 6a4 4 0 0 0-8 0v9a2 2 0 0 1-4 0v-2"/><circle cx="18" cy="6" r="1.5"/>',
+  plug:'<path d="M9 2v6M15 2v6M6 8h12v3a6 6 0 0 1-12 0V8ZM12 17v5"/>',
+  check:'<polyline points="20 6 9 17 4 12"/>',
+  x:'<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>',
+  zap:'<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>',
+  clock:'<circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/>',
+  spark:'<path d="M12 3v18M3 12h18"/>',
+  warn:'<path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12" y2="17"/>',
+};
+const svg = (k,cls='') => `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[k]||''}</svg>`;
+const $ = (s,r=document)=>r.querySelector(s);
+const esc = s => String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fmt = n => { n=Number(n)||0; return n>=1e6?(n/1e6).toFixed(1)+'M':n>=1e3?Math.round(n/1e3)+'k':''+n; };
+async function get(p){ const r=await fetch(p); if(!r.ok) throw new Error(r.status); return r.json(); }
 
-async function get(p){ const r = await fetch(p); return r.json(); }
-
-function tab(name){
-  for(const b of document.querySelectorAll('nav button')) b.classList.toggle('active', b.dataset.tab===name);
-  for(const s of ['status','telemetry','config']) $('#'+s).hidden = s!==name;
+const TABS = [
+  {id:'status', icon:'status', title:'Status', sub:'Plugin health, skills, agents & dependencies'},
+  {id:'telemetry', icon:'telemetry', title:'Telemetry', sub:'Local usage — never leaves your machine'},
+  {id:'config', icon:'config', title:'Config', sub:'Run modes — applied on your next session'},
+];
+let current='status';
+function buildNav(){
+  $('#nav').innerHTML = TABS.map(t=>`<button class="navitem${t.id===current?' active':''}" data-tab="${t.id}">${svg(t.icon)}<span>${t.title}</span></button>`).join('');
+  $('#nav').querySelectorAll('.navitem').forEach(b=>b.onclick=()=>go(b.dataset.tab));
 }
-document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{tab(b.dataset.tab); render(b.dataset.tab);});
+function go(id){
+  current=id; const t=TABS.find(x=>x.id===id);
+  $('#ptitle').textContent=t.title; $('#psub').textContent=t.sub;
+  buildNav(); render();
+}
+$('#refresh').onclick=()=>render();
+
+function render(){ ({status:renderStatus,telemetry:renderTelemetry,config:renderConfig}[current])(); }
 
 async function renderStatus(){
-  const s = await get('/api/status');
-  $('#version').textContent = 'v'+s.version;
-  const root = $('#status'); root.innerHTML='';
-  const depRow = (k,v)=>el('div',{class:'row'}, el('span',{},k), el('span',{class:'pill '+(v?'ok':'no')}, v?'installed':'missing'));
-  root.append(
-    el('div',{class:'grid'},
-      el('div',{class:'card'}, el('h3',{},'Plugin'), el('div',{class:'stat'}, 'v'+s.version)),
-      el('div',{class:'card'}, el('h3',{},'Skills'), el('div',{class:'stat'}, ''+s.skillCount)),
-      el('div',{class:'card'}, el('h3',{},'Agents'), el('div',{class:'stat'}, ''+s.agentCount)),
-      el('div',{class:'card'}, el('h3',{},'Hook events'), el('div',{class:'stat'}, ''+(s.hookEvents.length))),
-    ),
-    el('div',{class:'grid',style:'margin-top:12px'},
-      el('div',{class:'card'}, el('h3',{},'Dependencies'),
-        depRow('codegraph',s.deps.codegraph), depRow('markitdown',s.deps.markitdown),
-        depRow('node',s.deps.node), depRow('python',s.deps.python3), depRow('git',s.deps.git)),
-      el('div',{class:'card'}, el('h3',{},'MCP servers'),
-        s.mcpServers.length ? el('div',{}, ...s.mcpServers.map(m=>el('div',{class:'row'},el('span',{},m)))) : el('div',{class:'desc'},'none detected in Claude Code config')),
-      el('div',{class:'card'}, el('h3',{},'Hook events'),
-        ...s.hookEvents.map(h=>el('div',{class:'row'},el('span',{},h)))),
-    )
-  );
-  const mk = (title, items) => { const c = el('div',{class:'card',style:'margin-top:12px'}, el('h3',{},title));
-    const t = el('table',{}, el('tr',{}, el('th',{},'name'), el('th',{},'description')));
-    for(const i of items) t.append(el('tr',{}, el('td',{},i.name), el('td',{class:'desc'}, i.desc||'—')));
-    c.append(t); return c; };
-  root.append(mk('Skills ('+s.skillCount+')', s.skills), mk('Agents ('+s.agentCount+')', s.agents));
+  const v=$('#view'); v.innerHTML='<div class="grid g4">'+Array(4).fill('<div class="card skel" style="height:86px"></div>').join('')+'</div>';
+  let s; try{ s=await get('/api/status'); }catch{ v.innerHTML='<div class="empty">'+svg('warn')+'<div>Cannot reach the dashboard API.</div></div>'; return; }
+  $('#version').textContent='v'+s.version;
+  const kpi=(cls,icon,label,val)=>`<div class="card"><div class="kpi ${cls}"><div class="ic">${svg(icon)}</div><div><h3>${label}</h3><div class="stat num">${val}</div></div></div></div>`;
+  const depN=Object.values(s.deps).filter(Boolean).length, depT=Object.keys(s.deps).length;
+  const depRow=(k,ok)=>`<div class="row"><span>${esc(k)}</span><span class="pill ${ok?'ok':'no'}">${svg(ok?'check':'x')}${ok?'installed':'missing'}</span></div>`;
+  const rows=(items)=>items.map(i=>`<tr><td class="name">${esc(i.name)}</td><td class="desc">${esc(i.desc)||'—'}</td></tr>`).join('');
+  v.innerHTML=`
+    <div class="grid g4">
+      ${kpi('','box','Plugin','v'+esc(s.version))}
+      ${kpi('blue','layers','Skills',s.skillCount)}
+      ${kpi('violet','cpu','Agents',s.agentCount)}
+      ${kpi('amber','hook','Hook events',s.hookEvents.length)}
+    </div>
+    <div class="grid g3 mt">
+      <div class="panel"><div class="ph">${svg('box')}<h2>Dependencies</h2><span class="count num">${depN}/${depT}</span></div>
+        ${Object.entries(s.deps).map(([k,ok])=>depRow(k,ok)).join('')}</div>
+      <div class="panel"><div class="ph">${svg('plug')}<h2>MCP servers</h2><span class="count num">${s.mcpServers.length}</span></div>
+        ${s.mcpServers.length?s.mcpServers.map(m=>`<div class="row"><span>${esc(m)}</span><span class="tag">mcp</span></div>`).join(''):'<div class="row"><span class="desc">None detected in Claude Code config</span></div>'}</div>
+      <div class="panel"><div class="ph">${svg('hook')}<h2>Hook events</h2><span class="count num">${s.hookEvents.length}</span></div>
+        ${s.hookEvents.map(h=>`<div class="row"><span>${esc(h)}</span><span class="pill ok">${svg('check')}active</span></div>`).join('')}</div>
+    </div>
+    <div class="panel mt"><div class="ph">${svg('layers')}<h2>Skills</h2><span class="count num">${s.skillCount}</span></div>
+      <div style="max-height:340px;overflow:auto"><table><thead><tr><th>Name</th><th>Description</th></tr></thead><tbody>${rows(s.skills)}</tbody></table></div></div>
+    <div class="panel mt"><div class="ph">${svg('cpu')}<h2>Agents</h2><span class="count num">${s.agentCount}</span></div>
+      <div style="max-height:340px;overflow:auto"><table><thead><tr><th>Name</th><th>Description</th></tr></thead><tbody>${rows(s.agents)}</tbody></table></div></div>`;
 }
 
+function bars(title,icon,obj,val,cls=''){
+  const e=Object.entries(obj); if(!e.length) return '';
+  const max=Math.max(...e.map(([,x])=>val(x)))||1;
+  const rows=e.sort((a,b)=>val(b[1])-val(a[1])).map(([k,x])=>{const n=val(x);
+    return `<div class="barrow"><div class="barhead"><b>${esc(k)}</b><span class="num">${fmt(n)}</span></div>
+      <div class="track"><div class="fill ${cls}" style="width:${Math.max(2,100*n/max).toFixed(1)}%"></div></div></div>`;}).join('');
+  return `<div class="panel mt"><div class="ph">${svg(icon)}<h2>${title}</h2></div>${rows}</div>`;
+}
+function sparkline(byDay){
+  const days=Object.entries(byDay).sort((a,b)=>a[0]<b[0]?-1:1);
+  if(days.length<2) return '';
+  const vals=days.map(([,d])=>d.tokensIn+d.tokensOut), max=Math.max(...vals)||1, W=100,H=30;
+  const pts=vals.map((v,i)=>`${(i/(vals.length-1)*W).toFixed(1)},${(H-v/max*H).toFixed(1)}`);
+  const line=pts.join(' '), area=`0,${H} ${line} ${W},${H}`;
+  return `<div class="panel mt"><div class="ph">${svg('spark')}<h2>Token volume by day</h2><span class="count num">${days.length}d</span></div>
+    <svg class="spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
+      <defs><linearGradient id="ag" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#22c55e" stop-opacity=".35"/><stop offset="1" stop-color="#22c55e" stop-opacity="0"/></linearGradient></defs>
+      <polygon points="${area}" fill="url(#ag)"/>
+      <polyline points="${line}" fill="none" stroke="#22c55e" stroke-width="1.4" vector-effect="non-scaling-stroke"/>
+    </svg></div>`;
+}
 async function renderTelemetry(){
-  const d = await get('/api/telemetry');
-  const root = $('#telemetry'); root.innerHTML='';
-  if(!d.totals.runs){ root.append(el('div',{class:'empty'},'No runs recorded yet. Telemetry is local-only and fills in as you run /hydraia:feature.')); return; }
-  const t = d.totals;
-  root.append(el('div',{class:'grid'},
-    el('div',{class:'card'}, el('h3',{},'Runs'), el('div',{class:'stat'}, ''+t.runs)),
-    el('div',{class:'card'}, el('h3',{},'Agents dispatched'), el('div',{class:'stat'}, ''+t.agents)),
-    el('div',{class:'card'}, el('h3',{},'Tokens in'), el('div',{class:'stat'}, fmt(t.tokensIn))),
-    el('div',{class:'card'}, el('h3',{},'Tokens out'), el('div',{class:'stat'}, fmt(t.tokensOut))),
-  ));
-  const bars = (title, obj, val) => {
-    const entries = Object.entries(obj); if(!entries.length) return el('span');
-    const max = Math.max(...entries.map(([,v])=>val(v)));
-    const c = el('div',{class:'card',style:'margin-top:12px'}, el('h3',{},title));
-    for(const [k,v] of entries.sort((a,b)=>val(b[1])-val(a[1]))){
-      const n = val(v);
-      c.append(el('div',{style:'margin:8px 0'},
-        el('div',{class:'barlabel'}, el('span',{},k), el('span',{class:'muted'}, fmt(n))),
-        el('div',{class:'bar',style:`width:${Math.max(2,100*n/max)}%`})));
-    }
-    return c;
-  };
-  root.append(bars('Tokens by model (in)', d.byModel, v=>v.in));
-  root.append(bars('Skills used', d.bySkill, v=>v));
-  root.append(bars('Runs by day', d.byDay, v=>v.runs));
-  const rc = el('div',{class:'card',style:'margin-top:12px'}, el('h3',{},'Recent runs'));
-  const tb = el('table',{}, el('tr',{}, el('th',{},'when'), el('th',{},'repo'), el('th',{},'agents'), el('th',{},'in'), el('th',{},'out'), el('th',{},'models')));
-  for(const r of d.recent){
-    const when = r.ts ? new Date(r.ts*1000).toLocaleString() : '—';
-    tb.append(el('tr',{}, el('td',{},when), el('td',{},r.repo||'—'), el('td',{},''+(r.agents||0)),
-      el('td',{},fmt(r.tokensIn||0)), el('td',{},fmt(r.tokensOut||0)),
-      el('td',{class:'desc'}, Object.keys(r.models||{}).join(', '))));
-  }
-  rc.append(tb); root.append(rc);
+  const v=$('#view'); v.innerHTML='<div class="grid g4">'+Array(4).fill('<div class="card skel" style="height:86px"></div>').join('')+'</div>';
+  let d; try{ d=await get('/api/telemetry'); }catch{ v.innerHTML='<div class="empty">'+svg('warn')+'<div>Cannot reach the dashboard API.</div></div>'; return; }
+  if(!d.totals.runs){ v.innerHTML=`<div class="empty">${svg('telemetry')}<div><b>No runs recorded yet.</b></div><div style="margin-top:6px">Telemetry is local-only and fills in as you run <span class="mono">/hydraia:feature</span>.</div></div>`; return; }
+  const t=d.totals;
+  const kpi=(cls,icon,label,val)=>`<div class="card"><div class="kpi ${cls}"><div class="ic">${svg(icon)}</div><div><h3>${label}</h3><div class="stat num">${val}</div></div></div></div>`;
+  const recent=d.recent.map(r=>{const when=r.ts?new Date(r.ts*1000).toLocaleString():'—';
+    return `<tr><td class="mono">${esc(when)}</td><td class="name">${esc(r.repo)||'—'}</td><td class="num">${r.agents||0}</td>
+      <td class="num">${fmt(r.tokensIn)}</td><td class="num">${fmt(r.tokensOut)}</td><td class="desc">${esc(Object.keys(r.models||{}).join(', '))}</td></tr>`;}).join('');
+  v.innerHTML=`
+    <div class="grid g4">
+      ${kpi('','zap','Runs',t.runs)}
+      ${kpi('violet','cpu','Agents dispatched',t.agents)}
+      ${kpi('blue','telemetry','Tokens in',fmt(t.tokensIn))}
+      ${kpi('amber','telemetry','Tokens out',fmt(t.tokensOut))}
+    </div>
+    ${sparkline(d.byDay)}
+    ${bars('Tokens by model (input)','cpu',d.byModel,x=>x.in)}
+    ${bars('Skills used','layers',d.bySkill,x=>x,'blue')}
+    ${bars('Runs by day','clock',d.byDay,x=>x.runs,'violet')}
+    <div class="panel mt"><div class="ph">${svg('clock')}<h2>Recent runs</h2><span class="count num">${d.recent.length}</span></div>
+      <div style="overflow:auto"><table><thead><tr><th>When</th><th>Repo</th><th>Agents</th><th>In</th><th>Out</th><th>Models</th></tr></thead><tbody>${recent}</tbody></table></div></div>`;
 }
 
-const FIELDS = [
-  ['maxConcurrentAgents','number','Max concurrent agents','Sub-agents running at once (token multiplier).'],
+const FIELDS=[
+  ['maxConcurrentAgents','number','Max concurrent agents','Sub-agents running at once — the token multiplier.'],
   ['maxTotalAgents','number','Max agents per run','Hard ceiling on dispatches per pipeline run.'],
-  ['specDrive','select:strict,relaxed,off','Spec-drive gate','strict blocks edits without a plan; relaxed warns; off disables.'],
+  ['specDrive','select:strict,relaxed,off','Spec-drive gate','strict blocks edits without a plan · relaxed warns · off disables.'],
   ['quickMode','bool','Quick-mode','Allow the human-approved trivial-change shortcut.'],
-  ['autoInstallDeps','bool','Auto-install deps','Offer to install codegraph/markitdown on first run.'],
-  ['codegraphAuto','bool','Code-graph auto init/sync','Bootstrap and keep the code graph fresh at session start.'],
-  ['runSummary','bool','Run summary','Print the agents/models/tokens summary at run close.'],
+  ['autoInstallDeps','bool','Auto-install deps','Offer to install codegraph / markitdown on first run.'],
+  ['codegraphAuto','bool','Code-graph auto init / sync','Bootstrap and keep the code graph fresh at session start.'],
+  ['runSummary','bool','Run summary','Print the agents / models / tokens summary at run close.'],
   ['telemetry','bool','Telemetry (local)','Record each run locally. Never transmitted.'],
   ['telemetryRetentionDays','number','Telemetry retention (days)','How long to keep local records.'],
-  ['reviewMode','select:double,single','Review rigor','double = Superpowers + ECC passes; single = one pass.'],
+  ['reviewMode','select:double,single','Review rigor','double = Superpowers + ECC passes · single = one pass.'],
   ['selfReviewPasses','number','Plan self-review passes','How many times Phase 3 re-audits the plan.'],
   ['securityGates','bool','Security gates','Threat model + security scans. Turning off is discouraged.'],
   ['pdfConversion','bool','PDF → markdown','Convert PDFs via markitdown before context.'],
   ['cavemanInternal','bool','Caveman internal style','Token-saving compression for internal reasoning only.'],
   ['dashboardPort','number','Dashboard port','Port this dashboard binds on 127.0.0.1.'],
 ];
-
 async function renderConfig(){
-  const cfg = await get('/api/config');
-  const root = $('#config'); root.innerHTML='';
-  const form = el('form',{});
-  for(const [key,type,label,help] of FIELDS){
-    let input;
-    if(type==='bool'){ input = el('input',{type:'checkbox'}); input.checked = !!cfg[key]; }
-    else if(type.startsWith('select:')){ input = el('select',{}); for(const o of type.slice(7).split(',')){ const opt=el('option',{value:o},o); if(cfg[key]===o)opt.selected=true; input.append(opt);} }
-    else { input = el('input',{type:'number'}); input.value = cfg[key]; }
-    input.dataset.key = key; input.dataset.type = type;
-    const f = el('div',{class:'field'}, el('div',{}, el('label',{},label), el('small',{},help)), input);
-    form.append(f);
-    if(key==='securityGates'){ f.after(el('div',{class:'warnbox',id:'secwarn',hidden:'hidden'}, '⚠ Security gates off — threat model and security scans will be skipped.')); }
-  }
-  const status = el('span',{class:'muted'});
-  const save = el('button',{class:'primary',type:'button'},'Save');
-  save.onclick = async () => {
-    const body = {};
-    for(const i of form.querySelectorAll('[data-key]')){
-      const k=i.dataset.key, t=i.dataset.type;
-      body[k] = t==='bool' ? i.checked : t==='number' ? Number(i.value) : i.value;
-    }
-    status.textContent='saving…';
-    const r = await fetch('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
-    status.textContent = r.ok ? '✓ saved (applies to new sessions)' : '✗ error';
-    status.className = r.ok ? 'saved' : 'no';
+  const v=$('#view'); v.innerHTML='<div class="panel skel" style="height:520px"></div>';
+  let cfg; try{ cfg=await get('/api/config'); }catch{ v.innerHTML='<div class="empty">'+svg('warn')+'<div>Cannot reach the dashboard API.</div></div>'; return; }
+  const field=([key,type,label,help])=>{
+    let ctrl;
+    if(type==='bool') ctrl=`<label class="sw"><input type="checkbox" data-key="${key}" data-type="bool" ${cfg[key]?'checked':''}><span class="track2"></span><span class="knob"></span></label>`;
+    else if(type.startsWith('select:')) ctrl=`<select data-key="${key}" data-type="${type}">${type.slice(7).split(',').map(o=>`<option ${cfg[key]===o?'selected':''}>${o}</option>`).join('')}</select>`;
+    else ctrl=`<input type="number" data-key="${key}" data-type="number" value="${esc(cfg[key])}">`;
+    const warn = key==='securityGates'?`<div class="warnbox" id="secwarn" ${cfg[key]?'hidden':''}>${svg('warn')}Security gates off — threat model and security scans will be skipped.</div>`:'';
+    return `<div class="field"><div><label>${label}</label><small>${help}</small>${warn}</div>${ctrl}</div>`;
   };
-  const secToggle = () => { const w=$('#secwarn'); const c=form.querySelector('[data-key=securityGates]'); if(w) w.hidden = c.checked; };
-  form.addEventListener('change', secToggle); setTimeout(secToggle,0);
-  form.append(el('div',{class:'actions'}, save, status));
-  root.append(form);
+  v.innerHTML=`<div class="panel"><div class="ph">${svg('config')}<h2>Run modes</h2></div><form id="cfgform">
+    ${FIELDS.map(field).join('')}
+    <div class="actions"><button type="button" class="primary" id="save">Save configuration</button><span id="cfgstatus"></span></div>
+  </form></div>`;
+  const form=$('#cfgform');
+  const secSync=()=>{const w=$('#secwarn'),c=form.querySelector('[data-key=securityGates]'); if(w)w.hidden=c.checked;};
+  form.addEventListener('change',secSync);
+  $('#save').onclick=async()=>{
+    const body={};
+    form.querySelectorAll('[data-key]').forEach(i=>{const k=i.dataset.key,t=i.dataset.type;
+      body[k]= t==='bool'?i.checked : t==='number'?Number(i.value) : i.value;});
+    const st=$('#cfgstatus'); st.textContent='Saving…'; st.className='';
+    try{ const r=await fetch('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+      if(!r.ok) throw 0; st.textContent='✓ Saved — applies to new sessions'; st.className='saved';
+    }catch{ st.textContent='✗ Could not save'; st.className='errtxt'; }
+  };
 }
 
-function render(name){ ({status:renderStatus,telemetry:renderTelemetry,config:renderConfig}[name])(); }
-render('status');
+buildNav(); go('status');
 </script>
 </body>
 </html>
