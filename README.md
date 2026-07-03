@@ -487,13 +487,15 @@ claude plugin install hydraia
 `.claude-plugin/marketplace.json` from that clone. Updates pull the latest
 `main` (`claude plugin marketplace update hydraia`).
 
-Then install the two external tools (validates and updates them too):
-```
-/hydraia:doctor
-```
-
 That's it — every skill and agent Hydraia uses ships inside the plugin, so there
 is nothing else to clone or wire up.
+
+**You don't need to install the external tools by hand.** The first time you run
+`/hydraia:feature`, Phase 0 detects whether `codegraph` and `markitdown` are present
+and offers to install them inline — one click, no commands to memorize. You can
+still run `/hydraia:doctor` yourself anytime to check or update them, and it prints
+per-OS (`brew` / `apt` / `dnf` / `winget`) copy-paste commands for the system
+runtimes (`git`, Node, Python) a plugin can't install for you.
 
 ---
 

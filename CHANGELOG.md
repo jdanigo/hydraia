@@ -6,6 +6,25 @@ All notable changes to Hydraia are documented here. Format follows
 
 ## [Unreleased]
 
+## [0.3.0] — 2026-07-03
+
+### Changed
+- **Zero-touch dependency install.** Users complained that getting the external
+  tools running meant knowing about and manually running `/hydraia:doctor`. Now the
+  pipeline handles it: **Phase 0 detects missing managed binaries and offers to
+  install them inline, once, via `AskUserQuestion`** (one click — *Install now* /
+  *Skip this run*), then runs the bundled installer. Nothing to memorize. On approval
+  it installs; on skip it degrades gracefully and does not nag again that run. If a
+  system runtime is missing (`npm`/`pip`/`node`/`python3`/`git` — which a plugin must
+  not auto-install), it surfaces `doctor --check` with copy-paste hints instead of
+  silently failing.
+- **`doctor.sh` prints per-OS install commands** for the prerequisites it can't
+  install — `brew` on macOS, `apt`/`dnf` on Linux, `winget` on Windows, with a
+  download-URL fallback — so the manual part is copy-paste, not a scavenger hunt.
+- **`preflight.sh` persists the plugin root** (`~/.cache/hydraia/plugin-root`) at
+  session start, because `CLAUDE_PLUGIN_ROOT` is not set for the model's shell — this
+  is what lets Phase 0 locate and run the bundled installer on its own.
+
 ## [0.2.3] — 2026-07-03
 
 ### Fixed
@@ -144,6 +163,7 @@ verify) with security gates throughout.
   in `LICENSES/`, `CONTRIBUTING.md`, and a CI workflow validating manifests, bash
   syntax, discovery counts, and license completeness.
 
+[0.3.0]: https://github.com/jdanigo/hydraia/compare/v0.2.3...v0.3.0
 [0.2.3]: https://github.com/jdanigo/hydraia/compare/v0.2.2...v0.2.3
 [0.2.2]: https://github.com/jdanigo/hydraia/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/jdanigo/hydraia/compare/v0.2.0...v0.2.1

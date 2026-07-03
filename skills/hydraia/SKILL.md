@@ -98,6 +98,27 @@ trivial you MAY *offer* to skip the design ceremony — but the human decides, n
 
 ## Phase 0 — Context (always first)
 
+0. **Dependency check + one-click install (do this once, silently if all present).**
+   The user should never have to run install commands by hand. Detect what is
+   available: `command -v codegraph`, `command -v markitdown`, `command -v npm`,
+   `command -v pip` (or `pip3`).
+   - If **all present** → say nothing, continue.
+   - If a **managed** binary is missing but its installer is present (codegraph needs
+     `npm`, markitdown needs `pip`), offer to install it **inline, once**, via
+     `AskUserQuestion` — e.g. "Hydraia works best with codegraph (fast graph queries)
+     and markitdown (PDF→markdown). Install now?" with options *Install now* /
+     *Skip this run*. On **Install**, run the bundled installer (single source of
+     truth) — resolve its path from the session cache and run it:
+     ```
+     ROOT="$(cat "${HOME}/.cache/hydraia/plugin-root" 2>/dev/null)"
+     [ -n "$ROOT" ] || ROOT="$(ls -d "${HOME}/.claude/plugins/cache/hydraia/hydraia/"*/ 2>/dev/null | sort -V | tail -1)"
+     "$ROOT/hooks/doctor.sh" --install --yes
+     ```
+     Then report what installed. On **Skip**, continue and do not ask again this run.
+   - If an **installer itself** is missing (`npm`/`pip` absent, or `node`/`python3`/
+     `git`), these are system runtimes a plugin must not auto-install — run
+     `"$ROOT/hooks/doctor.sh" --check` and show the user its per-OS install hints,
+     then continue degraded. Never block the pipeline on a missing dependency.
 1. The session-start hook already bootstrapped the code graph — `codegraph init` the
    first time in a project (initialize + index, in the background), or `codegraph
    sync` on later sessions. Do not ask the user to sync anything.

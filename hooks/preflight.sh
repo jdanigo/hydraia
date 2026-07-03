@@ -6,7 +6,16 @@ set -uo pipefail
 
 CACHE_DIR="${HOME}/.cache/hydraia"
 CACHE_FILE="${CACHE_DIR}/deps-check"
+ROOT_FILE="${CACHE_DIR}/plugin-root"
 STALE_SECS=86400
+mkdir -p "$CACHE_DIR" 2>/dev/null || true
+
+# --- 0. Persist the plugin root ---
+# CLAUDE_PLUGIN_ROOT is set for hook processes but NOT for the model's Bash tool, so
+# the pipeline cannot locate doctor.sh on its own. Record it here (once per session)
+# so Phase 0 can offer to install missing dependencies without the user running any
+# command manually.
+[ -n "${CLAUDE_PLUGIN_ROOT:-}" ] && printf '%s' "$CLAUDE_PLUGIN_ROOT" > "$ROOT_FILE" 2>/dev/null || true
 
 # --- 1. Code graph bootstrap/sync ---
 # First time in a project (no .codegraph/): `codegraph init` — it initializes AND

@@ -30,11 +30,23 @@ check_prereq() {
     echo "  MISS $bin — $hint"
   fi
 }
-check_prereq node    "install Node.js >=18 from https://nodejs.org"
-check_prereq npm     "ships with Node.js"
-check_prereq python3 "install Python 3.8+ from https://python.org"
-check_prereq pip     "python3 -m ensurepip --upgrade"
-check_prereq git     "install git from https://git-scm.com"
+# Per-OS, copy-paste install hints so the user never has to hunt for commands.
+if [ "$(uname 2>/dev/null)" = "Darwin" ]; then
+  H_NODE="brew install node"; H_PY="brew install python"; H_GIT="brew install git"
+elif command -v apt-get >/dev/null 2>&1; then
+  H_NODE="sudo apt-get install -y nodejs npm"; H_PY="sudo apt-get install -y python3 python3-pip"; H_GIT="sudo apt-get install -y git"
+elif command -v dnf >/dev/null 2>&1; then
+  H_NODE="sudo dnf install -y nodejs npm"; H_PY="sudo dnf install -y python3 python3-pip"; H_GIT="sudo dnf install -y git"
+elif command -v winget >/dev/null 2>&1; then
+  H_NODE="winget install OpenJS.NodeJS"; H_PY="winget install Python.Python.3.12"; H_GIT="winget install Git.Git"
+else
+  H_NODE="install Node.js >=18 from https://nodejs.org"; H_PY="install Python 3.8+ from https://python.org"; H_GIT="install git from https://git-scm.com"
+fi
+check_prereq node    "$H_NODE"
+check_prereq npm     "ships with Node.js — $H_NODE"
+check_prereq python3 "$H_PY"
+check_prereq pip     "ships with Python — $H_PY (or: python3 -m ensurepip --upgrade)"
+check_prereq git     "$H_GIT"
 
 # --- Managed binaries ---
 echo "-- managed binaries --"
