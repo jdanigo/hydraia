@@ -286,10 +286,29 @@ security flaw here is far cheaper than at review time.
    Assume the implementer has zero prior context and cannot see the spec or your
    session — everything they need is in their task block. **Write to the weakest
    plausible executor:** the plan must be detailed enough that a cheaper or weaker
-   model (Sonnet 5, or an external agent like Codex or Gemini) can implement each
-   task correctly with no judgment calls left open — exact paths, exact signatures,
-   exact test commands. If a task would require the executor to infer intent or make
-   a design decision, it is under-specified — push that decision up into the plan.
+   model (Sonnet 5, Haiku, or an external agent like Codex or Gemini) can implement
+   each task correctly with no judgment calls left open — exact paths, exact
+   signatures, exact test commands. If a task would require the executor to infer
+   intent or make a design decision, it is under-specified — push that decision up
+   into the plan. This is where token cost is won or lost: a fully-specified task
+   executes in one shot on a cheap model; an under-specified one forces a re-dispatch
+   or an Opus rescue, which is the expensive path the plan exists to avoid.
+
+   **Literal content, never a description of it.** A task that creates a file MUST
+   embed the file's FULL verbatim content in a code block — never "create the file
+   with the appropriate content". A task that edits a file MUST give the exact
+   `old_string` → `new_string` (or a unique quoted anchor + the exact text to
+   insert) — never "add error handling here". The executor copies; it does not
+   compose.
+
+   **Anchor edits by unique quoted text, never by line number alone.** Line numbers
+   drift as earlier tasks change the file; every `Modify` must carry a unique text
+   anchor the executor can match exactly. State this in the task.
+
+   **Every task carries a runnable verification with its expected output** — not
+   only TDD steps. Config, docs, and scaffolding tasks each end with an exact
+   command and the exact output that proves the task landed (e.g.
+   `grep -c X file → 2`). A task with no way to self-check is under-specified.
 
    **QA cases (parallel, when `qaFunctional` is on and the run has acceptance
    criteria).** While writing the plan, dispatch the `qa-functional` agent
@@ -301,13 +320,29 @@ security flaw here is far cheaper than at review time.
    guess around. The plan must contain the test tasks that implement these
    cases (see the Phase 4 QA automation rule).
 2. **Self-review the plan (always TWO passes):**
-   - Pass A: critique your own plan hard. **Reject and revise if ANY task lacks
-     exact `Files:` paths, `Interfaces:`, or independently testable steps**, or says
-     vaguely "edit the code / update the component". When `qaFunctional` is on,
-     also reject if any acceptance criterion lacks BOTH a QA case (in the
-     qa-functional doc) and an implementing task in the plan. Also hunt gaps, hidden coupling
-     (check the graph), missing tests, unstated assumptions, over-broad changes, and
-     drift from the spec. Revise.
+   - Pass A: critique your own plan hard. **The Haiku test — apply it to every
+     task:** could a model with zero context and no permission to make decisions
+     produce EXACTLY the intended result from this task block alone? If any step
+     needs the executor to infer, deduce, or invent, the task is under-specified —
+     reject and push the decision up into the plan. Concretely, **reject and revise
+     if ANY task:**
+     - lacks exact `Files:` paths, `Interfaces:`, or independently testable steps,
+       or says vaguely "edit the code / update the component";
+     - **describes content instead of embedding it** — a create-file task without the
+       full verbatim file, or an edit task without the exact `old_string`→`new_string`
+       / quoted anchor + literal insert;
+     - **anchors an edit to a bare line number** instead of a unique quoted string;
+     - **lacks a runnable verification with expected output** (not just TDD tasks —
+       config/docs/scaffolding too);
+     - **contains a placeholder** — `TODO`, `TBD`, `...`, "similar to Task N",
+       "add appropriate X", "handle edge cases" — repeat the real content instead;
+     - **references a name (symbol, file, agent, skill) that no earlier task defines
+       and does not already exist**, or uses an inconsistent name/signature across
+       tasks (`foo()` in Task 3 vs `fooBar()` in Task 7 is a bug).
+     When `qaFunctional` is on, also reject if any acceptance criterion lacks BOTH a
+     QA case (in the qa-functional doc) and an implementing task in the plan. Also
+     hunt gaps, hidden coupling (check the graph), missing tests, unstated
+     assumptions, over-broad changes, and drift from the spec. Revise.
    - Pass B: run a **second full pass regardless** — even if Pass A found nothing,
      re-audit the whole plan against the same checklist with fresh eyes (Pass A can
      miss on the first read, and its own revisions introduce new gaps). Revise again

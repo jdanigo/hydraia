@@ -283,7 +283,7 @@ simply extends that same principle across tools and terminals.
 | Security-sensitive code (auth, user input, external calls) where a design-level miss is expensive | any pipeline run — the threat model + 3 security gates are always on |
 | Frontend work | `/hydraia:feature` — executors auto-consult `ui-ux-pro-max` for style, palette, type scale, a11y |
 | Turn a Jira ticket exported as PDF into shipped code | `/hydraia:feature path/to/ticket.pdf …` — it's converted to markdown before planning |
-| Greenfield service/module from scratch | `/hydraia:feature` — Phase 2 dispatches `architect` + `code-architect` (and `microservices-architect` for multi-service splits) before the spec |
+| Greenfield service/module from scratch | `/hydraia:architect` — `greenfield-architect` drives elicitation → architecture (`architect` + `code-architect`, `microservices-architect` for splits) → stack → `api-design` contract → ADRs before the spec |
 | Big feature where token cost worries you | any pipeline run — the Opus/Sonnet split keeps the expensive model off the mechanical work automatically |
 | Onboarding to a repo you've never seen | `/hydraia:graph` — map structure, call sites, and dependents without reading everything |
 | Enforcing tests across a team's work | `/hydraia:feature` — TDD in Phase 4, spec-conformance + test run in the Phase 6 verify gate |
@@ -336,28 +336,45 @@ with you, and an **autonomous half** that builds without interruption.
 ```
 /hydraia:feature <desc>          full pipeline
    Language gate · Model guard
+  -1 Triage    intent → route: feature · story · bug · perf/DB ·
+               greenfield · review (ambiguous → asks, never assumes)
    ┌─ INTERACTIVE (pauses allowed — this is where design happens) ─┐
    0 Context   codegraph query + PDF→md
    1 Think     karpathy gate · clarifying questions
    2 Design    brainstorm (questions → 2-3 approaches → present →
                YOUR approval) → write spec  docs/hydraia/specs/…
                + threat model + adversarial pass
-   3 Plan      writing-plans (exact Files, Interfaces, TDD steps)
+   3 Plan      writing-plans (exact Files, Interfaces, TDD steps,
+               literal content — the Haiku test) + qa-functional cases
                → self-review (rejects thin plans) → freeze plan
                → ARM gate (.active-plan)   ← needs spec + plan
    └─ AUTONOMOUS (never pause; only a real blocker stops it) ───────┐
-   4 Execute   fresh hydraia-executor (Sonnet) per task
+   4 Execute   fresh hydraia-executor (Sonnet) per task · qa-automation
    5 Review    branch review (Opus) + reviewer panel + security gate
-   6 Verify    run REAL build/tests · repo-scan/prod-audit
-               → DISARM gate · print credits
+   6 Verify    run REAL build/tests · QA matrix · E2E gate · docs sync
+               · repo-scan/prod-audit → DISARM gate · print credits
 
 /hydraia:plan <desc>     Phases 0→3 only, then STOP
    writes spec + frozen plan, does NOT arm the gate, writes no code.
    The human review point before building. Then run /hydraia:feature.
 
+/hydraia:story <story>   Phases -1→3, PO-first, then STOP
+   story-analysis (INVEST, ACs) → spec → QA cases → frozen plan.
+
+/hydraia:perf | :db <symptom>   measurement-first tuning route
+   baseline → perf-engineer / db-performance-tuner → numeric target
+   → build → Phase 6 re-measures against it.
+
+/hydraia:architect <idea>   greenfield route
+   greenfield-architect: elicit → architecture → stack → api-design
+   contract → ADRs → full build.
+
 /hydraia:review [focus]  Phases 5→6 on the current branch
    double review + cross-stack security gate + verify — no matter who
    (or what agent) wrote the code. Touches no earlier phase.
+
+/hydraia:e2e | :devops | :observability | :docs   opt-in specialists
+   e2e-runner · devops-engineer · sre-observability · docs-engineer.
 
 /hydraia:graph <query>   codegraph only — call sites, dependents, blast
    radius. No pipeline, no edits.
@@ -394,12 +411,13 @@ executor subagents whose model is pinned in their frontmatter.
 
 | Phase | Bundled skill(s) used |
 |-------|------------------------|
+| -1 Triage | routing table in `hydraia`; `story-analysis`, `performance-tuning`, `db-optimization`, `greenfield-architect`, `systematic-debugging` per route |
 | 1 Think | `karpathy-guidelines` |
-| 2 Design | `brainstorming` |
-| 3 Plan | `writing-plans` |
-| 4 Execute | `subagent-driven-development`, `test-driven-development`, `ui-ux-pro-max` |
+| 2 Design | `brainstorming`; `api-design`, `adr`, `microservices-architect` on greenfield |
+| 3 Plan | `writing-plans` + `qa-functional` (Given/When/Then cases + traceability matrix) |
+| 4 Execute | `subagent-driven-development`, `test-driven-development`, `ui-ux-pro-max`, stack patterns (`react`/`node`/`dotnet`/`python`/`go`/`springboot`), `qa-automation`, `e2e-testing` |
 | 5 Review | `requesting-code-review`, `receiving-code-review`, ECC reviewer agents, `security-scan`, `security-review` |
-| 6 Verify | `verification-before-completion`, `repo-scan`, `production-audit` |
+| 6 Verify | `verification-before-completion`, `repo-scan`, `production-audit`; QA matrix + E2E gate (`e2e-runner`) + docs sync (`docs-engineer`) |
 | all | `caveman` — compresses internal/subagent comms only |
 
 **Context comes from the code graph, not blind reads.** `hooks/preflight.sh`

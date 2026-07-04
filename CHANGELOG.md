@@ -6,6 +6,17 @@ All notable changes to Hydraia are documented here. Format follows
 
 ## [Unreleased]
 
+- **Phase 3 self-review hardened for cheap-model execution.** The plan contract now
+  enforces the "Haiku test": every task must embed literal file content (not a
+  description of it), give exact `old_string`→`new_string` edits anchored by unique
+  quoted text (never bare line numbers), carry a runnable verification with expected
+  output, contain no placeholders (`TODO`/`TBD`/"similar to Task N"), and keep
+  names/signatures consistent and resolvable across tasks. A fully-specified plan
+  executes in one shot on Sonnet/Haiku instead of forcing a re-dispatch or Opus
+  rescue — the token-economy win moves into the contract, not the planner's memory.
+- **README:** the "how it works" circuit and per-phase skill table now reflect
+  Phase -1 routing, the QA/E2E/docs Phase 6 gates, and all wave-1/2 commands.
+
 ## 0.8.0 — 2026-07-04
 
 Engineering-team expansion, wave 2: delivery — E2E, docs, DevOps, observability.
