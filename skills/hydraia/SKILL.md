@@ -20,8 +20,9 @@ Explicit commands skip classification and force their route
 (`/hydraia:feature` → feature · `/hydraia:story` → user story ·
 `/hydraia:plan` → feature, stopping after Phase 3 · `/hydraia:review` →
 review · `/hydraia:perf` → performance · `/hydraia:db` → performance,
-DB-shaped · `/hydraia:architect` → greenfield). Plain-language requests
-are classified by signals:
+DB-shaped · `/hydraia:architect` → greenfield · `/hydraia:e2e` → E2E suite ·
+`/hydraia:devops` → DevOps config · `/hydraia:observability` → instrumentation ·
+`/hydraia:docs` → docs sync). Plain-language requests are classified by signals:
 
 | Intent | Signals | Route |
 |---|---|---|
@@ -131,7 +132,8 @@ mode, telemetry, run summary, codegraph auto). YOU honor the prompt-level ones:
 (`single` → run only the Superpowers review pass in Phase 5, not both),
 `selfReviewPasses` (Phase 3 plan self-review count), `qaFunctional` (false → skip
 the qa-functional dispatch in Phase 3, drop the AC-coverage freeze check, and skip
-qa-automation in Phases 4 and 6), `securityGates` (false → the
+qa-automation in Phases 4 and 6), `e2eGate` (false → skip the Phase 6 E2E gate),
+`docsSync` (false → skip the Phase 6 docs-engineer sync), `securityGates` (false → the
 human disabled threat model / security scans; note it, do not silently assume they
 ran), `pdfConversion` (false → skip markitdown), `cavemanInternal`. Defaults apply
 when a key is absent.
@@ -406,6 +408,17 @@ dispatch `qa-automation` (mode: verify) against the case doc. Every case must be
 either automated — its `Test ref` points at a real test that ran green in the
 build above — or explicitly `manual — <reason>`. Any `pending`, missing ref, or
 red case means the run is NOT done: fix and re-verify before closing.
+
+**E2E gate (when `e2eGate` is on AND the repo has an E2E surface):** dispatch
+`e2e-runner` (mode: verify). It runs the critical-flow suite with the real e2e
+command; every non-quarantined critical flow must pass green. A failing critical
+flow means the run is NOT done — fix and re-verify. If the repo has no E2E surface,
+the gate is skipped (note it in the run log); never fabricate a suite to satisfy it.
+
+**Docs sync (when `docsSync` is on):** dispatch `docs-engineer` (mode: sync). It
+updates any README / API docs / CHANGELOG / ADR-index that drifted from the branch's
+changed surface and reports what changed. This step never blocks the run — stale
+docs do not fail a build; the report tells you what was updated.
 
 **Disarm the gate.** Once the run is verified and done, remove the active-plan
 marker so a later unrelated edit is gated again: `rm -f docs/hydraia/.active-plan`.
