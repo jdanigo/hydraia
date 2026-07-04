@@ -1,7 +1,7 @@
 # Hydraia
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)
-![Plugin version](https://img.shields.io/badge/plugin-v0.8.0-blue.svg)
+![Plugin version](https://img.shields.io/badge/plugin-v0.9.0-blue.svg)
 
 A personal agentic development harness for Claude Code. One command runs the
 entire feature pipeline: it **collaborates with you on the design** (brainstorm,
@@ -75,7 +75,7 @@ you meant to write. Hydraia doesn't let you skip them.
 | 2 · Design | Brainstorm → exhaustive spec + threat model | Opus 4.8 |
 | 3 · Plan | Detailed plan + self-review loop (max 2 passes) | Opus 4.8 |
 | 4 · Execute | Fresh sub-agent per task; UI intelligence on frontend work | Sonnet 5 |
-| 5 · Review | **Pass 1** whole-branch review + **Pass 2** ECC reviewers + security gate | Opus 4.8 |
+| 5 · Review | **Pass 1** whole-branch review + **Pass 2** diff-scoped reviewers + security gate, findings deduped | Opus (+ Sonnet/Haiku for mechanical) |
 | 6 · Verify | Run tests, confirm against spec, secrets/deps scan, summarize | Opus 4.8 |
 
 Token discipline (compressed internal comms, `caveman` style) runs in the

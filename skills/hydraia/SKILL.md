@@ -385,6 +385,15 @@ plan truly needs more than the ceiling, that is the human's call to raise
 is also why Phase 3 plans use coarse, consolidated tasks — a plan of 100+ atomic
 tasks is a planning smell, not a parallelism win.
 
+**Verify each task actually landed before dispatching the next wave (do not trust the
+report alone).** A subagent's summary is not proof — a task can report "done" or
+"delegated" without having committed (this failure is real, not hypothetical). After
+each wave, confirm the work exists in git before moving on: `git log --oneline -<n>`
+shows the expected commits and `git status --porcelain` is clean (or shows only the
+next wave's territory). If a claimed commit is missing, re-dispatch that one task —
+never build the next wave on an unverified one. The check costs a few tokens; a
+corrupted run caught at Phase 6 costs far more.
+
 **Frontend rule:** if a task creates or changes UI, the executor MUST consult the
 **ui-ux-pro-max** skill for styles, palettes, typography, and accessibility before
 writing markup.
@@ -404,29 +413,50 @@ decision. It names every test with its case ID (e.g. `TC-1.1`) and fills the
 matrix `Test ref` column with `path/to/test:line` per case, or
 `manual — <reason>` for cases that cannot be automated.
 
-## Phase 5 — Double code review (both passes on Opus 4.8)
+## Phase 5 — Double code review (both passes)
 
 Run BOTH passes. Do not stop after one.
 
+**Scope the panel to the diff — do not dispatch every reviewer on every run.** First
+read the actual changed surface (`git diff --name-only` against the branch point).
+Dispatch only the reviewers whose file types are present in the diff — running six
+Opus reviewers on a two-file TypeScript change is wasted money. This is the single
+biggest per-run cost lever, so route deliberately:
+
+- **Always** (any diff): `security-reviewer`, `silent-failure-hunter`, and
+  `code-reviewer` — correctness and security are never file-type-gated.
+- **Only when that language/framework is in the diff:** `typescript-reviewer`
+  (`.ts/.js`), `react-reviewer` (`.tsx/.jsx`), `vue-reviewer` (`.vue`),
+  `angular-reviewer` (Angular files), `python-reviewer` (`.py`),
+  `go-reviewer` (`.go`), `java-reviewer` (`.java`), `csharp-reviewer` (`.cs`),
+  `database-reviewer` (SQL/migrations), `type-design-analyzer` /
+  `performance-optimizer` only when the diff's nature (new public types, hot paths)
+  actually warrants them.
+
+**Model tiers — buy Opus only where judgment pays.** Correctness- and
+security-bearing reviewers (`hydraia-reviewer`, `security-reviewer`,
+`silent-failure-hunter`, the matched language reviewer) run on **Opus 4.8**.
+Mechanical passes (style/lint-level nits, doc-comment checks) run on **Sonnet** or
+**Haiku** — never spend Opus on a formatting scan.
+
 1. **Pass 1 — Superpowers review:** use **requesting-code-review** to dispatch the
    `hydraia-reviewer` subagent (Opus 4.8) against the whole branch.
-2. **Pass 2 — ECC review:** dispatch the ECC reviewer agents (Opus 4.8):
-   `code-reviewer`, `security-reviewer`, and `silent-failure-hunter` at minimum;
-   add the language-specific reviewer that matches the stack —
-   `csharp-reviewer` / `java-reviewer` for .NET & Spring Boot,
-   `typescript-reviewer` for Node & TypeScript, `react-reviewer` for React,
-   `angular-reviewer` for Angular, `vue-reviewer` for Vue,
-   `python-reviewer` for Python, `go-reviewer` for Go.
-3. **Security gate (mandatory, cross-stack):** run the ECC security skills over the
-   diff — **security-scan** (secrets, injection, unsafe patterns, vulnerable deps)
-   and **security-review** (OWASP Top 10 semantic pass). These are language-agnostic
-   and cover Node, C#, React, and Angular even though those have no dedicated
-   security skill. For Spring Boot add **springboot-security**; for Django add
-   **django-security**. Treat any high-severity finding as a blocker.
-4. Use **receiving-code-review** to triage findings from all passes. Fix everything
-   that is correct-and-material; high-severity security findings are non-negotiable.
-   Re-review only the changed surface if fixes were substantial (max one re-review
-   cycle).
+2. **Pass 2 — ECC review:** dispatch the diff-scoped reviewer set above (Opus for the
+   correctness/security-bearing ones per the tier rule).
+3. **Security gate (mandatory, cross-stack — always runs regardless of diff scope):**
+   run the ECC security skills over the diff — **security-scan** (secrets, injection,
+   unsafe patterns, vulnerable deps) and **security-review** (OWASP Top 10 semantic
+   pass). These are language-agnostic and cover Node, C#, React, and Angular even
+   though those have no dedicated security skill. For Spring Boot add
+   **springboot-security**; for Django add **django-security**. Treat any
+   high-severity finding as a blocker.
+4. **Dedup before you triage.** Pass 1, Pass 2, and the security skills overlap — the
+   same issue often surfaces three times. Collapse findings by (file, line, root
+   cause) into one entry BEFORE triage, so you spend triage tokens once per real
+   problem, not once per report. Then use **receiving-code-review** to triage: fix
+   everything correct-and-material; high-severity security findings are
+   non-negotiable. Re-review only the changed surface if fixes were substantial (max
+   one re-review cycle).
 
 ## Phase 6 — Verify & close
 

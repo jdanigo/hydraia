@@ -6,6 +6,26 @@ All notable changes to Hydraia are documented here. Format follows
 
 ## [Unreleased]
 
+## 0.9.0 — 2026-07-04
+
+Efficiency + reliability pass: cut per-run token cost and close a real
+subagent-trust gap. No new components — pure pipeline-contract tightening.
+
+- **Phase 5 reviewers scoped to the diff.** The review panel no longer dispatches
+  every reviewer on every run — `security-reviewer`, `silent-failure-hunter`, and
+  `code-reviewer` always run; language reviewers run only when their file types are
+  actually in the diff. Running six Opus reviewers on a two-file change was the
+  biggest avoidable per-run cost; it is now routed by changed surface.
+- **Model tiers in review.** Correctness/security-bearing reviewers stay on Opus;
+  mechanical passes (style/lint/doc-comment) drop to Sonnet/Haiku. Opus is spent
+  only where judgment pays.
+- **Findings deduped before triage.** Pass 1, Pass 2, and the security skills
+  overlap; findings are now collapsed by (file, line, root cause) so triage tokens
+  are spent once per real problem, not once per report.
+- **Phase 4 verifies each task landed in git before the next wave.** A subagent
+  report is no longer trusted as proof — `git log`/`git status` confirm the commit
+  exists before building on it, catching the "reported done but didn't commit"
+  failure at the wave boundary instead of at Phase 6.
 - **Phase 3 self-review hardened for cheap-model execution.** The plan contract now
   enforces the "Haiku test": every task must embed literal file content (not a
   description of it), give exact `old_string`→`new_string` edits anchored by unique
@@ -15,7 +35,8 @@ All notable changes to Hydraia are documented here. Format follows
   executes in one shot on Sonnet/Haiku instead of forcing a re-dispatch or Opus
   rescue — the token-economy win moves into the contract, not the planner's memory.
 - **README:** the "how it works" circuit and per-phase skill table now reflect
-  Phase -1 routing, the QA/E2E/docs Phase 6 gates, and all wave-1/2 commands.
+  Phase -1 routing, the QA/E2E/docs Phase 6 gates, diff-scoped review, and all
+  wave-1/2 commands.
 
 ## 0.8.0 — 2026-07-04
 
