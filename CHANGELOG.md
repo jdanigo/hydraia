@@ -6,6 +6,27 @@ All notable changes to Hydraia are documented here. Format follows
 
 ## [Unreleased]
 
+## 0.8.0 — 2026-07-04
+
+Engineering-team expansion, wave 2: delivery — E2E, docs, DevOps, observability.
+Completes the 8-agent / 9-skill roadmap.
+
+- **e2e-runner agent (Sonnet):** Playwright/Cypress critical-flow E2E, framework
+  auto-detected (never imposed), flaky quarantine. Phase 6 gate — a failing
+  critical flow fails the run; skipped cleanly when no E2E surface exists.
+- **docs-engineer agent (Sonnet):** syncs README / API docs / CHANGELOG / ADR
+  index with the code surface; Phase 6 updates and reports drift, never blocks.
+- **devops-engineer agent (Sonnet):** CI/CD, Docker, IaC following the repo's
+  platform; deploy/secrets/destructive infra flagged for human approval, never
+  executed by the agent.
+- **sre-observability agent (Sonnet):** structured logging, RED/USE metrics, OTel
+  traces, health checks, alerts; OTel-first, never logs secrets or PII.
+- **e2e-testing skill:** Playwright playbook — page objects, role/testid
+  selectors, condition-based waits, flaky quarantine, CI sharding.
+- **/hydraia:e2e, :devops, :observability, :docs commands**; Phase 6 E2E gate +
+  docs sync; `e2eGate` and `docsSync` config keys (default on).
+- Design spec: `docs/hydraia/specs/2026-07-04-devops-docs-e2e-observability-design.md`.
+
 ## 0.7.0 — 2026-07-03
 
 Engineering-team expansion, wave 1C: greenfield architecture + contract-first APIs.

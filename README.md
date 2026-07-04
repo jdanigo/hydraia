@@ -1,7 +1,7 @@
 # Hydraia
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)
-![Plugin version](https://img.shields.io/badge/plugin-v0.7.0-blue.svg)
+![Plugin version](https://img.shields.io/badge/plugin-v0.8.0-blue.svg)
 
 A personal agentic development harness for Claude Code. One command runs the
 entire feature pipeline: it **collaborates with you on the design** (brainstorm,
@@ -116,6 +116,10 @@ them are steps you'd never run by hand on a normal day.
 | `/hydraia:perf <symptom>` | -1–6 | Measurement-first performance run: baseline → profile-driven diagnosis (`perf-engineer`) → spec with numeric target → implement → **re-measure** in verify. |
 | `/hydraia:db <symptom>` | -1–6 | DB bottleneck run: engine detection, read-only evidence (EXPLAIN, stats, locks), findings by taxonomy, expand-contract migrations — `db-performance-tuner` as primary. |
 | `/hydraia:architect <idea>` | -1–6 | Greenfield: guided elicitation → architecture proposals → confirmed stack → API contract → ADRs → full build pipeline. |
+| `/hydraia:e2e [focus]` | — | Generate + run a Playwright critical-flow E2E suite (auto-detected framework). |
+| `/hydraia:devops <request>` | — | Author CI/CD, Docker, or IaC — deploy and secrets flagged for human approval. |
+| `/hydraia:observability <request>` | — | Instrument logs/metrics/traces/alerts — OTel-first, never logs secrets/PII. |
+| `/hydraia:docs [focus]` | — | Sync README, API docs, CHANGELOG, ADR index with the code — reports drift. |
 | `/hydraia:review [focus]` | 5–6 | Double code review + security gate on the **current branch**. Code already exists. |
 | `/hydraia:graph <query>` | — | Query the code graph (call sites, blast radius) without running the pipeline. |
 | `/hydraia:doctor` | — | Validate, install, and update external deps (`codegraph`, `markitdown`), with consent. |
@@ -523,7 +527,7 @@ hydraia/
 ├── LICENSES/                     upstream licenses (all MIT)
 ├── CONTRIBUTING.md               structure + how to add a skill
 ├── README.md                     this file
-├── skills/                       45 skills, all self-contained
+├── skills/                       46 skills, all self-contained
 │   ├── hydraia/                  the 7-phase pipeline contract (the brain)
 │   ├── process (15)              brainstorming, writing-plans, executing-plans,
 │   │                            subagent-driven-development, dispatching-parallel-agents,
@@ -540,22 +544,24 @@ hydraia/
 │   ├── security (7)             security-scan, security-review, security-bounty-hunter,
 │   │                            repo-scan, production-audit, django-security,
 │   │                            springboot-security
+│   ├── e2e (1)                   e2e-testing
 │   ├── ui / ux (7)              ui-ux-pro-max, ui-styling, design, design-system,
 │   │                            brand, banner-design, slides
 │   └── token discipline (1)     caveman
-├── agents/                       22 agents, all self-contained
+├── agents/                       26 agents, all self-contained
 │   ├── hydraia-executor.md       per-task executor (Sonnet 5)
 │   ├── hydraia-reviewer.md       whole-branch reviewer (Opus 4.8)
 │   ├── architecture (2)          architect, code-architect
 │   ├── qa (2)                    qa-functional, qa-automation
 │   ├── performance (2)           perf-engineer, db-performance-tuner
+│   ├── delivery (4)              e2e-runner, docs-engineer, devops-engineer, sre-observability
 │   ├── language reviewers (8)    go-reviewer, angular-reviewer, react-reviewer,
 │   │                            vue-reviewer, typescript-reviewer, python-reviewer,
 │   │                            java-reviewer, csharp-reviewer
 │   └── cross-cutting (6)         code-reviewer, security-reviewer, silent-failure-hunter,
 │                                database-reviewer, performance-optimizer,
 │                                type-design-analyzer
-├── commands/                     feature, plan, story, perf, db, architect, review, graph, doctor, resume, dashboard
+├── commands/                     feature, plan, story, perf, db, architect, e2e, devops, observability, docs, review, graph, doctor, resume, dashboard
 ├── hooks/
 │   ├── hooks.json                registers preflight (SessionStart) + gate (PreToolUse)
 │   ├── preflight.sh              codegraph sync + daily dep nudge
@@ -602,6 +608,8 @@ hydraia/
 | `greenfield-architect` | From-scratch design — elicitation, architecture, stack, contract, ADRs |
 | `api-design` | Contract-first APIs — OpenAPI 3.1 / GraphQL SDL / gRPC proto3 |
 | `adr` | Architecture Decision Records under docs/hydraia/adr/ |
+| **Testing / delivery** | |
+| `e2e-testing` | Playwright critical-flow playbook — page objects, stable selectors, flaky quarantine |
 | **Security** | |
 | `security-scan` | Scan `.claude/` config for injection and misconfig risks |
 | `security-review` | Security checklist for auth, input, secrets, APIs |
@@ -636,6 +644,11 @@ hydraia/
 | **Performance** | |
 | `perf-engineer` | Profile-driven diagnosis: baseline, ranked bottlenecks, hypotheses (Opus) |
 | `db-performance-tuner` | Multi-engine DB tuning: EXPLAIN, indexes, N+1, locks, pooling (Opus) |
+| **Delivery** | |
+| `e2e-runner` | Playwright critical-flow E2E; Phase 6 gate (Sonnet) |
+| `docs-engineer` | Syncs README/API/CHANGELOG/ADR with code; Phase 6, non-blocking (Sonnet) |
+| `devops-engineer` | CI/CD, Docker, IaC; deploy flagged for human approval (Sonnet) |
+| `sre-observability` | Logs/metrics/traces/alerts; OTel-first, redaction-strict (Sonnet) |
 | **Language reviewers** | |
 | `go-reviewer` | Go — idioms, concurrency, error handling, performance |
 | `angular-reviewer` | Angular — change detection, RxJS, signals, templates |

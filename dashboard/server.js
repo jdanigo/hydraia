@@ -38,6 +38,8 @@ const DEFAULTS = {
   reviewMode: 'double',         // double | single
   selfReviewPasses: 2,
   qaFunctional: true,
+  e2eGate: true,
+  docsSync: true,
   securityGates: true,
   pdfConversion: true,
   cavemanInternal: true,

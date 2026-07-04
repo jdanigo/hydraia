@@ -323,6 +323,8 @@ const FIELDS=[
   ['reviewMode','select:double,single','Review rigor','double = Superpowers + ECC passes · single = one pass.'],
   ['selfReviewPasses','number','Plan self-review passes','How many times Phase 3 re-audits the plan.'],
   ['qaFunctional','bool','Functional QA','Phase 3 derives Given/When/Then cases per acceptance criterion and gates the plan freeze on coverage. Off skips qa-functional and qa-automation.'],
+  ['e2eGate','bool','E2E gate','Phase 6 runs the critical-flow E2E suite when the repo has one; a failing flow blocks the run. Skipped if no E2E surface exists.'],
+  ['docsSync','bool','Docs sync','Phase 6 updates drifted README / API docs / CHANGELOG. Never blocks — reports what changed.'],
   ['securityGates','bool','Security gates','Threat model + security scans. Turning off is discouraged.'],
   ['pdfConversion','bool','PDF → markdown','Convert PDFs via markitdown before context.'],
   ['cavemanInternal','bool','Caveman internal style','Token-saving compression for internal reasoning only.'],
