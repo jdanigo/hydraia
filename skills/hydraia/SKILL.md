@@ -301,6 +301,33 @@ security flaw here is far cheaper than at review time.
    insert) — never "add error handling here". The executor copies; it does not
    compose.
 
+   **Never point at the spec (or any other document/code) for content the executor
+   must produce.** This is the single most common self-containment failure. A task
+   that says "implement per spec §3", "follow the skeleton in the design",
+   "match the existing User validation", or "see the spec for the schema" is NOT
+   self-contained — the executor may be a context-less cheap model (Gemini Flash,
+   Codex, Haiku) that CANNOT and WILL NOT open the spec, so it guesses, truncates,
+   or invents. Inline the actual content into the task, even though it duplicates the
+   spec. **Here DRY yields to self-containment:** the spec holds design rationale;
+   the task holds everything needed to execute, repeated in full. This is exactly why
+   the plan is a portable hand-off artifact ("execute anywhere" — Codex, Gemini, a
+   second session): portability only holds if every task carries its own content. A
+   runtime hook (`hooks/plancheck.sh`) scans the frozen plan's task bodies for these
+   reference smells and BLOCKS the gate-arm if it finds any — so a referencing plan
+   cannot reach execution.
+
+   **State each task's execution environment — assume nothing from context.** A cheap
+   executor does not know your repo's toolchain. Every task that runs anything gives
+   the EXACT command (not "run the tests" but `pnpm vitest run src/x.test.ts`), the
+   working directory, any dependency/env-var/service precondition, and — if it depends
+   on an earlier task's output — names that task and the files it must find already
+   present. Out-of-order or standalone execution must fail loudly, not silently guess.
+
+   **Verify completeness of large literals, not just existence.** A cheap model can
+   truncate a long verbatim block. For any sizable inlined file, the task's
+   verification confirms it landed WHOLE — e.g. `wc -l file → N` or a grep for the
+   exact last line — not merely that the file exists.
+
    **Anchor edits by unique quoted text, never by line number alone.** Line numbers
    drift as earlier tasks change the file; every `Modify` must carry a unique text
    anchor the executor can match exactly. State this in the task.
@@ -331,6 +358,14 @@ security flaw here is far cheaper than at review time.
      - **describes content instead of embedding it** — a create-file task without the
        full verbatim file, or an edit task without the exact `old_string`→`new_string`
        / quoted anchor + literal insert;
+     - **references the spec, another document, or other code for content it must
+       produce** — "follow spec §X", "see the design", "as in the spec", "match the
+       existing X" — instead of inlining that content into the task (the
+       `plancheck.sh` hook blocks the gate-arm on these, but catch them here first);
+     - **runs a command without the exact invocation** ("run the tests" with no
+       command/dir), or **assumes an earlier task's output without naming it**, or
+       **lacks a completeness check on a large inlined literal** (existence only, no
+       line-count / last-line assert);
      - **anchors an edit to a bare line number** instead of a unique quoted string;
      - **lacks a runnable verification with expected output** (not just TDD tasks —
        config/docs/scaffolding too);
@@ -364,7 +399,11 @@ security flaw here is far cheaper than at review time.
    The `gate.sh` hook blocks all source-code edits until this marker exists — which
    is exactly why no code can be written before Phases 2–3 complete. Do not arm the
    marker if the spec is missing. (`/hydraia:plan` stops here and does NOT arm the
-   marker — planning must never authorize edits.)
+   marker — planning must never authorize edits.) **A second hook
+   (`plancheck.sh`) fires on this arm command and scans the plan's task bodies for
+   reference smells ("follow spec §X", "see the design", etc.); if the plan is not
+   self-contained it BLOCKS the arm — so a plan that would fail on a cheap executor
+   cannot reach Phase 4. If it blocks, inline the referenced content and re-arm.**
 
 ## Phase 4 — Execution (delegated → Sonnet 5)
 

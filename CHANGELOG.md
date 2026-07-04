@@ -6,6 +6,30 @@ All notable changes to Hydraia are documented here. Format follows
 
 ## [Unreleased]
 
+## 0.9.1 — 2026-07-04
+
+Hard self-containment guarantee: any cheap, context-less executor (Haiku,
+Sonnet 5, Gemini Flash, Codex) can run a frozen plan from the task block alone —
+enforced at runtime, not just asked of the planner.
+
+- **`plancheck.sh` hook (new, PreToolUse on Bash).** When the pipeline arms the
+  spec-drive gate, this hook scans the frozen plan's task bodies for reference
+  smells — "follow spec §X", "see the design", "as in the spec", section
+  pointers — and BLOCKS the arm if the plan is not self-contained. A plan that
+  would make a cheap executor guess, truncate, or improvise cannot reach Phase 4.
+  Fail-open on error; `HYDRAIA_ALLOW_DIRECT=1` overrides a false positive.
+- **Contract: never reference the spec/other docs/other code for content.** The
+  plan must inline the literal content into each task even though it duplicates the
+  spec — DRY yields to self-containment, because the executor cannot open the spec.
+  This is what makes the plan a genuinely portable hand-off artifact.
+- **Contract: state each task's execution environment.** Exact command, working
+  directory, dependency/service preconditions, and named prior-task outputs — a
+  cheap executor assumes nothing from context.
+- **Contract: verify completeness of large literals** (line-count / last-line
+  assert), not just file existence — catches a truncated verbatim block.
+- **Self-review Pass A** gains explicit rejects for spec-referencing, missing exact
+  commands, unnamed task dependencies, and existence-only checks on big literals.
+
 ## 0.9.0 — 2026-07-04
 
 Efficiency + reliability pass: cut per-run token cost and close a real

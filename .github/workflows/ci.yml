@@ -13,7 +13,7 @@ jobs:
             python3 -m json.tool "$f" > /dev/null && echo "OK $f"
           done
       - name: Bash syntax
-        run: bash -n hooks/preflight.sh hooks/doctor.sh hooks/gate.sh hooks/summary.sh hooks/agents.sh hooks/config.sh
+        run: bash -n hooks/preflight.sh hooks/doctor.sh hooks/gate.sh hooks/plancheck.sh hooks/summary.sh hooks/agents.sh hooks/config.sh
       - name: Dashboard server syntax
         run: node -c dashboard/server.js && echo "server.js OK"
       - name: Discovery counts

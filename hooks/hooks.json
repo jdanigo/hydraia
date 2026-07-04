@@ -32,6 +32,16 @@
             "async": false
           }
         ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/plancheck.sh\"",
+            "async": false
+          }
+        ]
       }
     ],
     "SubagentStop": [

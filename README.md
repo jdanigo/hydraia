@@ -1,7 +1,7 @@
 # Hydraia
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)
-![Plugin version](https://img.shields.io/badge/plugin-v0.9.0-blue.svg)
+![Plugin version](https://img.shields.io/badge/plugin-v0.9.1-blue.svg)
 
 A personal agentic development harness for Claude Code. One command runs the
 entire feature pipeline: it **collaborates with you on the design** (brainstorm,
@@ -581,9 +581,10 @@ hydraia/
 │                                type-design-analyzer
 ├── commands/                     feature, plan, story, perf, db, architect, e2e, devops, observability, docs, review, graph, doctor, resume, dashboard
 ├── hooks/
-│   ├── hooks.json                registers preflight (SessionStart) + gate (PreToolUse)
+│   ├── hooks.json                registers preflight (SessionStart) + gate/plancheck (PreToolUse)
 │   ├── preflight.sh              codegraph sync + daily dep nudge
 │   ├── gate.sh                   spec-drive gate: blocks code edits before a plan is frozen
+│   ├── plancheck.sh              self-containment gate: blocks arming a plan that references the spec
 │   └── doctor.sh                 validate / install / update deps
 └── docs/hydraia/                 specs/, plans/, and runs/ written by the pipeline
 ```
