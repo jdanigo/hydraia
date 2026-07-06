@@ -1,7 +1,7 @@
 # Hydraia
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)
-![Plugin version](https://img.shields.io/badge/plugin-v0.9.2-blue.svg)
+![Plugin version](https://img.shields.io/badge/plugin-v0.10.0-blue.svg)
 
 🇬🇧 English · 🇪🇸 [Español](README.es.md)
 
@@ -76,9 +76,9 @@ you meant to write. Hydraia doesn't let you skip them.
 | 1 · Think | Forced think-before-coding gate (karpathy-guidelines) | Opus 4.8 |
 | 2 · Design | Brainstorm → exhaustive spec + threat model | Opus 4.8 |
 | 3 · Plan | Detailed plan + self-review loop (max 2 passes) | Opus 4.8 |
-| 4 · Execute | Fresh sub-agent per task; UI intelligence on frontend work | Sonnet 5 |
-| 5 · Review | **Pass 1** whole-branch review + **Pass 2** diff-scoped reviewers + security gate, findings deduped | Opus (+ Sonnet/Haiku for mechanical) |
-| 6 · Verify | Run tests, confirm against spec, secrets/deps scan, summarize | Opus 4.8 |
+| 4 · Execute | Fresh sub-agent per task; heartbeat watchdog auto re-pushes hung agents; UI intelligence on frontend work | Sonnet 5 |
+| 5 · Review | Depth chosen at plan freeze (Full/Lite/Custom, security floor always on) — **Pass 1** whole-branch + **Pass 2** diff-scoped reviewers + security gate, deduped | Opus (+ Sonnet/Haiku for mechanical) |
+| 6 · Verify | Run tests, confirm against spec, secrets/deps scan, brief-or-detailed summary | Opus 4.8 |
 
 Token discipline (compressed internal comms, `caveman` style) runs in the
 background across all phases — it never touches code, plans, or your summary.
@@ -102,6 +102,10 @@ them are steps you'd never run by hand on a normal day.
 | **Double code review** | A whole-branch reviewer pass, then a panel: 8 stack-specific reviewers (Go, Angular, React, Vue, TS, Python, Java, C#) plus cross-cutting ones (security, silent-failure, performance, types, database). |
 | **Resumable runs** | Every run writes a durable log with a phase checklist. If it's interrupted — crash, closed laptop, killed session — `/hydraia:resume` picks it up exactly where it stopped. |
 | **Persistent artifacts** | Specs and plans are saved under `docs/hydraia/` — reviewable, diff-able, reusable, and auditable after the fact. |
+| **You pick the depth** | At plan freeze Hydraia asks how much review ceremony this change warrants (Full / Lite / Custom) and whether you want a brief or detailed closing summary — so a trivial fix need not pay for a full double review. The security floor is never skippable. |
+| **Hung-agent watchdog** | Executors emit heartbeats; if one stalls without committing, the pipeline re-dispatches it automatically instead of waiting for you to nudge it — and surfaces a real blocker only after retries are exhausted. |
+| **QA as a committed artifact** | Functional QA is written to `docs/hydraia/qa/` and committed — a reviewable Given/When/Then case matrix you can read and keep, not QA done in the model's head. |
+| **Sub-agent-aware telemetry** | The local dashboard attributes tokens and models to each sub-agent (not just the main session), with per-model input/output and a per-run main-vs-sub split. |
 | **Feed it a PDF** | Point it at a Jira export or a design-doc PDF; `markitdown` converts it to markdown before it enters context. No copy-paste. |
 | **Plain-language trigger** | "add a `--dry-run` flag to the CLI…" auto-runs the whole pipeline — no slash command required. |
 | **Bilingual** | Replies in English or Español (asked once per run). Code, commits, specs, and plans stay English and portable. |

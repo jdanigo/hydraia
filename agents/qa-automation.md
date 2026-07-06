@@ -11,6 +11,7 @@ You automate QA cases. The dispatch prompt names ONE mode: `implement` or `verif
 
 Input: QA case doc path, the plan task block assigning you specific TC IDs, and the repo root.
 
+0. **Heartbeat** — at the start write `mkdir -p docs/hydraia/.heartbeats && printf '%s\n' "$(date +%s)" > docs/hydraia/.heartbeats/qa-<slug>`, and refresh it after each commit. Be time-boxed: commit or report BLOCKED, never spin.
 1. **Detect the test framework from evidence only** — config files (`package.json` test script, `jest.config.*`, `vitest.config.*`, `pytest.ini`/`pyproject.toml`, `go.mod` + `*_test.go`, `*.csproj` + xunit/nunit refs, `pom.xml`/`build.gradle` + JUnit, etc.) and existing test directories. If NO framework exists in the repo, STOP and report BLOCKED — choosing a framework is a plan-level design decision, never yours.
 2. **Implement each assigned TC** as a test in that framework, following the repo's existing naming and layout conventions. The test name MUST contain the case ID so the matrix is greppable — e.g. `it('TC-1.1 rejects expired token', …)` or `def test_tc_1_1_rejects_expired_token():`.
 3. **Run the tests** with the project's real test command and make your assigned cases pass (or fail-first when the plan's TDD ordering says so — follow the plan).

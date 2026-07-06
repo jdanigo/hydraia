@@ -286,33 +286,67 @@ function sparkline(byDay){
       <polyline points="${line}" fill="none" stroke="#22c55e" stroke-width="1.4" vector-effect="non-scaling-stroke"/>
     </svg></div>`;
 }
+// Per-model panel showing BOTH input and output tokens (two bars per model),
+// so the Opus-plan / Sonnet-execution split is legible at a glance.
+function modelBars(title,icon,obj){
+  const e=Object.entries(obj); if(!e.length) return '';
+  const max=Math.max(...e.flatMap(([,x])=>[x.in||0,x.out||0]))||1;
+  const rows=e.sort((a,b)=>((b[1].in||0)+(b[1].out||0))-((a[1].in||0)+(a[1].out||0))).map(([k,x])=>{
+    const bar=(n,cls)=>`<div class="track" style="margin:3px 0"><div class="fill ${cls}" style="width:${Math.max(2,100*n/max).toFixed(1)}%"></div></div>`;
+    return `<div class="barrow"><div class="barhead"><b>${esc(k)}</b>
+        <span class="num">${fmt(x.in||0)} in · ${fmt(x.out||0)} out${x.cr?` · ${fmt(x.cr)} cache`:''}</span></div>
+      ${bar(x.in||0,'')}${bar(x.out||0,'blue')}</div>`;}).join('');
+  return `<div class="panel mt"><div class="ph">${svg(icon)}<h2>${title}</h2>
+    <span class="count">in <span style="color:var(--accent)">▬</span>  out <span style="color:var(--blue)">▬</span></span></div>${rows}</div>`;
+}
 async function renderTelemetry(){
   const v=$('#view'); v.innerHTML='<div class="grid g4">'+Array(4).fill('<div class="card skel" style="height:86px"></div>').join('')+'</div>';
   let d; try{ d=await get('/api/telemetry'); }catch{ v.innerHTML='<div class="empty">'+svg('warn')+'<div>Cannot reach the dashboard API.</div></div>'; return; }
   if(!d.totals.runs){ v.innerHTML=`<div class="empty">${svg('telemetry')}<div><b>No runs recorded yet.</b></div><div style="margin-top:6px">Telemetry is local-only and fills in as you run <span class="mono">/hydraia:feature</span>.</div></div>`; return; }
   const t=d.totals;
-  const kpi=(cls,icon,label,val)=>`<div class="card"><div class="kpi ${cls}"><div class="ic">${svg(icon)}</div><div><h3>${label}</h3><div class="stat num">${val}</div></div></div></div>`;
-  const recent=d.recent.map(r=>{const when=r.ts?new Date(r.ts*1000).toLocaleString():'—';
-    return `<tr><td class="mono">${esc(when)}</td><td class="name">${esc(r.repo)||'—'}</td><td class="num">${r.agents||0}</td>
-      <td class="num">${fmt(r.tokensIn)}</td><td class="num">${fmt(r.tokensOut)}</td><td class="desc">${esc(Object.keys(r.models||{}).join(', '))}</td></tr>`;}).join('');
+  const kpi=(cls,icon,label,val,sub)=>`<div class="card"><div class="kpi ${cls}"><div class="ic">${svg(icon)}</div><div><h3>${label}</h3><div class="stat num">${val}</div>${sub?`<div class="desc num">${sub}</div>`:''}</div></div></div>`;
+  const recent=d.recent.map((r,i)=>{const when=r.ts?new Date(r.ts*1000).toLocaleString():'—';
+    const sub=r.subagents||{}; const models=Object.keys(r.models||{}).join(', ');
+    const byType=Object.entries(r.agentsByType||{}).map(([k,c])=>`${c} ${k}`).join(', ');
+    const detail=`<tr class="det" id="det${i}" hidden><td colspan="7" class="desc">
+        ${byType?`<b>Agents:</b> ${esc(byType)} &nbsp; `:''}
+        <b>Main:</b> ${fmt((r.main||{}).tokensIn)} in · ${fmt((r.main||{}).tokensOut)} out &nbsp;
+        <b>Sub-agents:</b> ${sub.count||0} · ${fmt(sub.tokensIn)} in · ${fmt(sub.tokensOut)} out &nbsp;
+        ${Object.keys(r.skills||{}).length?`<b>Skills:</b> ${esc(Object.keys(r.skills).join(', '))}`:''}</td></tr>`;
+    return `<tr style="cursor:pointer" onclick="var e=document.getElementById('det${i}');e.hidden=!e.hidden">
+        <td class="mono">${esc(when)}</td><td class="name">${esc(r.repo)||'—'}</td>
+        <td class="num">${r.agents||0}</td><td class="num">${sub.count||0}</td>
+        <td class="num">${fmt(r.tokensIn)}</td><td class="num">${fmt(r.tokensOut)}</td>
+        <td class="desc">${esc(models)}</td></tr>${detail}`;}).join('');
+  const subPanel = t.subAgents ? `<div class="panel mt"><div class="ph">${svg('cpu')}<h2>Sub-agent usage</h2>
+      <span class="count num">${t.subAgents} finished</span></div>
+      <div class="row"><span>Sub-agent tokens</span><span class="num">${fmt(t.subTokensIn)} in · ${fmt(t.subTokensOut)} out</span></div>
+      <div class="row"><span>Main-session tokens</span><span class="num">${fmt(t.mainTokensIn)} in · ${fmt(t.mainTokensOut)} out</span></div>
+      ${Object.keys(d.subByModel||{}).length?Object.entries(d.subByModel).map(([m,u])=>`<div class="row"><span class="mono">${esc(m)}</span><span class="num">${fmt(u.in)} in · ${fmt(u.out)} out</span></div>`).join(''):''}
+    </div>` : '';
   v.innerHTML=`
     <div class="grid g4">
       ${kpi('','zap','Runs',t.runs)}
-      ${kpi('violet','cpu','Agents dispatched',t.agents)}
-      ${kpi('blue','telemetry','Tokens in',fmt(t.tokensIn))}
-      ${kpi('amber','telemetry','Tokens out',fmt(t.tokensOut))}
+      ${kpi('violet','cpu','Agents dispatched',t.agents, t.subAgents?`${t.subAgents} sub-agent runs`:'')}
+      ${kpi('blue','telemetry','Tokens in',fmt(t.tokensIn), t.subTokensIn?`${fmt(t.subTokensIn)} from sub-agents`:'')}
+      ${kpi('amber','telemetry','Tokens out',fmt(t.tokensOut), t.subTokensOut?`${fmt(t.subTokensOut)} from sub-agents`:'')}
     </div>
     ${sparkline(d.byDay)}
-    ${bars('Tokens by model (input)','cpu',d.byModel,x=>x.in)}
+    ${modelBars('Tokens by model','cpu',d.byModel)}
+    ${subPanel}
+    ${bars('Agents by type','cpu',d.byAgentType||{},x=>x,'violet')}
     ${bars('Skills used','layers',d.bySkill,x=>x,'blue')}
     ${bars('Runs by day','clock',d.byDay,x=>x.runs,'violet')}
     <div class="panel mt"><div class="ph">${svg('clock')}<h2>Recent runs</h2><span class="count num">${d.recent.length}</span></div>
-      <div style="overflow:auto"><table><thead><tr><th>When</th><th>Repo</th><th>Agents</th><th>In</th><th>Out</th><th>Models</th></tr></thead><tbody>${recent}</tbody></table></div></div>`;
+      <div class="desc" style="margin:-6px 0 8px">Click a row for the main / sub-agent split.</div>
+      <div style="overflow:auto"><table><thead><tr><th>When</th><th>Repo</th><th>Agents</th><th>Sub</th><th>In</th><th>Out</th><th>Models</th></tr></thead><tbody>${recent}</tbody></table></div></div>`;
 }
 
 const FIELDS=[
   ['maxConcurrentAgents','number','Max concurrent agents','Sub-agents running at once — the token multiplier.'],
   ['maxTotalAgents','number','Max agents per run','Hard ceiling on dispatches per pipeline run.'],
+  ['heartbeatStaleSecs','number','Heartbeat stale (secs)','A dispatched task with no commit and a heartbeat older than this is treated as hung and re-dispatched.'],
+  ['maxTaskRetries','number','Max task re-pushes','How many times a stalled Phase-4 task is auto re-dispatched before it becomes a blocker.'],
   ['specDrive','select:strict,relaxed,off','Spec-drive gate','strict blocks edits without a plan · relaxed warns · off disables.'],
   ['quickMode','bool','Quick-mode','Allow the human-approved trivial-change shortcut.'],
   ['autoInstallDeps','bool','Auto-install deps','Offer to install codegraph / markitdown on first run.'],

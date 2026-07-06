@@ -28,6 +28,8 @@ const TELEM_FILE = path.join(HOME, '.cache', 'hydraia', 'telemetry.jsonl');
 const DEFAULTS = {
   maxConcurrentAgents: 6,
   maxTotalAgents: 30,
+  heartbeatStaleSecs: 300,
+  maxTaskRetries: 2,
   specDrive: 'strict',          // strict | relaxed | off
   quickMode: true,
   autoInstallDeps: true,
@@ -166,8 +168,13 @@ function telemetry() {
   for (const ln of lines) {
     try { runs.push(JSON.parse(ln)); } catch {}
   }
-  const totals = { runs: runs.length, agents: 0, tokensIn: 0, tokensOut: 0, cacheRead: 0 };
-  const byModel = {};
+  const totals = {
+    runs: runs.length, agents: 0, tokensIn: 0, tokensOut: 0, cacheRead: 0,
+    subAgents: 0, subTokensIn: 0, subTokensOut: 0, mainTokensIn: 0, mainTokensOut: 0,
+  };
+  const byModel = {};          // combined main+sub, in/out/cache
+  const subByModel = {};       // sub-agents only
+  const byAgentType = {};      // dispatched agent counts by type
   const bySkill = {};
   const byDay = {};
   for (const r of runs) {
@@ -175,10 +182,21 @@ function telemetry() {
     totals.tokensIn += r.tokensIn || 0;
     totals.tokensOut += r.tokensOut || 0;
     totals.cacheRead += r.cacheRead || 0;
+    const sub = r.subagents || {};
+    totals.subAgents += sub.count || 0;
+    totals.subTokensIn += sub.tokensIn || 0;
+    totals.subTokensOut += sub.tokensOut || 0;
+    totals.mainTokensIn += (r.main && r.main.tokensIn) || 0;
+    totals.mainTokensOut += (r.main && r.main.tokensOut) || 0;
     for (const [m, u] of Object.entries(r.models || {})) {
-      byModel[m] = byModel[m] || { in: 0, out: 0 };
-      byModel[m].in += (u.in || 0); byModel[m].out += (u.out || 0);
+      byModel[m] = byModel[m] || { in: 0, out: 0, cr: 0 };
+      byModel[m].in += (u.in || 0); byModel[m].out += (u.out || 0); byModel[m].cr += (u.cr || 0);
     }
+    for (const [m, u] of Object.entries(sub.models || {})) {
+      subByModel[m] = subByModel[m] || { in: 0, out: 0 };
+      subByModel[m].in += (u.in || 0); subByModel[m].out += (u.out || 0);
+    }
+    for (const [a, c] of Object.entries(r.agentsByType || {})) byAgentType[a] = (byAgentType[a] || 0) + c;
     for (const [s, c] of Object.entries(r.skills || {})) bySkill[s] = (bySkill[s] || 0) + c;
     if (r.ts) {
       const day = new Date(r.ts * 1000).toISOString().slice(0, 10);
@@ -186,7 +204,7 @@ function telemetry() {
       byDay[day].runs += 1; byDay[day].tokensIn += r.tokensIn || 0; byDay[day].tokensOut += r.tokensOut || 0;
     }
   }
-  return { totals, byModel, bySkill, byDay, recent: runs.slice(-25).reverse() };
+  return { totals, byModel, subByModel, byAgentType, bySkill, byDay, recent: runs.slice(-25).reverse() };
 }
 
 function writeConfig(body) {

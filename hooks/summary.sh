@@ -50,6 +50,11 @@ repo="$(git -C "$base" rev-parse --show-toplevel 2>/dev/null || true)"
 
 marker="$repo/docs/hydraia/.run-complete"
 [ -f "$marker" ] || exit 0        # no completed run this turn → stay silent
+# The marker's first line selects verbosity: "detailed" → full breakdown, anything
+# else (incl. empty / legacy "done") → the brief box. Phase 6 writes it per the
+# human's plan-freeze choice.
+DEPTH="$(head -n1 "$marker" 2>/dev/null | tr -d '[:space:]')"
+case "$DEPTH" in detailed) DEPTH="detailed" ;; *) DEPTH="brief" ;; esac
 rm -f "$marker" 2>/dev/null || true   # one-shot: consume it so we emit once
 
 # --- Config: whether to print the summary and/or record telemetry -----------
@@ -66,23 +71,48 @@ if [ "$TELEMETRY" = "true" ]; then
 fi
 NOW="$(date +%s)"
 
-# --- Build the summary from the transcript (and append telemetry) ------------
-summary="$(printf '%s' "$transcript_path" | HY_REPO="$repo" HY_TELEM="$TELEM_FILE" HY_NOW="$NOW" python3 -c '
-import sys, json, os
+# --- Gather run-scoped context for the summary ------------------------------
+# Sub-agent telemetry sidecar (written by agents.sh at each SubagentStop). It lives
+# in the repo and accumulates across sessions/compaction, so it is the authoritative
+# source for sub-agent model/token usage that the Stop-hook transcript cannot see.
+SIDE="$repo/docs/hydraia/.agents/subagents.jsonl"
 
-path = sys.stdin.read().strip()
-repo = os.environ.get("HY_REPO", "")
+# Detailed mode enriches with "what shipped". Compute git facts here (the hook already
+# has the repo) and the original request from the newest run log. Best-effort; empty
+# on failure — never block the summary.
+GITSTAT=""; REQUEST=""
+if [ "$DEPTH" = "detailed" ]; then
+  base="$(git -C "$repo" merge-base HEAD origin/main 2>/dev/null || git -C "$repo" merge-base HEAD main 2>/dev/null || true)"
+  if [ -n "$base" ]; then
+    GITSTAT="$(git -C "$repo" diff --shortstat "$base"..HEAD 2>/dev/null | sed 's/^ *//' || true)"
+  fi
+  newlog="$(ls -t "$repo"/docs/hydraia/runs/*.md 2>/dev/null | head -n1 || true)"
+  if [ -n "$newlog" ] && [ -f "$newlog" ]; then
+    REQUEST="$(grep -m1 -iE '^\s*(request|original request)\s*[:*-]' "$newlog" 2>/dev/null | sed -E 's/^[^:]*:\s*//; s/\*\*//g' | cut -c1-160 || true)"
+  fi
+fi
+
+# --- Build the summary (and append telemetry) --------------------------------
+summary="$(printf '%s' "$transcript_path" \
+  | HY_REPO="$repo" HY_TELEM="$TELEM_FILE" HY_NOW="$NOW" HY_SIDE="$SIDE" \
+    HY_DEPTH="$DEPTH" HY_GITSTAT="$GITSTAT" HY_REQUEST="$REQUEST" python3 -c '
+import sys, json, os, glob
+
+path  = sys.stdin.read().strip()
+repo  = os.environ.get("HY_REPO", "")
 telem = os.environ.get("HY_TELEM", "")
-now = os.environ.get("HY_NOW", "")
+now   = os.environ.get("HY_NOW", "")
+side  = os.environ.get("HY_SIDE", "")
+depth = os.environ.get("HY_DEPTH", "brief")
+gitstat = os.environ.get("HY_GITSTAT", "")
+request = os.environ.get("HY_REQUEST", "")
 
 def short(model):
     if not model or model == "<synthetic>":
         return None
     m = model
-    for pre in ("claude-",):
-        if m.startswith(pre):
-            m = m[len(pre):]
-    # trim a trailing date stamp like -20251001
+    if m.startswith("claude-"):
+        m = m[len("claude-"):]
     parts = m.split("-")
     if parts and parts[-1].isdigit() and len(parts[-1]) >= 6:
         m = "-".join(parts[:-1])
@@ -96,49 +126,128 @@ def h(n):
         return f"{n/1_000:.0f}k"
     return str(n)
 
-models = {}          # short name -> usage dict
-agents = {}          # subagent_type -> count
-n_agents = 0
-skills = {}          # skill name (prefix-stripped) -> invocation count
+def addmodel(d, sm, u):
+    x = d.setdefault(sm, {"in": 0, "out": 0, "cr": 0, "cc": 0})
+    x["in"]  += u.get("input_tokens", 0) or 0
+    x["out"] += u.get("output_tokens", 0) or 0
+    x["cr"]  += u.get("cache_read_input_tokens", 0) or 0
+    x["cc"]  += u.get("cache_creation_input_tokens", 0) or 0
 
-with open(path) as fh:
-    for line in fh:
-        try:
-            o = json.loads(line)
-        except Exception:
-            continue
-        msg = o.get("message")
-        if not isinstance(msg, dict):
-            continue
-        sm = short(msg.get("model"))
-        u = msg.get("usage")
-        if sm and isinstance(u, dict):
-            d = models.setdefault(sm, {"in": 0, "out": 0, "cr": 0, "cc": 0})
-            d["in"]  += u.get("input_tokens", 0) or 0
-            d["out"] += u.get("output_tokens", 0) or 0
-            d["cr"]  += u.get("cache_read_input_tokens", 0) or 0
-            d["cc"]  += u.get("cache_creation_input_tokens", 0) or 0
-        content = msg.get("content")
-        if isinstance(content, list):
-            for b in content:
-                if not (isinstance(b, dict) and b.get("type") == "tool_use"):
+# --- Main session: sweep every transcript sharing this sessionId (survives file
+# splits within the session), counting only non-sidechain turns. Dedup by uuid.
+main_models = {}      # short -> usage
+agents = {}           # subagent_type -> count (from Task blocks)
+n_tasks = 0
+skills = {}
+sid = ""
+try:
+    with open(path) as fh:
+        for line in fh:
+            try:
+                o = json.loads(line)
+            except Exception:
+                continue
+            if o.get("sessionId"):
+                sid = o["sessionId"]; break
+except Exception:
+    pass
+
+files = [path]
+try:
+    d = os.path.dirname(path)
+    if d and sid:
+        files = sorted(set([path] + glob.glob(os.path.join(d, "*.jsonl"))))
+except Exception:
+    files = [path]
+
+seen = set()
+for fp in files:
+    try:
+        fh = open(fp)
+    except Exception:
+        continue
+    with fh:
+        for line in fh:
+            try:
+                o = json.loads(line)
+            except Exception:
+                continue
+            if sid and o.get("sessionId") != sid:
+                continue
+            if o.get("isSidechain"):
+                continue        # sub-agents come from the sidecar, not here
+            uid = o.get("uuid")
+            if uid:
+                if uid in seen:
                     continue
-                if b.get("name") == "Task":
-                    n_agents += 1
-                    st = (b.get("input") or {}).get("subagent_type") or "agent"
-                    agents[st] = agents.get(st, 0) + 1
-                elif b.get("name") == "Skill":
-                    sk = (b.get("input") or {}).get("skill") or ""
-                    if sk:
-                        sk = sk.split(":")[-1]   # drop plugin prefix for display
-                        skills[sk] = skills.get(sk, 0) + 1
+                seen.add(uid)
+            msg = o.get("message")
+            if not isinstance(msg, dict):
+                continue
+            sm = short(msg.get("model"))
+            u = msg.get("usage")
+            if sm and isinstance(u, dict):
+                addmodel(main_models, sm, u)
+            content = msg.get("content")
+            if isinstance(content, list):
+                for b in content:
+                    if not (isinstance(b, dict) and b.get("type") == "tool_use"):
+                        continue
+                    if b.get("name") == "Task":
+                        n_tasks += 1
+                        st = (b.get("input") or {}).get("subagent_type") or "agent"
+                        agents[st] = agents.get(st, 0) + 1
+                    elif b.get("name") == "Skill":
+                        sk = (b.get("input") or {}).get("skill") or ""
+                        if sk:
+                            sk = sk.split(":")[-1]
+                            skills[sk] = skills.get(sk, 0) + 1
 
-if not models:
+# --- Sub-agents: read the repo sidecar (authoritative for sub-agent usage). ---
+sub_models = {}
+n_sub = 0
+if side:
+    try:
+        with open(side) as sf:
+            for line in sf:
+                try:
+                    rec = json.loads(line)
+                except Exception:
+                    continue
+                n_sub += 1
+                for sm, u in (rec.get("models") or {}).items():
+                    x = sub_models.setdefault(sm, {"in": 0, "out": 0, "cr": 0, "cc": 0})
+                    x["in"]  += u.get("in", 0) or 0
+                    x["out"] += u.get("out", 0) or 0
+                    x["cr"]  += u.get("cr", 0) or 0
+                    x["cc"]  += u.get("cc", 0) or 0
+    except Exception:
+        pass
+
+# Total agents dispatched: the sidecar (one record per finished sub-agent) is the
+# reliable count; fall back to Task blocks if the sidecar is empty (e.g. sub-agents
+# still counted but telemetry disabled).
+n_agents = max(n_sub, n_tasks)
+
+# Combined per-model view (main + sub) for totals and the dashboard.
+combined = {}
+for src in (main_models, sub_models):
+    for sm, u in src.items():
+        x = combined.setdefault(sm, {"in": 0, "out": 0, "cr": 0, "cc": 0})
+        for k in ("in", "out", "cr", "cc"):
+            x[k] += u[k]
+
+if not combined:
     sys.exit(0)
 
-tot_in  = sum(d["in"]  for d in models.values())
-tot_out = sum(d["out"] for d in models.values())
-tot_cr  = sum(d["cr"]  for d in models.values())
+def totals(d, k):
+    return sum(v[k] for v in d.values())
+
+tot_in  = totals(combined, "in")
+tot_out = totals(combined, "out")
+tot_cr  = totals(combined, "cr")
+main_in, main_out = totals(main_models, "in"), totals(main_models, "out")
+sub_in,  sub_out  = totals(sub_models, "in"),  totals(sub_models, "out")
 
 # Persist one local telemetry record per completed run (never transmitted).
 if telem:
@@ -149,8 +258,12 @@ if telem:
             "agents": n_agents,
             "agentsByType": agents,
             "skills": skills,
-            "models": {k: {"in": v["in"], "out": v["out"], "cr": v["cr"], "cc": v["cc"]}
-                       for k, v in models.items()},
+            "models": {k: dict(v) for k, v in combined.items()},
+            "main":   {"tokensIn": main_in, "tokensOut": main_out,
+                       "models": {k: dict(v) for k, v in main_models.items()}},
+            "subagents": {"count": n_sub, "tokensIn": sub_in, "tokensOut": sub_out,
+                          "cacheRead": totals(sub_models, "cr"),
+                          "models": {k: dict(v) for k, v in sub_models.items()}},
             "tokensIn": tot_in, "tokensOut": tot_out, "cacheRead": tot_cr,
         }
         with open(telem, "a") as tf:
@@ -158,10 +271,13 @@ if telem:
     except Exception:
         pass
 
-model_names = ", ".join(sorted(models))
+# --- Render ------------------------------------------------------------------
+model_names = ", ".join(sorted(combined))
 if agents:
     breakdown = ", ".join(f"{c} {k}" for k, c in sorted(agents.items()))
     agent_line = f"{n_agents} dispatched ({breakdown})"
+elif n_agents:
+    agent_line = f"{n_agents} dispatched"
 else:
     agent_line = "0 dispatched (main session only)"
 
@@ -172,15 +288,35 @@ lines = [
     f"Tokens:  {h(tot_in)} in · {h(tot_out)} out · {h(tot_cr)} cache-read",
 ]
 if skills:
-    skill_list = ", ".join(k for k, _ in sorted(skills.items(), key=lambda x: (-x[1], x[0])))
+    skill_items = sorted(skills.items(), key=lambda x: (-x[1], x[0]))
+    if depth == "detailed":
+        skill_list = ", ".join(f"{k}×{c}" if c > 1 else k for k, c in skill_items)
+    else:
+        skill_list = ", ".join(k for k, _ in skill_items)
     lines.append(f"Skills:  {skill_list}")
-# per-model line when more than one model ran (shows the Opus/Sonnet split)
-if len(models) > 1:
-    for name in sorted(models):
-        d = models[name]
-        di = h(d["in"])
-        do = h(d["out"])
-        lines.append(f"         ⤷ {name}: {di} in · {do} out")
+
+if depth == "detailed":
+    if request:
+        lines.append(f"Request: {request}")
+    if gitstat:
+        lines.append(f"Changed: {gitstat}")
+    if main_models or sub_models:
+        lines.append("Token split:")
+        lines.append(f"         main:      {h(main_in)} in · {h(main_out)} out")
+        lines.append(f"         sub-agents:{h(sub_in):>7} in · {h(sub_out)} out")
+    # full per-model in/out/cache table
+    for name in sorted(combined):
+        d = combined[name]
+        di, do, dc = h(d["in"]), h(d["out"]), h(d["cr"])
+        lines.append(f"         ⤷ {name}: {di} in · {do} out · {dc} cache")
+else:
+    # per-model line only when more than one model ran (Opus/Sonnet split)
+    if len(combined) > 1:
+        for name in sorted(combined):
+            d = combined[name]
+            di, do = h(d["in"]), h(d["out"])
+            lines.append(f"         ⤷ {name}: {di} in · {do} out")
+
 lines.append("───────────────────────────────────────")
 print("\n".join(lines))
 ' 2>/dev/null || true)"

@@ -135,8 +135,10 @@ the qa-functional dispatch in Phase 3, drop the AC-coverage freeze check, and sk
 qa-automation in Phases 4 and 6), `e2eGate` (false → skip the Phase 6 E2E gate),
 `docsSync` (false → skip the Phase 6 docs-engineer sync), `securityGates` (false → the
 human disabled threat model / security scans; note it, do not silently assume they
-ran), `pdfConversion` (false → skip markitdown), `cavemanInternal`. Defaults apply
-when a key is absent.
+ran), `pdfConversion` (false → skip markitdown), `cavemanInternal`,
+`heartbeatStaleSecs` (Phase 4 watchdog: seconds before a commit-less task is deemed
+hung, default 300), `maxTaskRetries` (Phase 4 watchdog: auto re-push attempts before a
+stall becomes a blocker, default 2). Defaults apply when a key is absent.
 
 0. **Dependency check + one-click install (do this once, silently if all present).**
    The user should never have to run install commands by hand. Detect what is
@@ -337,15 +339,25 @@ security flaw here is far cheaper than at review time.
    command and the exact output that proves the task landed (e.g.
    `grep -c X file → 2`). A task with no way to self-check is under-specified.
 
-   **QA cases (parallel, when `qaFunctional` is on and the run has acceptance
-   criteria).** While writing the plan, dispatch the `qa-functional` agent
-   (Sonnet) with: the spec path, the story artifact path if one exists, and the
-   output path `docs/hydraia/qa/YYYY-MM-DD-<slug>-cases.md`. It returns
-   Given/When/Then cases per AC plus a traceability matrix (`AC → Cases → Test
-   ref`, refs start as `pending`) and a GAPS section. Surface every GAP to the
-   human BEFORE freezing the plan — gaps are design questions, never things to
-   guess around. The plan must contain the test tasks that implement these
-   cases (see the Phase 4 QA automation rule).
+   **QA cases (parallel, when `qaFunctional` is on) — ALWAYS a committed document,
+   NEVER inline.** Functional QA is produced as a reviewable artifact, not performed
+   in your head. While writing the plan, dispatch the `qa-functional` agent (Sonnet)
+   with: the spec path, the story artifact path if one exists, and the output path
+   `docs/hydraia/qa/YYYY-MM-DD-<slug>-cases.md`. It returns Given/When/Then cases plus
+   a traceability matrix (`AC → Cases → Test ref`, refs start as `pending`) and a GAPS
+   section. **Non-negotiable rules:**
+   - **You (the main agent) MUST NOT write the test cases inline or "apply QA
+     yourself."** Dispatch `qa-functional`; the value is a durable document the human
+     can read, review, and upload to the repo — not ephemeral reasoning.
+   - **The document is always produced and committed.** Even when the run has no
+     formal acceptance criteria, instruct `qa-functional` to derive implicit ACs from
+     the spec's behavior so a case doc still results. After it returns, **commit the
+     file** (`git add docs/hydraia/qa/<file> && git commit`) so it lands in the repo.
+   - Surface every GAP to the human BEFORE freezing the plan — gaps are design
+     questions, never things to guess around.
+   - The plan must contain the test tasks that implement these cases (see the Phase 4
+     QA automation rule). The frozen-plan condition below includes "the QA case doc
+     exists and is committed."
 2. **Self-review the plan (always TWO passes):**
    - Pass A: critique your own plan hard. **The Haiku test — apply it to every
      task:** could a model with zero context and no permission to make decisions
@@ -385,8 +397,9 @@ security flaw here is far cheaper than at review time.
    - Both passes always run. Stop after the two even if minor nits remain — do not
      loop forever.
 3. The plan is frozen only after the self-review loop converges AND every task has
-   file-level detail AND — when `qaFunctional` is on and ACs exist — every AC maps
-   to at least one QA case and one plan task. If it does not, it is not frozen.
+   file-level detail AND — when `qaFunctional` is on — the QA case doc exists and is
+   committed AND (when ACs exist) every AC maps to at least one QA case and one plan
+   task. If it does not, it is not frozen.
 4. **Open a run log.** Create `docs/hydraia/runs/YYYY-MM-DD-HHMM-<feature>.md` with
    the original request, the plan path, and a phase checklist
    (`- [ ] Phase 0` … `- [ ] Phase 6`). Update it at each phase boundary — check
@@ -404,6 +417,30 @@ security flaw here is far cheaper than at review time.
    reference smells ("follow spec §X", "see the design", etc.); if the plan is not
    self-contained it BLOCKS the arm — so a plan that would fail on a cheap executor
    cannot reach Phase 4. If it blocks, inline the referenced content and re-arm.**
+6. **Run-controls picker (LAST interactive step — the human sets the depth before the
+   autonomous half runs).** The autonomous half (Phases 4–6) must not pause, so ask
+   here, once, via a single `AskUserQuestion` with these two questions:
+
+   **(a) Review depth** — how much of the Phase 5/6 ceremony to run on this change:
+   - **Full** — double review, all matched language reviewers, security gates, QA,
+     E2E, docs sync. (Default; pick when unsure.)
+   - **Lite** — a single review pass, skip the non-core language reviewers and the
+     docs-sync step; QA and the E2E gate still run per the repo's surface.
+   - **Custom** — then a second `AskUserQuestion` (multiSelect) over the OPTIONAL
+     stages only: `2nd review pass`, `language/framework reviewers`,
+     `type-design / performance reviewers`, `docs sync`, `extra OWASP pass`.
+
+   **Security floor (never offered as removable):** regardless of profile,
+   `security-scan`, `code-reviewer`, `silent-failure-hunter`, `security-reviewer`, and
+   one `hydraia-reviewer` pass ALWAYS run. The picker cannot switch these off — only
+   the human's explicit `securityGates=false` config can, which is a separate act.
+
+   **(b) Closing summary depth** — `Brief` (compact box) or `Detailed` (adds what
+   shipped, per-agent-type counts, main-vs-sub token split, per-model in/out/cache).
+
+   Record both answers in the run log and honor them in Phases 5–6. On dismissal,
+   default to **Full** + **Brief**. This is the only question in the autonomous half's
+   run-up — after it, Phases 4–6 run to completion without pausing.
 
 ## Phase 4 — Execution (delegated → Sonnet 5)
 
@@ -433,6 +470,23 @@ next wave's territory). If a claimed commit is missing, re-dispatch that one tas
 never build the next wave on an unverified one. The check costs a few tokens; a
 corrupted run caught at Phase 6 costs far more.
 
+**Hung-agent watchdog — heartbeats + auto re-push (no manual nudging).** A real run
+had executors stall silently and need a manual "keep going" message. Detect and
+recover automatically at every wave boundary:
+- Each executor writes a heartbeat on start and after each commit to
+  `docs/hydraia/.heartbeats/<task-slug>` (its agent definition does this). The file's
+  epoch mtime is the liveness signal; the directory is gitignored.
+- When a wave returns, for every task in it, confirm progress: a **commit exists**
+  (the git check above) OR its **heartbeat is fresh** (mtime within
+  `heartbeatStaleSecs`, default 300). A task with neither is treated as **hung/failed**
+  and is **automatically re-dispatched ("pushed")** — you do not wait for the human to
+  poke it. Re-push the SAME task with the same context, up to `maxTaskRetries`
+  (default 2). Log each retry in the run log.
+- If a task exhausts its retries without a commit, that is a genuine BLOCKER: stop and
+  surface it with the evidence (no commit, stale heartbeat, retry count) — never spin
+  on it silently. Bounded waves (`HYDRAIA_MAX_CONCURRENT`) keep a stall from taking the
+  whole plan down with it.
+
 **Frontend rule:** if a task creates or changes UI, the executor MUST consult the
 **ui-ux-pro-max** skill for styles, palettes, typography, and accessibility before
 writing markup.
@@ -452,9 +506,17 @@ decision. It names every test with its case ID (e.g. `TC-1.1`) and fills the
 matrix `Test ref` column with `path/to/test:line` per case, or
 `manual — <reason>` for cases that cannot be automated.
 
-## Phase 5 — Double code review (both passes)
+## Phase 5 — Code review (depth per the run-controls picker)
 
-Run BOTH passes. Do not stop after one.
+**Honor the review depth the human chose in Phase 3 step 6.** **Full** runs both passes
+below. **Lite** runs only Pass 1 (Superpowers) plus the security floor, skips the
+non-core language reviewers and the OWASP `security-review` extra pass. **Custom** runs
+Pass 1 + whatever optional stages the human checked. In every profile the **security
+floor is mandatory** — `security-scan`, `code-reviewer`, `silent-failure-hunter`,
+`security-reviewer`, and one `hydraia-reviewer` pass always run; the picker cannot
+remove them. Default (no answer recorded) is Full.
+
+For a Full run, run BOTH passes — do not stop after one.
 
 **Scope the panel to the diff — do not dispatch every reviewer on every run.** First
 read the actual changed surface (`git diff --name-only` against the branch point).
@@ -529,13 +591,17 @@ marker so a later unrelated edit is gated again: `rm -f docs/hydraia/.active-pla
 On a genuine blocker that ends the run early, leave the marker so `/hydraia:resume`
 can continue without re-arming.
 
-**Emit the run summary.** As the final close step, drop the one-shot marker that
-tells the Stop hook to print the transcript-derived run summary (agents dispatched,
-models used, real token usage): `printf 'done\n' > docs/hydraia/.run-complete`.
-The hook (`hooks/summary.sh`) reads the numbers straight from the session
-transcript and removes the marker after emitting — do NOT hand-write token or agent
-counts yourself; they would be guesses. Skip this only for `plan`/`graph`, which do
-not complete a build.
+**Emit the run summary.** As the final close step, drop the one-shot marker that tells
+the Stop hook to print the transcript-derived run summary (agents dispatched, models
+used, real token usage). **Write the summary depth the human chose in Phase 3 step 6
+as the marker's content** — `printf 'detailed\n' > docs/hydraia/.run-complete` for a
+detailed breakdown, or `printf 'brief\n' > docs/hydraia/.run-complete` for the compact
+box (default). The hook (`hooks/summary.sh`) reads that first line to pick verbosity,
+then reads the real numbers straight from the session transcript and the sub-agent
+telemetry sidecar (`docs/hydraia/.agents/subagents.jsonl`) — so sub-agent tokens and
+models are counted, not just the main session. Do NOT hand-write token or agent counts
+yourself; they would be guesses. Skip this only for `plan`/`graph`, which do not
+complete a build.
 
 **Pre-close security gate (mandatory):** run **repo-scan** and **production-audit**
 to confirm no hardcoded secrets, no vulnerable dependencies, and no obvious

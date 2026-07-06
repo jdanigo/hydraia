@@ -6,6 +6,47 @@ All notable changes to Hydraia are documented here. Format follows
 
 ## [Unreleased]
 
+## 0.10.0 — 2026-07-06
+
+Observability and run-control pass driven by a real production run: the dashboard
+was blind to sub-agents, the review ceremony was one-size-fits-all, hung executors
+needed manual nudging, functional QA was done in-head instead of as an artifact, and
+there was no closing summary choice. All five fixed.
+
+- **Full sub-agent telemetry (the "0 agents / Opus-only" bug).** `hooks/agents.sh`
+  now delta-captures each finishing sub-agent's model + token usage at `SubagentStop`
+  into a repo-scoped sidecar (`docs/hydraia/.agents/subagents.jsonl`, deduped by entry
+  uuid, reset per run) — which survives compaction and session changes, unlike the
+  Stop-hook transcript that was silently dropping sub-agent turns. `hooks/summary.sh`
+  now merges main-session tokens (swept across every transcript sharing the session
+  id) with the sidecar, so the summary and telemetry record report the real agent
+  count, the Sonnet execution tokens, and a main-vs-sub split.
+- **Dashboard detail.** Telemetry tab shows the true agents-dispatched count, per-model
+  **input *and* output** tokens (was input-only), a sub-agent usage panel, agents-by-type,
+  and a per-run drill-down (main / sub-agent split). New `heartbeatStaleSecs` and
+  `maxTaskRetries` config fields.
+- **Per-run review picker (Phase 3).** Before the autonomous half begins, the pipeline
+  asks the human for a review depth — **Full** / **Lite** / **Custom** (multi-select of
+  optional stages) — so a trivial change need not pay the full double-review ceremony.
+  A security floor (`security-scan`, `code-reviewer`, `silent-failure-hunter`,
+  `security-reviewer`, one `hydraia-reviewer` pass) always runs; the picker cannot
+  remove it.
+- **Hung-agent watchdog (Phase 4).** Executors write a heartbeat
+  (`docs/hydraia/.heartbeats/<task>`) on start and after each commit. On every wave
+  return the pipeline auto re-dispatches ("pushes") any task with no commit and a stale
+  heartbeat — up to `maxTaskRetries` (default 2) — instead of waiting for the human to
+  poke a stalled agent; exhausted retries surface a real blocker.
+- **QA is always a committed document.** The main agent may no longer "apply QA
+  itself" — Phase 3 dispatches `qa-functional` to produce and commit
+  `docs/hydraia/qa/…-cases.md` (deriving implicit ACs when the spec has no formal
+  ones), so the case matrix is reviewable and repo-tracked. The frozen-plan condition
+  now requires the committed doc.
+- **Closing summary depth.** The human chooses **Brief** or **Detailed** at plan freeze
+  (batched with the review picker, keeping Phases 4–6 pause-free); the choice is written
+  into the `.run-complete` marker and `summary.sh` renders accordingly — detailed adds
+  what shipped, per-agent-type counts, the main-vs-sub token split, and per-model
+  in/out/cache.
+
 ## 0.9.2 — 2026-07-06
 
 E2E browser binaries become Hydraia-managed instead of an assumed-present

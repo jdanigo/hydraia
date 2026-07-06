@@ -1,7 +1,7 @@
 # Hydraia
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)
-![Plugin version](https://img.shields.io/badge/plugin-v0.9.2-blue.svg)
+![Plugin version](https://img.shields.io/badge/plugin-v0.10.0-blue.svg)
 
 🇬🇧 [English](README.md) · 🇪🇸 Español
 
@@ -77,9 +77,9 @@ llamarías, las pruebas que pensabas escribir. Hydraia no te deja saltártelos.
 | 1 · Pensar | Gate forzado de pensar-antes-de-programar (karpathy-guidelines) | Opus 4.8 |
 | 2 · Diseño | Lluvia de ideas → spec exhaustivo + threat model | Opus 4.8 |
 | 3 · Plan | Plan detallado + ciclo de auto-revisión (máx. 2 pasadas) | Opus 4.8 |
-| 4 · Ejecutar | Sub-agente nuevo por tarea; inteligencia de UI en trabajo de frontend | Sonnet 5 |
-| 5 · Revisar | **Pasada 1** review de toda la rama + **Pasada 2** revisores acotados al diff + gate de seguridad, hallazgos deduplicados | Opus (+ Sonnet/Haiku para lo mecánico) |
-| 6 · Verificar | Corre pruebas, confirma contra el spec, escaneo de secretos/deps, resume | Opus 4.8 |
+| 4 · Ejecutar | Sub-agente nuevo por tarea; watchdog de heartbeat re-despacha agentes colgados; inteligencia de UI en trabajo de frontend | Sonnet 5 |
+| 5 · Revisar | Profundidad elegida al congelar el plan (Full/Lite/Custom, piso de seguridad siempre activo) — **Pasada 1** de toda la rama + **Pasada 2** acotada al diff + gate de seguridad, deduplicado | Opus (+ Sonnet/Haiku para lo mecánico) |
+| 6 · Verificar | Corre pruebas, confirma contra el spec, escaneo de secretos/deps, resumen breve o detallado | Opus 4.8 |
 
 La disciplina de tokens (comunicación interna comprimida, estilo `caveman`) corre
 en segundo plano a través de todas las fases — nunca toca el código, los planes,
@@ -104,6 +104,10 @@ tu cuenta — la mayoría son pasos que nunca correrías a mano en un día norma
 | **Doble revisión de código** | Una pasada de revisor de toda la rama, y luego un panel: 8 revisores específicos de stack (Go, Angular, React, Vue, TS, Python, Java, C#) más los transversales (seguridad, fallos silenciosos, performance, tipos, base de datos). |
 | **Corridas reanudables** | Cada corrida escribe un log durable con un checklist de fases. Si se interrumpe — crash, laptop cerrada, sesión matada — `/hydraia:resume` la retoma exactamente donde se detuvo. |
 | **Artefactos persistentes** | Specs y planes se guardan bajo `docs/hydraia/` — revisables, comparables con diff, reutilizables y auditables después. |
+| **Tú eliges la profundidad** | Al congelar el plan Hydraia pregunta cuánta ceremonia de review amerita el cambio (Full / Lite / Custom) y si quieres un resumen breve o detallado — así un arreglo trivial no paga un doble review completo. El piso de seguridad nunca se omite. |
+| **Watchdog de agentes colgados** | Los ejecutores emiten heartbeats; si uno se cuelga sin commitear, el pipeline lo re-despacha automáticamente en vez de esperar a que lo empujes — y solo reporta un bloqueo real tras agotar los reintentos. |
+| **QA como artefacto commiteado** | El QA funcional se escribe en `docs/hydraia/qa/` y se commitea — una matriz de casos Given/When/Then revisable que puedes leer y conservar, no QA hecho en la cabeza del modelo. |
+| **Telemetría consciente de sub-agentes** | El dashboard local atribuye tokens y modelos a cada sub-agente (no solo a la sesión principal), con entrada/salida por modelo y un desglose main-vs-sub por corrida. |
 | **Dale un PDF** | Apúntalo a un export de Jira o un PDF de design-doc; `markitdown` lo convierte a markdown antes de que entre al contexto. Sin copiar y pegar. |
 | **Disparador en lenguaje simple** | "add a `--dry-run` flag to the CLI…" corre automáticamente todo el pipeline — no requiere slash command. |
 | **Bilingüe** | Responde en inglés o Español (se pregunta una vez por corrida). Código, commits, specs y planes se mantienen en inglés y portables. |
