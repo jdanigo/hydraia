@@ -6,6 +6,27 @@ All notable changes to Hydraia are documented here. Format follows
 
 ## [Unreleased]
 
+## 0.11.0 — 2026-07-06
+
+Hydraia now tells you when you are running an outdated version.
+
+- **Version-outdated nudge at session start.** `preflight.sh` (SessionStart hook) now
+  checks whether a newer Hydraia has been published and, if so, prints the current and
+  latest version plus the exact update commands:
+
+  ```
+  [hydraia] update available: v0.10.2 → v0.11.0. Update with:
+    claude plugin marketplace update hydraia
+    claude plugin install hydraia
+  ```
+
+- **Fast and non-invasive.** The latest version is read from
+  `.claude-plugin/plugin.json` on `main` via `raw.githubusercontent.com` — the same file
+  `marketplace update` pulls. The network fetch is throttled to at most once a day with a
+  3-second timeout, so it never slows a session start; offline or on any failure the hook
+  stays silent and never blocks. The nudge itself is emitted **every session** — from the
+  cached latest version — until the local plugin catches up, then it stops automatically.
+
 ## 0.10.2 — 2026-07-06
 
 Telemetry now logs for **every** Hydraia command, not only `feature`.

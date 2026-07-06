@@ -53,4 +53,44 @@ if [ $(( now - last )) -ge "$STALE_SECS" ]; then
   echo "$now" > "$CACHE_FILE" 2>/dev/null || true
 fi
 
+# --- 3. Version-outdated nudge ---
+# Warn (every session) when a newer Hydraia is published, and print the update
+# commands. The network fetch is throttled to at most once a day with a short
+# timeout, so it never slows a session start; offline or on any failure we stay
+# silent and never block. The nudge is emitted every session — from the cached
+# latest version — until the local plugin catches up.
+LATEST_FILE="${CACHE_DIR}/latest-version"
+LATEST_TS="${CACHE_DIR}/latest-version-check"
+VERSION_URL="https://raw.githubusercontent.com/jdanigo/hydraia/main/.claude-plugin/plugin.json"
+
+_hy_ver() { grep -o '"version"[[:space:]]*:[[:space:]]*"[^"]*"' 2>/dev/null | head -1 | sed 's/.*"\([0-9][^"]*\)".*/\1/'; }
+
+local_ver=""
+if [ -n "${CLAUDE_PLUGIN_ROOT:-}" ] && [ -f "${CLAUDE_PLUGIN_ROOT}/.claude-plugin/plugin.json" ]; then
+  local_ver=$(_hy_ver < "${CLAUDE_PLUGIN_ROOT}/.claude-plugin/plugin.json")
+fi
+
+# refresh the cached latest version at most once a day
+lts=0
+[ -f "$LATEST_TS" ] && lts=$(cat "$LATEST_TS" 2>/dev/null || echo 0)
+if command -v curl >/dev/null 2>&1 && [ $(( now - lts )) -ge "$STALE_SECS" ]; then
+  remote_ver=$(curl -fsSL --max-time 3 "$VERSION_URL" 2>/dev/null | _hy_ver)
+  if [ -n "$remote_ver" ]; then
+    printf '%s' "$remote_ver" > "$LATEST_FILE" 2>/dev/null || true
+    echo "$now" > "$LATEST_TS" 2>/dev/null || true
+  fi
+fi
+
+# compare local against the cached latest and nudge if older
+latest_ver=""
+[ -f "$LATEST_FILE" ] && latest_ver=$(cat "$LATEST_FILE" 2>/dev/null || echo "")
+if [ -n "$local_ver" ] && [ -n "$latest_ver" ] && [ "$local_ver" != "$latest_ver" ]; then
+  newest=$(printf '%s\n%s\n' "$local_ver" "$latest_ver" | sort -V | tail -1)
+  if [ "$newest" = "$latest_ver" ]; then
+    echo "[hydraia] update available: v${local_ver} → v${latest_ver}. Update with:" >&2
+    echo "  claude plugin marketplace update hydraia" >&2
+    echo "  claude plugin install hydraia" >&2
+  fi
+fi
+
 exit 0
