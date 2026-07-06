@@ -72,10 +72,17 @@ fi
 NOW="$(date +%s)"
 
 # --- Gather run-scoped context for the summary ------------------------------
-# Sub-agent telemetry sidecar (written by agents.sh at each SubagentStop). It lives
-# in the repo and accumulates across sessions/compaction, so it is the authoritative
-# source for sub-agent model/token usage that the Stop-hook transcript cannot see.
-SIDE="$repo/docs/hydraia/.agents/subagents.jsonl"
+# Sub-agent model/token usage: Claude Code persists every sub-agent's full transcript
+# on disk at  <project>/<sessionId>/subagents/agent-<id>.jsonl  (with a sibling
+# .meta.json carrying its agentType). summary.sh reads that directory directly (see the
+# python below) — this is authoritative and independent of whether the SubagentStop
+# hook fired. Run start (for spanning compaction across session dirs) is the newest run
+# log's mtime; 0 → only the current session's sub-agents.
+RUNSTART=0
+newlog="$(ls -t "$repo"/docs/hydraia/runs/*.md 2>/dev/null | head -n1 || true)"
+if [ -n "$newlog" ] && [ -f "$newlog" ]; then
+  RUNSTART="$(stat -f %m "$newlog" 2>/dev/null || stat -c %Y "$newlog" 2>/dev/null || echo 0)"
+fi
 
 # Detailed mode enriches with "what shipped". Compute git facts here (the hook already
 # has the repo) and the original request from the newest run log. Best-effort; empty
@@ -86,7 +93,6 @@ if [ "$DEPTH" = "detailed" ]; then
   if [ -n "$base" ]; then
     GITSTAT="$(git -C "$repo" diff --shortstat "$base"..HEAD 2>/dev/null | sed 's/^ *//' || true)"
   fi
-  newlog="$(ls -t "$repo"/docs/hydraia/runs/*.md 2>/dev/null | head -n1 || true)"
   if [ -n "$newlog" ] && [ -f "$newlog" ]; then
     REQUEST="$(grep -m1 -iE '^\s*(request|original request)\s*[:*-]' "$newlog" 2>/dev/null | sed -E 's/^[^:]*:\s*//; s/\*\*//g' | cut -c1-160 || true)"
   fi
@@ -94,7 +100,7 @@ fi
 
 # --- Build the summary (and append telemetry) --------------------------------
 summary="$(printf '%s' "$transcript_path" \
-  | HY_REPO="$repo" HY_TELEM="$TELEM_FILE" HY_NOW="$NOW" HY_SIDE="$SIDE" \
+  | HY_REPO="$repo" HY_TELEM="$TELEM_FILE" HY_NOW="$NOW" HY_RUNSTART="$RUNSTART" \
     HY_DEPTH="$DEPTH" HY_GITSTAT="$GITSTAT" HY_REQUEST="$REQUEST" python3 -c '
 import sys, json, os, glob
 
@@ -102,7 +108,10 @@ path  = sys.stdin.read().strip()
 repo  = os.environ.get("HY_REPO", "")
 telem = os.environ.get("HY_TELEM", "")
 now   = os.environ.get("HY_NOW", "")
-side  = os.environ.get("HY_SIDE", "")
+try:
+    runstart = int(os.environ.get("HY_RUNSTART", "0") or "0")
+except Exception:
+    runstart = 0
 depth = os.environ.get("HY_DEPTH", "brief")
 gitstat = os.environ.get("HY_GITSTAT", "")
 request = os.environ.get("HY_REQUEST", "")
@@ -203,31 +212,86 @@ for fp in files:
                             sk = sk.split(":")[-1]
                             skills[sk] = skills.get(sk, 0) + 1
 
-# --- Sub-agents: read the repo sidecar (authoritative for sub-agent usage). ---
+# --- Sub-agents: read the on-disk sub-agent transcripts. ----------------------
+# Layout:  <project_dir>/<sessionId>/subagents/agent-<id>.jsonl  (+ .meta.json with
+# agentType). One agent file == one dispatched sub-agent. This is authoritative and
+# independent of the SubagentStop hook (which does not fire for every dispatch). To
+# span a compaction (which changes the session id), also scan sibling session dir
+# subagents whose agent files were modified at/after the run start.
 sub_models = {}
+sub_by_type = {}       # agentType -> count
 n_sub = 0
-if side:
+
+def sum_agent_file(fp):
+    md = {}
     try:
-        with open(side) as sf:
-            for line in sf:
+        with open(fp) as fh:
+            for line in fh:
                 try:
-                    rec = json.loads(line)
+                    o = json.loads(line)
                 except Exception:
                     continue
-                n_sub += 1
-                for sm, u in (rec.get("models") or {}).items():
-                    x = sub_models.setdefault(sm, {"in": 0, "out": 0, "cr": 0, "cc": 0})
-                    x["in"]  += u.get("in", 0) or 0
-                    x["out"] += u.get("out", 0) or 0
-                    x["cr"]  += u.get("cr", 0) or 0
-                    x["cc"]  += u.get("cc", 0) or 0
+                msg = o.get("message")
+                if not isinstance(msg, dict):
+                    continue
+                sm = short(msg.get("model"))
+                u = msg.get("usage")
+                if sm and isinstance(u, dict):
+                    x = md.setdefault(sm, {"in": 0, "out": 0, "cr": 0, "cc": 0})
+                    x["in"]  += u.get("input_tokens", 0) or 0
+                    x["out"] += u.get("output_tokens", 0) or 0
+                    x["cr"]  += u.get("cache_read_input_tokens", 0) or 0
+                    x["cc"]  += u.get("cache_creation_input_tokens", 0) or 0
+    except Exception:
+        return {}
+    return md
+
+proj_dir = os.path.dirname(path)
+agent_files = []
+try:
+    if proj_dir and sid:
+        primary = os.path.join(proj_dir, sid, "subagents")
+        for fp in glob.glob(os.path.join(primary, "agent-*.jsonl")):
+            agent_files.append(fp)
+        # Cross-compaction: other session dirs, gated by run-start mtime.
+        if runstart:
+            for fp in glob.glob(os.path.join(proj_dir, "*", "subagents", "agent-*.jsonl")):
+                if fp in agent_files:
+                    continue
+                try:
+                    if os.path.getmtime(fp) >= runstart - 5:
+                        agent_files.append(fp)
+                except Exception:
+                    pass
+except Exception:
+    agent_files = []
+
+for fp in sorted(set(agent_files)):
+    md = sum_agent_file(fp)
+    if not md:
+        continue
+    n_sub += 1
+    for sm, u in md.items():
+        x = sub_models.setdefault(sm, {"in": 0, "out": 0, "cr": 0, "cc": 0})
+        for k in ("in", "out", "cr", "cc"):
+            x[k] += u[k]
+    # agentType from the sibling .meta.json
+    at = "agent"
+    try:
+        meta = fp[:-6] + ".meta.json" if fp.endswith(".jsonl") else None
+        if meta and os.path.exists(meta):
+            with open(meta) as mf:
+                at = (json.load(mf).get("agentType") or "agent")
     except Exception:
         pass
+    sub_by_type[at] = sub_by_type.get(at, 0) + 1
 
-# Total agents dispatched: the sidecar (one record per finished sub-agent) is the
-# reliable count; fall back to Task blocks if the sidecar is empty (e.g. sub-agents
-# still counted but telemetry disabled).
+# Total agents dispatched: the on-disk sub-agent files are the reliable count; fall
+# back to main-transcript Task blocks if none are found (e.g. a CC build that stores
+# them elsewhere). Prefer the agentType map from meta.json for the by-type breakdown.
 n_agents = max(n_sub, n_tasks)
+if sub_by_type:
+    agents = dict(sub_by_type)
 
 # Combined per-model view (main + sub) for totals and the dashboard.
 combined = {}

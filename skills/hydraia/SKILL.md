@@ -597,10 +597,11 @@ used, real token usage). **Write the summary depth the human chose in Phase 3 st
 as the marker's content** — `printf 'detailed\n' > docs/hydraia/.run-complete` for a
 detailed breakdown, or `printf 'brief\n' > docs/hydraia/.run-complete` for the compact
 box (default). The hook (`hooks/summary.sh`) reads that first line to pick verbosity,
-then reads the real numbers straight from the session transcript and the sub-agent
-telemetry sidecar (`docs/hydraia/.agents/subagents.jsonl`) — so sub-agent tokens and
-models are counted, not just the main session. Do NOT hand-write token or agent counts
-yourself; they would be guesses. Skip this only for `plan`/`graph`, which do not
+then reads the real numbers from the session transcript plus Claude Code's on-disk
+sub-agent transcripts (`<project>/<sessionId>/subagents/agent-*.jsonl`, one per
+dispatched sub-agent, with a `.meta.json` naming its `agentType`) — so sub-agent tokens
+and models are counted, not just the main session. Do NOT hand-write token or agent
+counts yourself; they would be guesses. Skip this only for `plan`/`graph`, which do not
 complete a build.
 
 **Pre-close security gate (mandatory):** run **repo-scan** and **production-audit**

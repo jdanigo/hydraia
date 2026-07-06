@@ -78,109 +78,27 @@ pm="$(mtime "$plan")"
 
 mkdir -p "$adir" 2>/dev/null || exit 0
 
-# Reset per-run accumulators when a new run is detected (plan mtime changed). The
-# SubagentStop path needs the same reset the dispatch path does, so a run's sub-agent
-# telemetry never bleeds into the next run.
+# Reset per-run counters when a new run is detected (plan mtime changed).
 reset_if_new_run() {
   local rid="$adir/runid" cur
   cur="$(cat "$rid" 2>/dev/null || echo)"
   if [ "$cur" != "$pm" ]; then
-    : > "$adir/dispatched"      2>/dev/null || true
-    : > "$adir/finished"        2>/dev/null || true
-    : > "$adir/subagents.jsonl" 2>/dev/null || true
-    : > "$adir/seen-uuids"      2>/dev/null || true
+    : > "$adir/dispatched" 2>/dev/null || true
+    : > "$adir/finished"   2>/dev/null || true
     printf '%s' "$pm" > "$rid" 2>/dev/null || true
   fi
 }
 
-# --- SubagentStop: record a completion + capture the sub-agent's telemetry ----
-# Delta-capture the finishing sub-agent's usage into a repo-scoped sidecar. Because
-# the sidecar lives in the repo and accumulates as agents finish, it survives session
-# changes and compaction — unlike the Stop-hook transcript, which loses sub-agent
-# turns across a compaction (the root cause of the "0 agents / Opus-only" telemetry
-# bug). Deduped by entry uuid via a persisted seen-set, so re-scanning the same
-# transcript never double-counts. Fail-open on any error — telemetry must never wedge.
+# --- SubagentStop: record a completion, nothing to block ---------------------
+# Sub-agent TOKEN/MODEL telemetry is NOT captured here: this hook does not fire
+# reliably for every sub-agent (e.g. background dispatches), and Claude Code already
+# persists each sub-agent's full transcript on disk at
+# <project>/<sessionId>/subagents/agent-<id>.jsonl (+ .meta.json with its agentType).
+# summary.sh reads that directory directly at run close — deterministic and
+# hook-independent. Here we only bump the concurrency completion counter.
 if [ "$event" = "SubagentStop" ]; then
   reset_if_new_run
   printf '1\n' >> "$adir/finished" 2>/dev/null || true
-
-  tpath="$(printf '%s' "$payload" | python3 -c '
-import sys, json
-try: print(json.load(sys.stdin).get("transcript_path") or "")
-except Exception: print("")
-' 2>/dev/null || true)"
-
-  if [ -n "$tpath" ] && [ -f "$tpath" ]; then
-    HY_ADIR="$adir" python3 - "$tpath" <<'PY' 2>/dev/null || true
-import sys, os, json
-tpath = sys.argv[1]
-adir  = os.environ.get("HY_ADIR", "")
-seen_path = os.path.join(adir, "seen-uuids")
-out_path  = os.path.join(adir, "subagents.jsonl")
-
-seen = set()
-try:
-    with open(seen_path) as fh:
-        seen = set(x.strip() for x in fh if x.strip())
-except Exception:
-    pass
-
-def short(model):
-    if not model or model == "<synthetic>":
-        return None
-    m = model
-    if m.startswith("claude-"):
-        m = m[len("claude-"):]
-    parts = m.split("-")
-    if parts and parts[-1].isdigit() and len(parts[-1]) >= 6:
-        m = "-".join(parts[:-1])
-    return m
-
-# Sum usage over NEW sidechain assistant turns only (uuid not already recorded).
-agg = {}   # short model -> usage
-new_uuids = []
-try:
-    with open(tpath) as fh:
-        for line in fh:
-            try:
-                o = json.loads(line)
-            except Exception:
-                continue
-            if not o.get("isSidechain"):
-                continue
-            uid = o.get("uuid")
-            if not uid or uid in seen:
-                continue
-            msg = o.get("message")
-            if not isinstance(msg, dict):
-                continue
-            sm = short(msg.get("model"))
-            u = msg.get("usage")
-            if not (sm and isinstance(u, dict)):
-                continue
-            d = agg.setdefault(sm, {"in": 0, "out": 0, "cr": 0, "cc": 0})
-            d["in"]  += u.get("input_tokens", 0) or 0
-            d["out"] += u.get("output_tokens", 0) or 0
-            d["cr"]  += u.get("cache_read_input_tokens", 0) or 0
-            d["cc"]  += u.get("cache_creation_input_tokens", 0) or 0
-            new_uuids.append(uid)
-except Exception:
-    sys.exit(0)
-
-if not agg:
-    sys.exit(0)
-
-# One sidecar record per SubagentStop: the delta this sub-agent contributed.
-try:
-    with open(out_path, "a") as of:
-        of.write(json.dumps({"models": agg}) + "\n")
-    with open(seen_path, "a") as sf:
-        for u in new_uuids:
-            sf.write(u + "\n")
-except Exception:
-    pass
-PY
-  fi
   exit 0
 fi
 

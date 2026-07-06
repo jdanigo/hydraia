@@ -6,6 +6,28 @@ All notable changes to Hydraia are documented here. Format follows
 
 ## [Unreleased]
 
+## 0.10.1 — 2026-07-06
+
+Fixes the sub-agent telemetry capture that 0.10.0 got wrong: agents still showed
+`0` and sub-agent tokens were misattributed to the main session.
+
+- **Root cause.** 0.10.0 tried to capture sub-agent usage at `SubagentStop` into a
+  repo sidecar. But `SubagentStop` does not fire for every dispatch (e.g. background
+  agents), and sub-agent turns are **not** in the main transcript — Claude Code
+  persists each sub-agent's full transcript on disk at
+  `<project>/<sessionId>/subagents/agent-<id>.jsonl`, with a sibling `.meta.json`
+  carrying its `agentType`. The sidecar stayed empty; `summary.sh` then counted any
+  in-transcript sonnet turns as *main*, and the agent count fell back to Task blocks
+  that a compacted transcript no longer contained → `0`.
+- **Fix.** `summary.sh` now reads that on-disk `subagents/` directory directly — one
+  agent file = one dispatched sub-agent (the reliable count), its `.meta.json` gives
+  the by-type breakdown, and its turns give the real model + token split. It also
+  scans sibling session dirs (gated by run-start mtime) so a **compaction** mid-run no
+  longer loses the sub-agents. No dependence on the `SubagentStop` hook firing.
+- `hooks/agents.sh` reverts to only counting completions for the concurrency cap; the
+  sidecar/uuid-dedup machinery is removed. Verified against real on-disk sub-agent
+  transcripts: agent count, `agentType`, and per-model in/out/cache all correct.
+
 ## 0.10.0 — 2026-07-06
 
 Observability and run-control pass driven by a real production run: the dashboard
