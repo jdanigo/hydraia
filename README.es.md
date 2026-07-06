@@ -20,6 +20,18 @@ correr, qué gates de seguridad exigir.
 
 ---
 
+## Vista visual
+
+Cómo un solo comando conduce todo el pipeline — las 7 fases (diseño interactivo →
+plan congelado → construcción autónoma), el reparto de modelo Opus/Sonnet, y qué
+fases corre cada comando principal.
+
+![Cómo funciona Hydraia: el pipeline de 7 fases dividido en una mitad interactiva de diseño y una mitad autónoma de construcción, con el gate de plan congelado entre ambas, badges de modelo por fase, y una tabla que mapea cada comando principal con las fases que corre.](docs/diagrams/hydraia-pipeline-es.svg)
+
+> Fuente editable: [`docs/diagrams/hydraia-pipeline-es.excalidraw`](docs/diagrams/hydraia-pipeline-es.excalidraw) — arrástralo a [excalidraw.com](https://excalidraw.com) para ajustarlo.
+
+---
+
 ## Tabla de contenidos
 
 - [Por qué Hydraia](#por-qué-hydraia)

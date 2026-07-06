@@ -1,0 +1,119 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1240 1000" font-family="'Segoe Print','Comic Sans MS','Bradley Hand',cursive">
+<rect x="0" y="0" width="1240" height="1000" fill="#ffffff"/>
+<rect x="6" y="6" width="1228" height="988" rx="18" fill="none" stroke="#dee2e6" stroke-width="2"/>
+<text x="620" y="52" font-size="34" font-weight="bold" text-anchor="middle" fill="#343a40">Cómo funciona Hydraia</text>
+<text x="620" y="82" font-size="15" text-anchor="middle" fill="#868e96">Un solo comando ejecuta todo el pipeline — tú te quedas en Opus 4.8, él decide lo demás.</text>
+<rect x="340" y="100" width="560" height="46" rx="12" fill="#ffec99" stroke="#f08c00" stroke-width="3"/>
+<text x="620" y="129" font-size="20" font-weight="bold" text-anchor="middle" fill="#343a40" font-family="'DejaVu Sans Mono','Consolas',monospace">/hydraia:feature  &lt;lo que quieres construir&gt;</text>
+<text x="620" y="166" font-size="13" text-anchor="middle" fill="#868e96">Gate de idioma · Guardia de modelo</text>
+<path d="M 269 198 L 269 192 L 1207 192 L 1207 198" fill="none" stroke="#1971c2" stroke-width="2.5"/>
+<text x="738" y="184" font-size="14" font-weight="bold" text-anchor="middle" fill="#1971c2">INTERACTIVA  —  permite pausas, el diseño ocurre contigo</text>
+<rect x="39" y="210" width="218" height="118" rx="12" fill="#e9ecef" stroke="#495057" stroke-width="2.5"/>
+<circle cx="65" cy="236" r="17" fill="#ffffff" stroke="#495057" stroke-width="2"/>
+<text x="65" y="242" font-size="15" font-weight="bold" text-anchor="middle" fill="#495057" font-family="'DejaVu Sans Mono','Consolas',monospace">-1</text>
+<text x="91" y="242" font-size="19" font-weight="bold" text-anchor="start" fill="#343a40">Triaje</text>
+<text x="53" y="272" font-size="13.5" text-anchor="start" fill="#495057">Detecta intención, enruta</text>
+<rect x="183" y="294" width="62" height="22" rx="11" fill="#d0bfff" stroke="#6741d9" stroke-width="1.5"/>
+<text x="214" y="309" font-size="12" font-weight="bold" text-anchor="middle" fill="#ffffff">Opus</text>
+<rect x="275" y="210" width="218" height="118" rx="12" fill="#a5d8ff" stroke="#1971c2" stroke-width="2.5"/>
+<circle cx="301" cy="236" r="17" fill="#ffffff" stroke="#1971c2" stroke-width="2"/>
+<text x="301" y="242" font-size="15" font-weight="bold" text-anchor="middle" fill="#1971c2" font-family="'DejaVu Sans Mono','Consolas',monospace">0</text>
+<text x="327" y="242" font-size="19" font-weight="bold" text-anchor="start" fill="#343a40">Contexto</text>
+<text x="289" y="272" font-size="13.5" text-anchor="start" fill="#495057">Consulta grafo · PDF →</text>
+<text x="289" y="291" font-size="13.5" text-anchor="start" fill="#495057">markdown</text>
+<rect x="419" y="294" width="62" height="22" rx="11" fill="#d0bfff" stroke="#6741d9" stroke-width="1.5"/>
+<text x="450" y="309" font-size="12" font-weight="bold" text-anchor="middle" fill="#ffffff">Opus</text>
+<rect x="511" y="210" width="218" height="118" rx="12" fill="#a5d8ff" stroke="#1971c2" stroke-width="2.5"/>
+<circle cx="537" cy="236" r="17" fill="#ffffff" stroke="#1971c2" stroke-width="2"/>
+<text x="537" y="242" font-size="15" font-weight="bold" text-anchor="middle" fill="#1971c2" font-family="'DejaVu Sans Mono','Consolas',monospace">1</text>
+<text x="563" y="242" font-size="19" font-weight="bold" text-anchor="start" fill="#343a40">Pensar</text>
+<text x="525" y="272" font-size="13.5" text-anchor="start" fill="#495057">Gate</text>
+<text x="525" y="291" font-size="13.5" text-anchor="start" fill="#495057">pensar-antes-de-codear</text>
+<rect x="655" y="294" width="62" height="22" rx="11" fill="#d0bfff" stroke="#6741d9" stroke-width="1.5"/>
+<text x="686" y="309" font-size="12" font-weight="bold" text-anchor="middle" fill="#ffffff">Opus</text>
+<rect x="747" y="210" width="218" height="118" rx="12" fill="#a5d8ff" stroke="#1971c2" stroke-width="2.5"/>
+<circle cx="773" cy="236" r="17" fill="#ffffff" stroke="#1971c2" stroke-width="2"/>
+<text x="773" y="242" font-size="15" font-weight="bold" text-anchor="middle" fill="#1971c2" font-family="'DejaVu Sans Mono','Consolas',monospace">2</text>
+<text x="799" y="242" font-size="19" font-weight="bold" text-anchor="start" fill="#343a40">Diseño</text>
+<text x="761" y="272" font-size="13.5" text-anchor="start" fill="#495057">Lluvia de ideas → spec +</text>
+<text x="761" y="291" font-size="13.5" text-anchor="start" fill="#495057">amenazas</text>
+<rect x="891" y="294" width="62" height="22" rx="11" fill="#d0bfff" stroke="#6741d9" stroke-width="1.5"/>
+<text x="922" y="309" font-size="12" font-weight="bold" text-anchor="middle" fill="#ffffff">Opus</text>
+<rect x="983" y="210" width="218" height="118" rx="12" fill="#a5d8ff" stroke="#1971c2" stroke-width="2.5"/>
+<circle cx="1009" cy="236" r="17" fill="#ffffff" stroke="#1971c2" stroke-width="2"/>
+<text x="1009" y="242" font-size="15" font-weight="bold" text-anchor="middle" fill="#1971c2" font-family="'DejaVu Sans Mono','Consolas',monospace">3</text>
+<text x="1035" y="242" font-size="19" font-weight="bold" text-anchor="start" fill="#343a40">Plan</text>
+<text x="997" y="272" font-size="13.5" text-anchor="start" fill="#495057">Plan detallado +</text>
+<text x="997" y="291" font-size="13.5" text-anchor="start" fill="#495057">auto-revisión</text>
+<rect x="1127" y="294" width="62" height="22" rx="11" fill="#d0bfff" stroke="#6741d9" stroke-width="1.5"/>
+<text x="1158" y="309" font-size="12" font-weight="bold" text-anchor="middle" fill="#ffffff">Opus</text>
+<rect x="44" y="368" width="1152" height="40" rx="10" fill="#ffec99" stroke="#f08c00" stroke-width="3"/>
+<text x="620" y="394" font-size="16" font-weight="bold" text-anchor="middle" fill="#8a5a00">⛔  PLAN CONGELADO  —  no se escribe código hasta que existan spec + plan</text>
+<path d="M 134 440 L 134 434 L 1106 434 L 1106 440" fill="none" stroke="#2f9e44" stroke-width="2.5"/>
+<text x="620" y="426" font-size="14" font-weight="bold" text-anchor="middle" fill="#2f9e44">AUTÓNOMA  —  nunca pausa, sólo un bloqueo real la detiene</text>
+<rect x="140" y="452" width="300" height="118" rx="12" fill="#b2f2bb" stroke="#2f9e44" stroke-width="2.5"/>
+<circle cx="166" cy="478" r="17" fill="#ffffff" stroke="#2f9e44" stroke-width="2"/>
+<text x="166" y="484" font-size="15" font-weight="bold" text-anchor="middle" fill="#2f9e44" font-family="'DejaVu Sans Mono','Consolas',monospace">4</text>
+<text x="192" y="484" font-size="19" font-weight="bold" text-anchor="start" fill="#343a40">Ejecutar</text>
+<text x="154" y="514" font-size="13.5" text-anchor="start" fill="#495057">Sub-agente fresco por tarea, commits</text>
+<rect x="366" y="536" width="62" height="22" rx="11" fill="#b2f2bb" stroke="#2f9e44" stroke-width="1.5"/>
+<text x="397" y="551" font-size="12" font-weight="bold" text-anchor="middle" fill="#ffffff">Sonnet</text>
+<rect x="470" y="452" width="300" height="118" rx="12" fill="#b2f2bb" stroke="#2f9e44" stroke-width="2.5"/>
+<circle cx="496" cy="478" r="17" fill="#ffffff" stroke="#2f9e44" stroke-width="2"/>
+<text x="496" y="484" font-size="15" font-weight="bold" text-anchor="middle" fill="#2f9e44" font-family="'DejaVu Sans Mono','Consolas',monospace">5</text>
+<text x="522" y="484" font-size="19" font-weight="bold" text-anchor="start" fill="#343a40">Revisión</text>
+<text x="484" y="514" font-size="13.5" text-anchor="start" fill="#495057">Doble revisión + gate de seguridad</text>
+<rect x="696" y="536" width="62" height="22" rx="11" fill="#d0bfff" stroke="#6741d9" stroke-width="1.5"/>
+<text x="727" y="551" font-size="12" font-weight="bold" text-anchor="middle" fill="#ffffff">Opus</text>
+<rect x="800" y="452" width="300" height="118" rx="12" fill="#b2f2bb" stroke="#2f9e44" stroke-width="2.5"/>
+<circle cx="826" cy="478" r="17" fill="#ffffff" stroke="#2f9e44" stroke-width="2"/>
+<text x="826" y="484" font-size="15" font-weight="bold" text-anchor="middle" fill="#2f9e44" font-family="'DejaVu Sans Mono','Consolas',monospace">6</text>
+<text x="852" y="484" font-size="19" font-weight="bold" text-anchor="start" fill="#343a40">Verificar</text>
+<text x="814" y="514" font-size="13.5" text-anchor="start" fill="#495057">Corre tests · spec · escaneo secretos</text>
+<rect x="1026" y="536" width="62" height="22" rx="11" fill="#d0bfff" stroke="#6741d9" stroke-width="1.5"/>
+<text x="1057" y="551" font-size="12" font-weight="bold" text-anchor="middle" fill="#ffffff">Opus</text>
+<rect x="36" y="610" width="1168" height="296" rx="14" fill="#f8f9fa" stroke="#6741d9" stroke-width="2"/>
+<text x="620" y="640" font-size="19" font-weight="bold" text-anchor="middle" fill="#6741d9">Comandos principales  —  qué fases corre cada uno</text>
+<rect x="56" y="658" width="548" height="40" rx="9" fill="#d0bfff" stroke="#6741d9" stroke-width="2"/>
+<text x="70" y="683" font-size="16" font-weight="bold" text-anchor="start" fill="#3b2a75" font-family="'DejaVu Sans Mono','Consolas',monospace">/hydraia:feature</text>
+<rect x="508" y="666" width="84" height="24" rx="12" fill="#ffffff" stroke="#343a40" stroke-width="1.5"/>
+<text x="550" y="683" font-size="13" font-weight="bold" text-anchor="middle" fill="#343a40" font-family="'DejaVu Sans Mono','Consolas',monospace">0 – 6</text>
+<text x="70" y="695" font-size="12.5" text-anchor="start" fill="#5c5f66">Pipeline completo: construye, revisa, verifica</text>
+<rect x="620" y="658" width="548" height="40" rx="9" fill="#d0bfff" stroke="#6741d9" stroke-width="2"/>
+<text x="634" y="683" font-size="16" font-weight="bold" text-anchor="start" fill="#3b2a75" font-family="'DejaVu Sans Mono','Consolas',monospace">/hydraia:plan</text>
+<rect x="1072" y="666" width="84" height="24" rx="12" fill="#ffffff" stroke="#343a40" stroke-width="1.5"/>
+<text x="1114" y="683" font-size="13" font-weight="bold" text-anchor="middle" fill="#343a40" font-family="'DejaVu Sans Mono','Consolas',monospace">0 – 3</text>
+<text x="634" y="695" font-size="12.5" text-anchor="start" fill="#5c5f66">Sólo plan, luego para — sin código</text>
+<rect x="56" y="710" width="548" height="40" rx="9" fill="#d0bfff" stroke="#6741d9" stroke-width="2"/>
+<text x="70" y="735" font-size="16" font-weight="bold" text-anchor="start" fill="#3b2a75" font-family="'DejaVu Sans Mono','Consolas',monospace">/hydraia:story</text>
+<rect x="508" y="718" width="84" height="24" rx="12" fill="#ffffff" stroke="#343a40" stroke-width="1.5"/>
+<text x="550" y="735" font-size="13" font-weight="bold" text-anchor="middle" fill="#343a40" font-family="'DejaVu Sans Mono','Consolas',monospace">-1 – 3</text>
+<text x="70" y="747" font-size="12.5" text-anchor="start" fill="#5c5f66">Análisis PO (INVEST, ACs) → plan</text>
+<rect x="620" y="710" width="548" height="40" rx="9" fill="#d0bfff" stroke="#6741d9" stroke-width="2"/>
+<text x="634" y="735" font-size="16" font-weight="bold" text-anchor="start" fill="#3b2a75" font-family="'DejaVu Sans Mono','Consolas',monospace">/hydraia:perf</text>
+<rect x="1072" y="718" width="84" height="24" rx="12" fill="#ffffff" stroke="#343a40" stroke-width="1.5"/>
+<text x="1114" y="735" font-size="13" font-weight="bold" text-anchor="middle" fill="#343a40" font-family="'DejaVu Sans Mono','Consolas',monospace">-1 – 6</text>
+<text x="634" y="747" font-size="12.5" text-anchor="start" fill="#5c5f66">Rendimiento medido primero</text>
+<rect x="56" y="762" width="548" height="40" rx="9" fill="#d0bfff" stroke="#6741d9" stroke-width="2"/>
+<text x="70" y="787" font-size="16" font-weight="bold" text-anchor="start" fill="#3b2a75" font-family="'DejaVu Sans Mono','Consolas',monospace">/hydraia:db</text>
+<rect x="508" y="770" width="84" height="24" rx="12" fill="#ffffff" stroke="#343a40" stroke-width="1.5"/>
+<text x="550" y="787" font-size="13" font-weight="bold" text-anchor="middle" fill="#343a40" font-family="'DejaVu Sans Mono','Consolas',monospace">-1 – 6</text>
+<text x="70" y="799" font-size="12.5" text-anchor="start" fill="#5c5f66">Ajuste de cuellos DB (EXPLAIN primero)</text>
+<rect x="620" y="762" width="548" height="40" rx="9" fill="#d0bfff" stroke="#6741d9" stroke-width="2"/>
+<text x="634" y="787" font-size="16" font-weight="bold" text-anchor="start" fill="#3b2a75" font-family="'DejaVu Sans Mono','Consolas',monospace">/hydraia:architect</text>
+<rect x="1072" y="770" width="84" height="24" rx="12" fill="#ffffff" stroke="#343a40" stroke-width="1.5"/>
+<text x="1114" y="787" font-size="13" font-weight="bold" text-anchor="middle" fill="#343a40" font-family="'DejaVu Sans Mono','Consolas',monospace">-1 – 6</text>
+<text x="634" y="799" font-size="12.5" text-anchor="start" fill="#5c5f66">App desde cero, diseñada primero</text>
+<rect x="56" y="814" width="548" height="40" rx="9" fill="#d0bfff" stroke="#6741d9" stroke-width="2"/>
+<text x="70" y="839" font-size="16" font-weight="bold" text-anchor="start" fill="#3b2a75" font-family="'DejaVu Sans Mono','Consolas',monospace">/hydraia:review</text>
+<rect x="508" y="822" width="84" height="24" rx="12" fill="#ffffff" stroke="#343a40" stroke-width="1.5"/>
+<text x="550" y="839" font-size="13" font-weight="bold" text-anchor="middle" fill="#343a40" font-family="'DejaVu Sans Mono','Consolas',monospace">5 – 6</text>
+<text x="70" y="851" font-size="12.5" text-anchor="start" fill="#5c5f66">Revisa una rama existente</text>
+<rect x="620" y="814" width="548" height="40" rx="9" fill="#d0bfff" stroke="#6741d9" stroke-width="2"/>
+<text x="634" y="839" font-size="16" font-weight="bold" text-anchor="start" fill="#3b2a75" font-family="'DejaVu Sans Mono','Consolas',monospace">/hydraia:graph</text>
+<rect x="1072" y="822" width="84" height="24" rx="12" fill="#ffffff" stroke="#343a40" stroke-width="1.5"/>
+<text x="1114" y="839" font-size="13" font-weight="bold" text-anchor="middle" fill="#343a40" font-family="'DejaVu Sans Mono','Consolas',monospace">query</text>
+<text x="634" y="851" font-size="12.5" text-anchor="start" fill="#5c5f66">Radio de impacto, sin pipeline ni ediciones</text>
+<text x="620" y="932" font-size="13.5" text-anchor="middle" fill="#495057">Reparto de modelo:  Opus 4.8 = criterio (diseño, plan, revisión)   ·   Sonnet 5 = ejecución</text>
+<text x="620" y="954" font-size="12" text-anchor="middle" fill="#adb5bd">Spec-drive forzado por gate en runtime · reanudable · artefactos en docs/hydraia/</text>
+</svg>

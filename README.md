@@ -20,6 +20,18 @@ security gates to enforce.
 
 ---
 
+## Visual overview
+
+How one command drives the whole pipeline — the 7 phases (interactive design →
+frozen plan → autonomous build), the Opus/Sonnet model split, and which phases
+each main command runs.
+
+![How Hydraia works: the 7-phase pipeline split into an interactive design half and an autonomous build half, with the frozen-plan gate between them, model badges per phase, and a table mapping each main command to the phases it runs.](docs/diagrams/hydraia-pipeline-en.svg)
+
+> Editable source: [`docs/diagrams/hydraia-pipeline-en.excalidraw`](docs/diagrams/hydraia-pipeline-en.excalidraw) — drag it into [excalidraw.com](https://excalidraw.com) to tweak.
+
+---
+
 ## Table of contents
 
 - [Why Hydraia](#why-hydraia)
