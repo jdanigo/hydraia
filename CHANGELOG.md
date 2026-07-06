@@ -6,6 +6,24 @@ All notable changes to Hydraia are documented here. Format follows
 
 ## [Unreleased]
 
+## 0.10.2 — 2026-07-06
+
+Telemetry now logs for **every** Hydraia command, not only `feature`.
+
+- **Every route records a run.** The run-complete marker that triggers the Stop-hook
+  telemetry is now dropped at the end of every route that does real model work —
+  `feature`, `review`, `resume`, `plan`, `story`, `perf`, `db`, `architect`, and the
+  direct-agent commands `e2e`, `devops`, `observability`, `docs`, `graph`. Routes that
+  stop before Phase 6 (`plan`/`story`, one-shot `graph`) drop it at their own end. Only
+  the pure utilities `dashboard` and `doctor` skip it. The credits line is unchanged
+  (still only `feature`/`review`/`resume`).
+- **Per-session delta cursor (no double-counting).** Because several commands can run in
+  one session and `summary.sh` sweeps the whole session transcript, it now records only
+  the DELTA since the previous marker this session — tracked by a per-session cursor
+  (`~/.cache/hydraia/cursor-<sessionId>.json`) of already-logged message uuids and
+  sub-agent files. Running `graph` then `plan` then `review` logs three correct records,
+  not three cumulative ones. An emit with no new activity writes nothing.
+
 ## 0.10.1 — 2026-07-06
 
 Fixes the sub-agent telemetry capture that 0.10.0 got wrong: agents still showed

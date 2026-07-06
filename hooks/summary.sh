@@ -169,7 +169,26 @@ try:
 except Exception:
     files = [path]
 
-seen = set()
+# Per-session cursor: which message uuids and sub-agent files were ALREADY logged in
+# a prior emit this session. Every Hydraia command drops the run-complete marker at its
+# end, so several commands can run in one session; without this cursor each emit would
+# re-count the whole session and inflate the totals. We record only the DELTA since the
+# last emit. Cursor lives in the local cache, keyed by session id.
+cursor_path = ""
+cur_u, cur_a = set(), set()
+try:
+    if telem and sid:
+        cdir = os.path.dirname(telem) or "."
+        cursor_path = os.path.join(cdir, "cursor-" + sid + ".json")
+        with open(cursor_path) as cf:
+            cj = json.load(cf)
+        cur_u = set(cj.get("u") or [])
+        cur_a = set(cj.get("a") or [])
+except Exception:
+    cur_u, cur_a = set(), set()
+
+seen = set(cur_u)
+new_uuids = []
 for fp in files:
     try:
         fh = open(fp)
@@ -190,6 +209,7 @@ for fp in files:
                 if uid in seen:
                     continue
                 seen.add(uid)
+                new_uuids.append(uid)
             msg = o.get("message")
             if not isinstance(msg, dict):
                 continue
@@ -266,10 +286,14 @@ try:
 except Exception:
     agent_files = []
 
+new_agents = []
 for fp in sorted(set(agent_files)):
+    if os.path.basename(fp) in cur_a:
+        continue                      # already logged in an earlier emit this session
     md = sum_agent_file(fp)
     if not md:
         continue
+    new_agents.append(os.path.basename(fp))
     n_sub += 1
     for sm, u in md.items():
         x = sub_models.setdefault(sm, {"in": 0, "out": 0, "cr": 0, "cc": 0})
@@ -334,6 +358,14 @@ if telem:
             tf.write(json.dumps(rec) + "\n")
     except Exception:
         pass
+    # Advance the cursor so the next command this session records only its own delta.
+    if cursor_path:
+        try:
+            with open(cursor_path, "w") as cf:
+                json.dump({"u": sorted(cur_u | set(new_uuids)),
+                           "a": sorted(cur_a | set(new_agents))}, cf)
+        except Exception:
+            pass
 
 # --- Render ------------------------------------------------------------------
 model_names = ", ".join(sorted(combined))

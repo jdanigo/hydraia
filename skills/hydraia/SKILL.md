@@ -601,8 +601,19 @@ then reads the real numbers from the session transcript plus Claude Code's on-di
 sub-agent transcripts (`<project>/<sessionId>/subagents/agent-*.jsonl`, one per
 dispatched sub-agent, with a `.meta.json` naming its `agentType`) — so sub-agent tokens
 and models are counted, not just the main session. Do NOT hand-write token or agent
-counts yourself; they would be guesses. Skip this only for `plan`/`graph`, which do not
-complete a build.
+counts yourself; they would be guesses.
+
+**Telemetry logs for EVERY Hydraia route, not just `feature`.** Dropping this marker is
+the last action of every route that does real model work — `feature`, `review`,
+`resume`, `plan`, `story`, `perf`, `db`, `architect`, and the direct-agent commands
+(`e2e`, `devops`, `observability`, `docs`, `graph`). Routes that stop before Phase 6
+(e.g. `plan`/`story` at Phase 3, or a one-shot `graph` query) STILL drop the marker at
+their end so the run is recorded — use `brief` unless the human explicitly chose
+detailed. The Stop hook records only the DELTA since the previous marker this session
+(a per-session cursor prevents double-counting when several commands run back to back),
+so emitting once per command is correct, never inflating. Only the pure utilities
+`dashboard` and `doctor` skip it (no model work to record). The credits line below is
+separate: it is printed only for `feature`, `review`, and `resume`.
 
 **Pre-close security gate (mandatory):** run **repo-scan** and **production-audit**
 to confirm no hardcoded secrets, no vulnerable dependencies, and no obvious

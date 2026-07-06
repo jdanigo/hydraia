@@ -8,3 +8,5 @@ Invoke the **hydraia** skill forcing the Phase -1 route to **user story**. Run: 
 Produce ALL FOUR artifacts: story artifact, design spec, QA case document, and the frozen plan. Do NOT arm the spec-drive gate and do NOT write feature code — this is the human review point before implementation. Run /hydraia:feature when ready to build.
 
 Request: $ARGUMENTS
+
+When finished, record telemetry for this run: `printf 'brief\n' > docs/hydraia/.run-complete`. The Stop hook logs this run's real token/model/sub-agent usage to the local dashboard (delta-scoped per session, so it never double-counts). Do not hand-write the numbers.
