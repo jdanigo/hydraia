@@ -6,6 +6,30 @@ All notable changes to Hydraia are documented here. Format follows
 
 ## [Unreleased]
 
+## 0.9.2 — 2026-07-06
+
+E2E browser binaries become Hydraia-managed instead of an assumed-present
+dependency, and the bilingual README split into English (default) + Spanish.
+
+- **`hooks/doctor.sh --install-e2e` (new mode).** Installs the Playwright
+  (`npx playwright install chromium`) or Cypress binary for whichever E2E
+  framework the repo already picked (detected from `playwright.config.*`/
+  `cypress.config.*`/package.json — never chosen by the installer). Same
+  no-sudo, cross-platform pattern as the `codegraph`/`markitdown` installers
+  (macOS, Linux, Windows-via-WSL). `--check` now also reports the detected
+  framework and whether its browser binary is cached.
+- **`e2e-runner` agent** runs `doctor.sh --install-e2e --yes` before writing or
+  running any suite (both `implement` and `verify` modes) and reads its
+  `RESULT e2e_framework=… e2e_browsers=…` line — `missing` surfaces the exact
+  recovery command (including the sudo-gated `install-deps` case on Linux)
+  instead of silently failing mid-run.
+- **`/hydraia:doctor` command** and the `e2e-testing` skill document the new
+  opt-in install path; README prerequisites table gains the browser-binaries
+  row.
+- **`README.es.md` (new).** Full Spanish translation, faithful 1:1 with
+  `README.md` (code/commands/names untouched). `README.md` stays the default;
+  both files cross-link via a language switcher at the top.
+
 ## 0.9.1 — 2026-07-04
 
 Hard self-containment guarantee: any cheap, context-less executor (Haiku,

@@ -34,3 +34,7 @@ Playbook for functional end-to-end tests. The `e2e-runner` agent does the writin
 - Capture trace + screenshot + video ON FAILURE only (cost). Upload as CI artifacts.
 - CI: shard across workers for speed; retries allowed ONLY with a report that surfaces the retried specs (so flake stays visible, not buried).
 - The critical-flow subset is the gate; the full suite can be broader.
+
+## Browser binaries — never assumed present
+
+Never assume Playwright/Cypress browser binaries are already on the machine. `hooks/doctor.sh --install-e2e --yes` installs the binary for whichever framework the repo already uses (detected from `playwright.config.*`/`cypress.config.*` — it never picks a framework for you), cross-platform (macOS, Linux, Windows-via-WSL), no sudo. The `e2e-runner` agent runs this before every suite in both `implement` and `verify` mode. If it comes back `missing`, that's an environment gap (or, on Linux, missing system libraries that need `install-deps` and sudo) — report it plainly, never silently skip the gate.

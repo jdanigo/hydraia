@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Hydraia doctor: validate prerequisites, install/update external binaries.
-#   doctor.sh --check            read-only status, never mutates
-#   doctor.sh --install [--yes]  install/update codegraph + markitdown
+#   doctor.sh --check                read-only status, never mutates
+#   doctor.sh --install [--yes]      install/update codegraph + markitdown
+#   doctor.sh --install-e2e [--yes]  install E2E browser binaries (Playwright/Cypress)
 set -uo pipefail
 
 CACHE_DIR="${HOME}/.cache/hydraia"
@@ -10,9 +11,10 @@ MODE="--check"
 ASSUME_YES=0
 for arg in "$@"; do
   case "$arg" in
-    --check)   MODE="--check" ;;
-    --install) MODE="--install" ;;
-    --yes|-y)  ASSUME_YES=1 ;;
+    --check)       MODE="--check" ;;
+    --install)     MODE="--install" ;;
+    --install-e2e) MODE="--install-e2e" ;;
+    --yes|-y)      ASSUME_YES=1 ;;
   esac
 done
 
@@ -105,6 +107,44 @@ markitdown_ok=0; have markitdown && markitdown_ok=1
 echo "  codegraph:  $( [ $codegraph_ok -eq 1 ] && codegraph --version 2>/dev/null || echo 'not installed')"
 echo "  markitdown: $( [ $markitdown_ok -eq 1 ] && markitdown --version 2>/dev/null || echo 'not installed')"
 
+# --- E2E browser binaries (opt-in, project-scoped: only relevant if the repo
+# already decided on a framework via its own config file) ---
+detect_e2e_framework() {
+  if ls playwright.config.* >/dev/null 2>&1; then echo "playwright"
+  elif ls cypress.config.* >/dev/null 2>&1; then echo "cypress"
+  elif grep -q '"@playwright/test"' package.json 2>/dev/null; then echo "playwright"
+  elif grep -q '"cypress"' package.json 2>/dev/null; then echo "cypress"
+  else echo "none"
+  fi
+}
+# Cache dirs Playwright/Cypress download browser binaries into — existence of
+# any versioned subdir means at least one browser is already cached.
+playwright_browsers_cached() {
+  local d
+  for d in "${XDG_CACHE_HOME:-$HOME/.cache}/ms-playwright" "$HOME/Library/Caches/ms-playwright"; do
+    [ -d "$d" ] && [ -n "$(ls -A "$d" 2>/dev/null)" ] && return 0
+  done
+  return 1
+}
+cypress_binary_cached() {
+  local d
+  for d in "${XDG_CACHE_HOME:-$HOME/.cache}/Cypress" "$HOME/Library/Caches/Cypress"; do
+    [ -d "$d" ] && [ -n "$(ls -A "$d" 2>/dev/null)" ] && return 0
+  done
+  return 1
+}
+E2E_FRAMEWORK="$(detect_e2e_framework)"
+if [ "$E2E_FRAMEWORK" != "none" ]; then
+  echo "  e2e framework: $E2E_FRAMEWORK (detected)"
+  if [ "$E2E_FRAMEWORK" = "playwright" ]; then
+    playwright_browsers_cached && echo "  e2e browsers:  cached" || echo "  e2e browsers:  not installed — run '/hydraia:doctor' e2e install (see below)"
+  else
+    cypress_binary_cached && echo "  e2e browsers:  cached" || echo "  e2e browsers:  not installed — run '/hydraia:doctor' e2e install (see below)"
+  fi
+else
+  echo "  e2e framework: none detected (no playwright.config.*/cypress.config.* in this repo)"
+fi
+
 if [ "$MODE" = "--check" ]; then
   echo "-- discovery --"
   local_skills=$(find "$(dirname "$0")/../skills" -name SKILL.md 2>/dev/null | wc -l | tr -d ' ')
@@ -114,7 +154,73 @@ if [ "$MODE" = "--check" ]; then
   exit 0
 fi
 
-# --- MODE=install ---
+# --- MODE=install-e2e (Playwright/Cypress browser binaries — opt-in, heavy) ---
+if [ "$MODE" = "--install-e2e" ]; then
+  if [ "$E2E_FRAMEWORK" = "none" ]; then
+    echo "No E2E framework detected (no playwright.config.*/cypress.config.* and no"
+    echo "@playwright/test or cypress in package.json) — nothing to install here."
+    echo "Choosing a framework is a plan-level decision, not this installer's."
+    exit 0
+  fi
+  if [ "$ASSUME_YES" -ne 1 ]; then
+    echo "This will download the ${E2E_FRAMEWORK} browser binary via npx (one-time,"
+    echo "roughly 100-300MB), no sudo. Re-run with --yes to proceed."
+    exit 0
+  fi
+  mkdir -p "$CACHE_DIR" 2>/dev/null || true
+
+  # Browser binary only (no system libraries) — never needs sudo, works the same
+  # on macOS, Linux, and Windows-via-WSL.
+  install_playwright_browsers() {
+    if ! have npx; then
+      echo "  skip playwright browsers: npx not found — $H_NODE"
+      return
+    fi
+    echo "Installing Playwright browser binaries (chromium)…"
+    local err="${CACHE_DIR}/playwright-err.log"
+    if npx --yes playwright install chromium >/dev/null 2>"$err"; then
+      return
+    fi
+    echo "  playwright browser install failed. Recover (no sudo): npx playwright install chromium"
+    echo "  If tests fail at browser LAUNCH with missing shared libraries (Linux only),"
+    echo "  that needs OS packages via sudo, so it is never run automatically:"
+    echo "      npx playwright install-deps chromium"
+    echo "  (full log: $err)"
+  }
+
+  install_cypress_binary() {
+    if ! have npx; then
+      echo "  skip cypress binary: npx not found — $H_NODE"
+      return
+    fi
+    echo "Installing Cypress binary…"
+    local err="${CACHE_DIR}/cypress-err.log"
+    if npx --yes cypress install >/dev/null 2>"$err"; then
+      return
+    fi
+    echo "  cypress binary install failed. Recover (no sudo): npx cypress install"
+    echo "  (full log: $err)"
+  }
+
+  if [ "$E2E_FRAMEWORK" = "playwright" ]; then
+    install_playwright_browsers
+  else
+    install_cypress_binary
+  fi
+
+  echo "-- verify --"
+  pw_state="missing"
+  if [ "$E2E_FRAMEWORK" = "playwright" ]; then
+    playwright_browsers_cached && pw_state="ok"
+  else
+    cypress_binary_cached && pw_state="ok"
+  fi
+  echo "  ${E2E_FRAMEWORK} browsers: $pw_state"
+  echo "RESULT e2e_framework=$E2E_FRAMEWORK e2e_browsers=$pw_state"
+  exit 0
+fi
+
+# --- MODE=install (codegraph + markitdown) ---
 if [ "$ASSUME_YES" -ne 1 ]; then
   echo "This will run user-level npm/pip installs (no sudo). Re-run with --yes to proceed."
   exit 0

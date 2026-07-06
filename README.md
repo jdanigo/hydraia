@@ -1,7 +1,9 @@
 # Hydraia
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)
-![Plugin version](https://img.shields.io/badge/plugin-v0.9.1-blue.svg)
+![Plugin version](https://img.shields.io/badge/plugin-v0.9.2-blue.svg)
+
+🇬🇧 English · 🇪🇸 [Español](README.es.md)
 
 A personal agentic development harness for Claude Code. One command runs the
 entire feature pipeline: it **collaborates with you on the design** (brainstorm,
@@ -503,6 +505,7 @@ auto-installed; `/hydraia:doctor` installs the last two tools for you.
 | `codegraph` | code-graph context | **Yes** |
 | `markitdown` | PDF → markdown | **Yes** |
 | `gh` CLI | GitHub PRs from the pipeline | No (optional) |
+| Playwright/Cypress browser binaries | E2E tests (`e2e-runner`) | **Yes, opt-in** (`/hydraia:doctor` → `--install-e2e`, only once the repo already picked a framework) |
 
 Platform: macOS/Linux. On Windows, run inside WSL.
 

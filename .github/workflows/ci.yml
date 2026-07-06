@@ -53,3 +53,34 @@ jobs:
             *missing*) echo "FAIL: a managed tool did not install on ${{ matrix.os }}"; exit 1 ;;
             *) echo "PASS: codegraph + markitdown both ok/installed" ;;
           esac
+
+  # Same proof for E2E browser binaries: once a repo has already picked Playwright
+  # (config file present), --install-e2e must land its browser on all three OSes —
+  # no sudo, no manual step.
+  install-e2e-browsers:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fake a Playwright-picked repo and install its browser binary
+        shell: bash
+        run: |
+          dir="${RUNNER_TEMP}/fake-pw-repo"
+          mkdir -p "$dir"
+          cd "$dir"
+          touch playwright.config.js
+          bash "${GITHUB_WORKSPACE}/hooks/doctor.sh" --install-e2e --yes | tee out.log
+      - name: Assert the browser binary landed (never 'missing')
+        shell: bash
+        run: |
+          dir="${RUNNER_TEMP}/fake-pw-repo"
+          res="$(grep '^RESULT' "$dir/out.log" | tail -1)"
+          echo "on ${{ matrix.os }}: $res"
+          test -n "$res" || { echo "no RESULT line — installer did not finish"; exit 1; }
+          case "$res" in
+            *e2e_browsers=ok*) echo "PASS: playwright chromium installed" ;;
+            *) echo "FAIL: browser binary did not install on ${{ matrix.os }}"; exit 1 ;;
+          esac
