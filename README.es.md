@@ -1,7 +1,7 @@
 # Hydraia
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)
-![Plugin version](https://img.shields.io/badge/plugin-v0.11.0-blue.svg)
+![Plugin version](https://img.shields.io/badge/plugin-v0.11.1-blue.svg)
 
 🇬🇧 [English](README.md) · 🇪🇸 Español
 
@@ -142,7 +142,7 @@ tu cuenta — la mayoría son pasos que nunca correrías a mano en un día norma
 | `/hydraia:docs [focus]` | — | Sincroniza README, docs de API, CHANGELOG, índice de ADR con el código — reporta drift. |
 | `/hydraia:review [focus]` | 5–6 | Doble revisión de código + gate de seguridad sobre la **rama actual**. El código ya existe. |
 | `/hydraia:graph <query>` | — | Consulta el grafo de código (sitios de llamada, radio de impacto) sin correr el pipeline. |
-| `/hydraia:doctor` | — | Valida, instala y actualiza dependencias externas (`codegraph`, `markitdown`), con consentimiento. |
+| `/hydraia:doctor` | — | Valida, instala y actualiza dependencias externas (`codegraph`, `markitdown`), con consentimiento. **Córrelo dentro del CLI de Claude Code** (ver [Instalación](#instalación)) — no es un comando de terminal. |
 | `/hydraia:dashboard [port]` | — | Lanza un dashboard web local (127.0.0.1): estado del plugin, telemetría de uso, y modos de corrida editables. Servidor Node sin dependencias; todos los datos se quedan en tu máquina. |
 | `/hydraia:resume [run]` | reanuda | Continúa un pipeline interrumpido desde la última fase incompleta. |
 
@@ -564,6 +564,11 @@ claude plugin install hydraia
 `.claude-plugin/marketplace.json` de ese clon. Las actualizaciones traen lo
 último de `main` (`claude plugin marketplace update hydraia`).
 
+> Ambos comandos también corren **dentro del CLI de Claude Code** — arranca
+> `claude` en tu terminal primero, luego córrelos en su prompt.
+
+![Agregando el marketplace de Hydraia e instalando el plugin dentro del CLI de Claude Code — claude plugin marketplace add jdanigo/hydraia, luego claude plugin install hydraia.](docs/diagrams/hydraia-install-terminal.svg)
+
 Eso es todo — cada skill y agente que usa Hydraia viene incluido dentro del
 plugin, así que no hay nada más que clonar o conectar.
 
@@ -574,6 +579,18 @@ Igual puedes correr `/hydraia:doctor` tú mismo cuando quieras para revisarlos o
 actualizarlos, e imprime comandos copiar-y-pegar por SO (`brew` / `apt` / `dnf`
 / `winget`) para los runtimes del sistema (`git`, Node, Python) que un plugin no
 puede instalar por ti.
+
+> **`/hydraia:doctor` es un slash command, no un comando de terminal.** Solo
+> corre *dentro* de la sesión del CLI de Claude Code — después de escribir
+> `claude` en tu terminal y llegar a su prompt. Correr `hydraia:doctor` o
+> `claude /hydraia:doctor` directo en bash/zsh no va a funcionar.
+>
+> ```bash
+> $ claude            # 1. primero arranca Claude Code
+> > /hydraia:doctor    # 2. luego corre esto, en el prompt de Claude
+> ```
+
+![Corriendo /hydraia:doctor dentro del CLI de Claude Code — arranca `claude` en tu terminal, luego corre el slash command en su prompt, y valida codegraph, markitdown, y git.](docs/diagrams/hydraia-doctor-terminal.svg)
 
 ---
 

@@ -1,0 +1,95 @@
+<svg viewBox="0 0 700 400" xmlns="http://www.w3.org/2000/svg" font-family="Menlo, Consolas, 'Courier New', monospace">
+  <title>Running /hydraia:doctor inside the Claude Code CLI</title>
+
+  <!-- Terminal window -->
+  <rect x="1" y="1" width="698" height="398" rx="14" fill="#0b0c14" stroke="#22243a" stroke-width="1"/>
+
+  <!-- Title bar -->
+  <rect x="1" y="1" width="698" height="40" rx="14" fill="#12131c"/>
+  <rect x="1" y="27" width="698" height="14" fill="#12131c"/>
+  <circle cx="28" cy="21" r="6" fill="#ff5f56"/>
+  <circle cx="48" cy="21" r="6" fill="#ffbd2e"/>
+  <circle cx="68" cy="21" r="6" fill="#27c93f"/>
+  <text x="350" y="26" text-anchor="middle" font-size="13" fill="#5c5f78">terminal</text>
+
+  <!-- Body -->
+  <g font-size="15" fill="#c9ccdb">
+
+    <!-- Line 1: $ claude (typed) -->
+    <g>
+      <text x="26" y="75" fill="#5c5f78">$</text>
+      <g clip-path="url(#clipL1)">
+        <text x="42" y="75" fill="#ffffff">claude</text>
+      </g>
+      <clipPath id="clipL1">
+        <rect x="42" y="60" height="20">
+          <animate attributeName="width" values="0;0;62;62;62;62;0" keyTimes="0;0.021;0.093;0.786;0.857;0.9;1" dur="14s" repeatCount="indefinite"/>
+        </rect>
+      </clipPath>
+    </g>
+
+    <!-- idle cursor before typing starts / after reset -->
+    <rect x="26" y="61" width="9" height="17" fill="#7ee2a8">
+      <animate attributeName="opacity" values="1;1;0;0;1" keyTimes="0;0.02;0.03;0.9;1" dur="14s" repeatCount="indefinite"/>
+    </rect>
+
+    <!-- Line 2: session banner -->
+    <text x="26" y="105" fill="#5c5f78" font-size="13">
+      Claude Code — interactive session started.
+      <animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;0.093;0.107;0.9;1" dur="14s" repeatCount="indefinite"/>
+    </text>
+
+    <!-- Line 3: > /hydraia:doctor (typed) -->
+    <g>
+      <text x="26" y="140" fill="#8b8fff">
+        &gt;
+        <animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;0.15;0.157;0.9;1" dur="14s" repeatCount="indefinite"/>
+      </text>
+      <g clip-path="url(#clipL3)">
+        <text x="42" y="140" fill="#ffffff">/hydraia:doctor</text>
+      </g>
+      <clipPath id="clipL3">
+        <rect x="42" y="125" height="20">
+          <animate attributeName="width" values="0;0;168;168;168;0" keyTimes="0;0.157;0.271;0.786;0.857;1" dur="14s" repeatCount="indefinite"/>
+        </rect>
+      </clipPath>
+    </g>
+
+    <!-- Output lines -->
+    <text x="26" y="175" fill="#a8abc2" font-size="14">
+      Checking dependencies…
+      <animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;0.271;0.293;0.786;0.9" dur="14s" repeatCount="indefinite"/>
+    </text>
+
+    <text x="26" y="203" fill="#7ee2a8" font-size="14">
+      ✓ codegraph &#160;&#160;v1.4.2
+      <animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;0.293;0.329;0.786;0.9" dur="14s" repeatCount="indefinite"/>
+    </text>
+
+    <text x="26" y="231" fill="#7ee2a8" font-size="14">
+      ✓ markitdown&#160;v0.3.1
+      <animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;0.329;0.364;0.786;0.9" dur="14s" repeatCount="indefinite"/>
+    </text>
+
+    <text x="26" y="259" fill="#7ee2a8" font-size="14">
+      ✓ git
+      <animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;0.364;0.4;0.786;0.9" dur="14s" repeatCount="indefinite"/>
+    </text>
+
+    <text x="26" y="287" fill="#5c5f78" font-size="14">
+      ○ gh CLI &#160;&#160;&#160;&#160;optional — not installed
+      <animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;0.4;0.436;0.786;0.9" dur="14s" repeatCount="indefinite"/>
+    </text>
+
+    <text x="26" y="322" fill="#ffffff" font-size="15" font-weight="700">
+      All required dependencies OK.
+      <animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;0.436;0.479;0.786;0.9" dur="14s" repeatCount="indefinite"/>
+    </text>
+  </g>
+
+  <!-- Caption footer -->
+  <rect x="1" y="360" width="698" height="39" rx="0" fill="#12131c"/>
+  <text x="350" y="384" text-anchor="middle" font-size="13" fill="#8b8fff">
+    Run inside the Claude Code CLI — not your regular shell
+  </text>
+</svg>

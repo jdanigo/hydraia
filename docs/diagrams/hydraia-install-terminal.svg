@@ -1,0 +1,91 @@
+<svg viewBox="0 0 700 400" xmlns="http://www.w3.org/2000/svg" font-family="Menlo, Consolas, 'Courier New', monospace">
+  <title>Installing Hydraia — marketplace add + plugin install, inside the Claude Code CLI</title>
+
+  <!-- Terminal window -->
+  <rect x="1" y="1" width="698" height="398" rx="14" fill="#0b0c14" stroke="#22243a" stroke-width="1"/>
+
+  <!-- Title bar -->
+  <rect x="1" y="1" width="698" height="40" rx="14" fill="#12131c"/>
+  <rect x="1" y="27" width="698" height="14" fill="#12131c"/>
+  <circle cx="28" cy="21" r="6" fill="#ff5f56"/>
+  <circle cx="48" cy="21" r="6" fill="#ffbd2e"/>
+  <circle cx="68" cy="21" r="6" fill="#27c93f"/>
+  <text x="350" y="26" text-anchor="middle" font-size="13" fill="#5c5f78">terminal</text>
+
+  <!-- Body -->
+  <g font-size="15" fill="#c9ccdb">
+
+    <!-- idle cursor before typing starts / after reset -->
+    <rect x="26" y="61" width="9" height="17" fill="#7ee2a8">
+      <animate attributeName="opacity" values="1;1;0;0;1" keyTimes="0;0.02;0.03;0.9;1" dur="14s" repeatCount="indefinite"/>
+    </rect>
+
+    <!-- Line 1: $ claude plugin marketplace add jdanigo/hydraia (typed) -->
+    <g>
+      <text x="26" y="75" fill="#5c5f78">$</text>
+      <g clip-path="url(#clipI1)">
+        <text x="42" y="75" fill="#ffffff">claude plugin marketplace add jdanigo/hydraia</text>
+      </g>
+      <clipPath id="clipI1">
+        <rect x="42" y="60" height="20">
+          <animate attributeName="width" values="0;0;410;410;410;410;0" keyTimes="0;0.021;0.164;0.786;0.857;0.9;1" dur="14s" repeatCount="indefinite"/>
+        </rect>
+      </clipPath>
+    </g>
+
+    <!-- Output: cloning -->
+    <text x="26" y="105" fill="#a8abc2" font-size="13">
+      Cloning jdanigo/hydraia…
+      <animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;0.179;0.2;0.786;0.9" dur="14s" repeatCount="indefinite"/>
+    </text>
+
+    <!-- Output: marketplace added -->
+    <text x="26" y="132" fill="#7ee2a8" font-size="13">
+      ✓ Marketplace added.
+      <animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;0.207;0.229;0.786;0.9" dur="14s" repeatCount="indefinite"/>
+    </text>
+
+    <!-- Line 2: $ claude plugin install hydraia (typed) -->
+    <g>
+      <text x="26" y="168" fill="#5c5f78">
+        $
+        <animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;0.25;0.257;0.9;1" dur="14s" repeatCount="indefinite"/>
+      </text>
+      <g clip-path="url(#clipI2)">
+        <text x="42" y="168" fill="#ffffff">claude plugin install hydraia</text>
+      </g>
+      <clipPath id="clipI2">
+        <rect x="42" y="153" height="20">
+          <animate attributeName="width" values="0;0;270;270;270;270;0" keyTimes="0;0.257;0.371;0.786;0.857;0.9;1" dur="14s" repeatCount="indefinite"/>
+        </rect>
+      </clipPath>
+    </g>
+
+    <!-- Output lines for install -->
+    <text x="26" y="196" fill="#a8abc2" font-size="13">
+      Resolving plugin manifest…
+      <animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;0.386;0.407;0.786;0.9" dur="14s" repeatCount="indefinite"/>
+    </text>
+
+    <text x="26" y="224" fill="#a8abc2" font-size="13">
+      Installing hydraia…
+      <animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;0.414;0.436;0.786;0.9" dur="14s" repeatCount="indefinite"/>
+    </text>
+
+    <text x="26" y="252" fill="#7ee2a8" font-size="13">
+      ✓ 46 skills, 26 agents ready.
+      <animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;0.443;0.464;0.786;0.9" dur="14s" repeatCount="indefinite"/>
+    </text>
+
+    <text x="26" y="286" fill="#ffffff" font-size="15" font-weight="700">
+      Hydraia installed. Run /hydraia:doctor next.
+      <animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;0.471;0.493;0.786;0.9" dur="14s" repeatCount="indefinite"/>
+    </text>
+  </g>
+
+  <!-- Caption footer -->
+  <rect x="1" y="360" width="698" height="39" rx="0" fill="#12131c"/>
+  <text x="350" y="384" text-anchor="middle" font-size="13" fill="#8b8fff">
+    Both commands run inside the Claude Code CLI, one after the other
+  </text>
+</svg>

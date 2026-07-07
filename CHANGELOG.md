@@ -6,6 +6,22 @@ All notable changes to Hydraia are documented here. Format follows
 
 ## [Unreleased]
 
+## 0.11.1 — 2026-07-06
+
+Clarifies where `/hydraia:doctor` and the install commands actually run — several
+users tried running them as plain shell commands instead of inside the Claude
+Code CLI.
+
+- **`/hydraia:doctor` is a slash command, not a shell command.** README/README.es
+  now spell out explicitly: start `claude` in your terminal first, then run
+  `/hydraia:doctor` at its prompt — not `hydraia:doctor` or `claude /hydraia:doctor`
+  directly in bash/zsh.
+- **Two new animated SVG diagrams** (`docs/diagrams/hydraia-doctor-terminal.svg`,
+  `docs/diagrams/hydraia-install-terminal.svg`) show a looping terminal demo of
+  `claude` → `/hydraia:doctor`, and `claude plugin marketplace add` →
+  `claude plugin install`, end to end.
+- Docs only — no behavior change.
+
 ## 0.11.0 — 2026-07-06
 
 Hydraia now tells you when you are running an outdated version.
