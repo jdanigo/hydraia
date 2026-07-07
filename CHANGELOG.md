@@ -6,6 +6,18 @@ All notable changes to Hydraia are documented here. Format follows
 
 ## [Unreleased]
 
+## 0.11.2 — 2026-07-06
+
+Removes an internal editing-workflow reference that leaked into the public
+README.
+
+- **Dropped the "Editable source: ... .excalidraw — drag it into excalidraw.com"
+  callout** under the pipeline diagram in both README.md and README.es.md. The
+  `.excalidraw` source files still ship in `docs/diagrams/` for anyone who wants
+  to edit the diagram, but the public docs no longer point at the raw editing
+  workflow.
+- Docs only — no behavior change.
+
 ## 0.11.1 — 2026-07-06
 
 Clarifies where `/hydraia:doctor` and the install commands actually run — several
