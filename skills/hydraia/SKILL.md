@@ -221,6 +221,10 @@ start until this file exists. The spec MUST contain, at minimum:
 - **Global constraints** — version floors, naming/copy rules, platform limits, and
   any acceptance criteria, with exact values.
 - **Threat model + mitigations** — see below; folded in so they become plan tasks.
+- **UX / visual direction** (mandatory when the change creates or touches UI) — the
+  chosen style, colour palette, type scale, spacing/layout system, key interaction
+  states, and the accessibility floor, decided HERE via **ui-ux-pro-max** — not left
+  to markup-writing time. See the frontend-design rule below.
 
 **Design approval (interactive gate, mandatory).** Present the design to the user and
 get their approval BEFORE writing the spec file — this is `brainstorming`'s HARD-GATE
@@ -258,6 +262,18 @@ untrusted inputs, authN/authZ boundaries, PII/financial data handled, external
 calls, and secrets. Note the OWASP categories at risk. Bake the mitigations into
 the spec so they become plan tasks, not afterthoughts. Catching a design-level
 security flaw here is far cheaper than at review time.
+
+**Frontend design (mandatory when UI is in scope, before freezing the spec):**
+visual quality is decided at design time, not patched on at markup-writing time — a
+landing or screen that reads "flat / generic" was already flat in the spec. So when
+this change creates or touches any UI, consult the **ui-ux-pro-max** skill NOW, during
+design, and record its output in the spec's *UX / visual direction* section: the chosen
+style, palette, type scale, spacing/layout system, key component and interaction
+states, and the WCAG accessibility floor. This is the design-time source of truth that
+Phase 3 inlines into every UI task and Phase 4 executes against — the Phase 4
+"consult ui-ux-pro-max before markup" rule enforces the *floor*, but the intent must be
+set here or the executor is left guessing. Skipping this for a UI change is the exact
+gap that produces generic output. (Purely back-end / non-visual changes skip it.)
 
 ## Phase 3 — Plan + self-review loop (the "todo bien hechesito" gate)
 
@@ -333,6 +349,17 @@ security flaw here is far cheaper than at review time.
    **Anchor edits by unique quoted text, never by line number alone.** Line numbers
    drift as earlier tasks change the file; every `Modify` must carry a unique text
    anchor the executor can match exactly. State this in the task.
+
+   **Every UI task carries its visual direction inline.** A task that creates or
+   changes UI MUST embed the concrete decisions from the Phase 2 *UX / visual
+   direction* section — the exact style, palette values, type scale, spacing, and
+   component/interaction states it must produce — plus an instruction to consult
+   **ui-ux-pro-max** for implementation-level accessibility and interaction states.
+   Because Phase 4 runs autonomously on a weak executor, "make it look good" or
+   "see the spec for styling" is NOT self-contained — the executor cannot open the
+   spec and will fall back to generic defaults. Inline the values, per the
+   self-containment rule above. A UI task with no visual direction in its body is
+   under-specified and produces flat output.
 
    **Every task carries a runnable verification with its expected output** — not
    only TDD steps. Config, docs, and scaffolding tasks each end with an exact
@@ -487,9 +514,13 @@ recover automatically at every wave boundary:
   on it silently. Bounded waves (`HYDRAIA_MAX_CONCURRENT`) keep a stall from taking the
   whole plan down with it.
 
-**Frontend rule:** if a task creates or changes UI, the executor MUST consult the
-**ui-ux-pro-max** skill for styles, palettes, typography, and accessibility before
-writing markup.
+**Frontend rule (hard gate, not optional):** any task that creates or changes UI —
+markup, components, styles, or templates — the executor consults the **ui-ux-pro-max**
+skill BEFORE writing a single line of markup, and implements the *UX / visual
+direction* the task carries from the Phase 2 spec (style, palette, type scale, spacing,
+interaction states, accessibility floor). This is not conditional on the executor
+self-classifying the task as "UI enough" — if the task touches anything a user sees, the
+gate applies. Writing markup first and styling later is the failure this prevents.
 
 **Stack best-practices rule:** before writing non-trivial code, the executor
 consults the matching patterns/standards skill so idioms are right the first time —

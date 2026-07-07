@@ -16,7 +16,7 @@ by hand):
 
 Rules:
 - Do only what the task specifies. Surgical changes. No scope creep.
-- If the task involves UI, consult the ui-ux-pro-max skill before writing markup: pick a style, palette, type scale, and check accessibility.
+- If the task touches anything a user sees — markup, components, styles, templates — consult the ui-ux-pro-max skill BEFORE writing any markup. This is a hard gate, not conditional on you judging the task "UI enough". Implement the visual direction the task carries (style, palette, type scale, spacing, interaction states) and check the accessibility floor. If the task carries no visual direction, that is a plan defect — report it, do not invent a generic look.
 - Write or update tests as the plan dictates (TDD where specified).
 - Query the code graph instead of broad file reads when locating call sites.
 - Run the relevant tests before declaring the task done.

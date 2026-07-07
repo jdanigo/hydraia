@@ -6,6 +6,29 @@ All notable changes to Hydraia are documented here. Format follows
 
 ## [Unreleased]
 
+## 0.12.0 — 2026-07-07
+
+Guarantees UI work is design-guided end to end. The `ui-ux-pro-max` rule used to
+live only in Phase 4 execution — and only as a soft, self-classified "if the task
+involves UI" — so visual intent was never set at design time and autonomous
+executors fell back to flat, generic output.
+
+- **Phase 2 (design):** the design spec now MUST carry a *UX / visual direction*
+  section when the change creates or touches UI — style, palette, type scale,
+  spacing/layout, interaction states, and the accessibility floor, decided via
+  `ui-ux-pro-max` at design time. Visual quality is set in the spec, not patched
+  on at markup-writing time.
+- **Phase 3 (plan):** every UI task must embed its concrete visual direction inline
+  (per self-containment) instead of pointing at the spec, since a weak autonomous
+  executor cannot open it.
+- **Phase 4 (execution):** the frontend rule is now a hard gate — not conditional on
+  the executor judging a task "UI enough". The `hydraia-executor` agent reports a
+  plan defect rather than inventing a generic look when a UI task lacks direction.
+- **Enforcement:** `hooks/plancheck.sh` now blocks the spec-drive gate-arm when a
+  plan has UI-touching tasks that carry no visual direction, alongside the existing
+  self-containment check. Conservative and fail-open, with the `HYDRAIA_ALLOW_DIRECT`
+  bypass.
+
 ## 0.11.2 — 2026-07-06
 
 Removes an internal editing-workflow reference that leaked into the public
