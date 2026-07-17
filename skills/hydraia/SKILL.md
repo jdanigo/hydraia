@@ -50,6 +50,51 @@ messages, spec/plan files, or the credits line — those stay as-is (English,
 portable). Ask this exactly once per run; `/hydraia:resume` inherits the prior
 run's choice if the run log records it, otherwise re-asks.
 
+**Storage & commit gate (second action, right after the Language gate).** Two
+`AskUserQuestion` prompts, asked once per run (like the language gate). Do NOT
+recommend an option — the user chooses; these are privacy/workflow decisions, not
+quality ones.
+
+1. **Artifacts location** — "Where should Hydraia store its artifacts (specs, plans,
+   QA, run logs, and pipeline state)?"
+   - `In the repo` → `<repo>/docs/hydraia/` (tracked by git — the default).
+   - `Outside the repo` → `~/.config/hydraia/artifacts/<repo-slug>/` (on this machine,
+     never committed, no `.gitignore` edits). `<repo-slug>` = repo dir basename + `-`
+     + the first 6 hex of a hash of the absolute repo root.
+2. **Auto-commit** — "Auto-commit each task as Hydraia goes?"
+   - `Yes` → commit per task (the default).
+   - `No` → executors do NOT commit; all changes are left in the working tree for you
+     to commit as you like.
+
+After the answers: write both to the GLOBAL config `~/.config/hydraia/config.json`
+under `repos["<absolute repo root>"]` as `artifactsDir` (omit or `docs/hydraia` for
+in-repo; the absolute external path otherwise) and `autoCommit` (`true`/`false`);
+create the external dir (with `specs/ plans/ qa/ runs/`) if chosen; then use the
+resolved absolute base as **the artifacts base** for the whole run (see *Artifacts
+base* below). If the user dismisses either question, default to in-repo + auto-commit
+ON (behavior identical to prior versions). `/hydraia:resume` inherits both from the
+run log if recorded, otherwise re-asks. The hooks read the same choice via
+`hy_artifacts_dir` / `hy_repo_config` in `hooks/config.sh`, so the gate, agent caps,
+plan-check, and summary all resolve to the same base — in-repo or external.
+
+**Commit attribution (hard rule, every commit this pipeline makes).** Hydraia commits
+carry a clean, conventional message and NOTHING else. NEVER add a `Co-Authored-By`
+trailer for Claude, Hydraia, or any AI; never add a `🤖 Generated with…` line; never
+add any AI-attribution footer. This overrides any default harness commit-trailer
+behavior and applies everywhere a commit is made — executor per-task commits,
+qa-automation, spec/plan commits, quick-mode, and any final commit. (The run-summary
+credits line is separate and unaffected — it is printed to the user, not written into
+git.)
+
+**Artifacts base (path resolution).** Wherever this skill names a `docs/hydraia/<sub>`
+path (specs, plans, qa, runs, `.active-plan`, `.heartbeats`, config), that path is
+relative to the **resolved artifacts base** from the Storage gate — `docs/hydraia/` in
+the repo by default, or the external dir when chosen. Resolve the base once at the
+gate and use it for the rest of the run; when dispatching a task to a sub-agent, pass
+the absolute base so the executor writes its heartbeat and any artifacts to the right
+place. The shown `docs/hydraia/...` paths below are the default; substitute the
+resolved base when the user chose external storage.
+
 **Model guard.** Check the model this session is running on. If it is NOT Opus 4.8
 (e.g. Sonnet 5), print this once, then continue anyway — never block:
 
@@ -538,6 +583,22 @@ executor subagents have no Skill tool, so the visual system is decided ONCE at d
 time (Phase 2, below) and inlined into every UI task; the spec is the executor's single
 source of truth. A UI task that reaches Phase 4 with no visual direction is a plan
 defect — the executor reports it BLOCKED rather than inventing a generic look.
+
+**Auto-commit mode (from the Storage & commit gate):**
+- **Auto-commit ON (default):** each executor commits its task with a clean message
+  (no attribution trailer — see the hard rule above). Unchanged behavior.
+- **Auto-commit OFF:** executors write code and run tests but **do not commit** — they
+  leave all changes in the working tree and report files touched + test result. Tell
+  each dispatched executor explicitly not to commit. Liveness then rests on the
+  heartbeat alone (the "commit exists OR heartbeat fresh" check degrades gracefully to
+  heartbeat-only), so heartbeats are mandatory in this mode. **Phase 5** reviews the
+  working-tree diff (`git diff` including staged + unstaged) instead of branch commits —
+  both passes and the security gate see the full uncommitted diff. **Phase 6** runs the
+  real tests and confirms against the spec as usual, then reports "N files changed,
+  uncommitted — commit them yourself"; it makes no commit. `/hydraia:resume` in this
+  mode falls back to the run-log phase checklist + heartbeats for progress (it cannot
+  reconstruct per-task state from git); the spec-drive gate and `.active-plan` are
+  commit-independent and work the same.
 
 **Stack best-practices rule:** before writing non-trivial code, the executor
 consults the matching patterns/standards skill so idioms are right the first time —
