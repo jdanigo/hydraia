@@ -6,6 +6,34 @@ All notable changes to Hydraia are documented here. Format follows
 
 ## [Unreleased]
 
+## 0.13.0 — 2026-07-17
+
+Puts the user in control of where Hydraia writes and whether it commits — so nothing
+the pipeline generates lands in git unless they choose it. Aimed at teams and
+enterprises that don't want pipeline artifacts, per-task commits, or AI attribution
+trailers revealing how they work, and don't want to hand-edit `.gitignore`.
+
+- **Storage gate (session start).** Right after the language gate, Hydraia asks where
+  to store its artifacts (specs, plans, QA, run logs, and pipeline state): `In the
+  repo` (`docs/hydraia/`, tracked by git — the default) or `Outside the repo`
+  (`~/.config/hydraia/artifacts/<repo-slug>/`, on the machine, never committed, no
+  `.gitignore` edits). No recommendation — the user picks.
+- **Auto-commit gate (session start).** Asks whether to auto-commit each task. `No`
+  means executors write and test but never commit — all changes are left in the working
+  tree for you to commit as you like. Phase 5 then reviews the working-tree diff and
+  Phase 6 reports the uncommitted changes instead of committing.
+- **No attribution in commits.** Hydraia commits now carry a clean, conventional
+  message and nothing else — no `Co-Authored-By: Claude`/`Hydraia`, no `🤖 Generated
+  with…`, no AI footer. Overrides default harness trailer behavior across the executor,
+  qa-automation, spec/plan commits, quick-mode, and any final commit. (The run-summary
+  credits line is unaffected — it's printed to you, not written into git.)
+- **Configurable artifacts base.** New `hy_artifacts_dir` / `hy_repo_config` helpers in
+  `hooks/config.sh` resolve one base (env `HYDRAIA_DOCS_DIR` > global
+  `repos[<root>].artifactsDir` > `docs/hydraia`); the spec-drive gate, agent caps,
+  plan-check, and run summary all honor it. The gate's opt-in now also recognizes a
+  repo registered in the global config, so it stays active in external mode with zero
+  files in the repo. Fail-open to the in-repo default throughout.
+
 ## 0.12.1 — 2026-07-17
 
 Fixes the gap left by 0.12.0: the Phase 4 rule told the `hydraia-executor` to "consult

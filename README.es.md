@@ -1,7 +1,7 @@
 # Hydraia
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)
-![Plugin version](https://img.shields.io/badge/plugin-v0.12.1-blue.svg)
+![Plugin version](https://img.shields.io/badge/plugin-v0.13.0-blue.svg)
 
 🇬🇧 [English](README.md) · 🇪🇸 Español
 
@@ -115,6 +115,7 @@ tu cuenta — la mayoría son pasos que nunca correrías a mano en un día norma
 | **Corridas reanudables** | Cada corrida escribe un log durable con un checklist de fases. Si se interrumpe — crash, laptop cerrada, sesión matada — `/hydraia:resume` la retoma exactamente donde se detuvo. |
 | **Artefactos persistentes** | Specs y planes se guardan bajo `docs/hydraia/` — revisables, comparables con diff, reutilizables y auditables después. |
 | **Tú eliges la profundidad** | Al congelar el plan Hydraia pregunta cuánta ceremonia de review amerita el cambio (Full / Lite / Custom) y si quieres un resumen breve o detallado — así un arreglo trivial no paga un doble review completo. El piso de seguridad nunca se omite. |
+| **Nada se filtra a git salvo que quieras** | Al iniciar la sesión eliges dónde viven los artefactos (en el repo, o un dir externo por-usuario `~/.config/hydraia/artifacts/…`) y si commitear cada task — así specs, planes, logs, estado del pipeline y commits por-task se quedan fuera de tu repo si lo decides, sin editar `.gitignore`. Los commits de Hydraia tampoco llevan trailer `Co-Authored-By`/atribución de IA. |
 | **Watchdog de agentes colgados** | Los ejecutores emiten heartbeats; si uno se cuelga sin commitear, el pipeline lo re-despacha automáticamente en vez de esperar a que lo empujes — y solo reporta un bloqueo real tras agotar los reintentos. |
 | **QA como artefacto commiteado** | El QA funcional se escribe en `docs/hydraia/qa/` y se commitea — una matriz de casos Given/When/Then revisable que puedes leer y conservar, no QA hecho en la cabeza del modelo. |
 | **Telemetría consciente de sub-agentes** | El dashboard local atribuye tokens y modelos a cada sub-agente (no solo a la sesión principal), con entrada/salida por modelo y un desglose main-vs-sub por corrida. |

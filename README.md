@@ -1,7 +1,7 @@
 # Hydraia
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)
-![Plugin version](https://img.shields.io/badge/plugin-v0.12.1-blue.svg)
+![Plugin version](https://img.shields.io/badge/plugin-v0.13.0-blue.svg)
 
 🇬🇧 English · 🇪🇸 [Español](README.es.md)
 
@@ -113,6 +113,7 @@ them are steps you'd never run by hand on a normal day.
 | **Resumable runs** | Every run writes a durable log with a phase checklist. If it's interrupted — crash, closed laptop, killed session — `/hydraia:resume` picks it up exactly where it stopped. |
 | **Persistent artifacts** | Specs and plans are saved under `docs/hydraia/` — reviewable, diff-able, reusable, and auditable after the fact. |
 | **You pick the depth** | At plan freeze Hydraia asks how much review ceremony this change warrants (Full / Lite / Custom) and whether you want a brief or detailed closing summary — so a trivial fix need not pay for a full double review. The security floor is never skippable. |
+| **Nothing leaks into git unless you want it** | At session start you choose where artifacts live (in the repo, or an external per-user dir `~/.config/hydraia/artifacts/…`) and whether to auto-commit per task — so specs, plans, logs, pipeline state, and per-task commits stay out of your repo if you choose, with no `.gitignore` edits. Hydraia commits also carry no `Co-Authored-By`/AI attribution trailer. |
 | **Hung-agent watchdog** | Executors emit heartbeats; if one stalls without committing, the pipeline re-dispatches it automatically instead of waiting for you to nudge it — and surfaces a real blocker only after retries are exhausted. |
 | **QA as a committed artifact** | Functional QA is written to `docs/hydraia/qa/` and committed — a reviewable Given/When/Then case matrix you can read and keep, not QA done in the model's head. |
 | **Sub-agent-aware telemetry** | The local dashboard attributes tokens and models to each sub-agent (not just the main session), with per-model input/output and a per-run main-vs-sub split. |
