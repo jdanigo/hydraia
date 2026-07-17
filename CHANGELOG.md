@@ -6,12 +6,15 @@ All notable changes to Hydraia are documented here. Format follows
 
 ## [Unreleased]
 
+## 0.13.1 — 2026-07-17
+
 - **Fix (external mode):** the `.run-complete` telemetry marker written by `devops`,
   `e2e`, `docs`, `graph`, `plan`, `observability`, and `story` commands now targets the
   resolved artifacts base, not a hardcoded `docs/hydraia/`. In external storage mode the
   old path wrote into the repo while `summary.sh` read the external base, so the Stop
-  hook found no marker and silently skipped the run summary + telemetry. Needs a 0.13.1
-  tag.
+  hook found no marker and silently skipped the run summary + telemetry.
+- **Fix (packaging):** `.claude-plugin/plugin.json` version, missed by the 0.13.0 bump,
+  is now in sync with the README badges.
 
 ## 0.13.0 — 2026-07-17
 
