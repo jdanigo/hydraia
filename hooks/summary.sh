@@ -48,7 +48,15 @@ base="${cwd:-$PWD}"
 repo="$(git -C "$base" rev-parse --show-toplevel 2>/dev/null || true)"
 [ -n "$repo" ] || exit 0
 
-marker="$repo/docs/hydraia/.run-complete"
+# Resolve the artifacts base (in-repo docs/hydraia, or the external dir chosen at the
+# storage gate) so the run marker + logs are found in both modes.
+# shellcheck source=/dev/null
+. "$(dirname "$0")/config.sh" 2>/dev/null || true
+abase="$repo/docs/hydraia"
+command -v hy_artifacts_dir >/dev/null 2>&1 && abase="$(cd "$repo" 2>/dev/null && hy_artifacts_dir)"
+[ -n "$abase" ] || abase="$repo/docs/hydraia"
+
+marker="$abase/.run-complete"
 [ -f "$marker" ] || exit 0        # no completed run this turn → stay silent
 # The marker's first line selects verbosity: "detailed" → full breakdown, anything
 # else (incl. empty / legacy "done") → the brief box. Phase 6 writes it per the
@@ -79,7 +87,7 @@ NOW="$(date +%s)"
 # hook fired. Run start (for spanning compaction across session dirs) is the newest run
 # log's mtime; 0 → only the current session's sub-agents.
 RUNSTART=0
-newlog="$(ls -t "$repo"/docs/hydraia/runs/*.md 2>/dev/null | head -n1 || true)"
+newlog="$(ls -t "$abase"/runs/*.md 2>/dev/null | head -n1 || true)"
 if [ -n "$newlog" ] && [ -f "$newlog" ]; then
   RUNSTART="$(stat -f %m "$newlog" 2>/dev/null || stat -c %Y "$newlog" 2>/dev/null || echo 0)"
 fi

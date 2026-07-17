@@ -64,10 +64,20 @@ tool="$(printf '%s' "$parsed" | awk -F'\t' '{print $3}')"
 base="${cwd:-$PWD}"; [ -d "$base" ] || base="$PWD"
 repo="$(git -C "$base" rev-parse --show-toplevel 2>/dev/null || true)"
 [ -n "$repo" ] || exit 0
-[ -d "$repo/docs/hydraia" ] || exit 0
 
-plan="$repo/docs/hydraia/.active-plan"
-adir="$repo/docs/hydraia/.agents"
+# Resolve the artifacts base (in-repo docs/hydraia, or the external dir chosen at the
+# storage gate). Opt-in: base exists, OR repo registered in global config, OR legacy
+# in-repo docs/hydraia/.
+hbase="$(cd "$repo" 2>/dev/null && hy_artifacts_dir)"
+[ -n "$hbase" ] || hbase="$repo/docs/hydraia"
+if [ ! -d "$hbase" ] \
+   && [ -z "$(cd "$repo" 2>/dev/null && hy_repo_config artifactsDir "")" ] \
+   && [ ! -d "$repo/docs/hydraia" ]; then
+  exit 0
+fi
+
+plan="$hbase/.active-plan"
+adir="$hbase/.agents"
 now="$(date +%s)"
 mtime() { stat -f %m "$1" 2>/dev/null || stat -c %Y "$1" 2>/dev/null || echo 0; }
 

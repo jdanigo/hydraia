@@ -39,12 +39,21 @@ except Exception:
 fi
 [ -n "$cmd" ] || exit 0
 
+# Resolve the artifacts base for this repo (in-repo docs/hydraia, or the external dir
+# chosen at the storage gate) so the arm-target and plan-path match in both modes.
+# shellcheck source=/dev/null
+. "$(dirname "$0")/config.sh" 2>/dev/null || true
+abase="docs/hydraia"
+command -v hy_artifacts_dir >/dev/null 2>&1 && abase="$(hy_artifacts_dir)"
+
 case "$cmd" in
-  *docs/hydraia/.active-plan*) : ;;
+  *docs/hydraia/.active-plan*|*"$abase"/.active-plan*) : ;;
   *) exit 0 ;;
 esac
 
-plan="$(printf '%s' "$cmd" | grep -oE 'docs/hydraia/plans/[^"'"'"' ]+\.md' | head -1 || true)"
+# Match the plan path in either mode: a token ending in /plans/<name>.md, whether
+# in-repo (docs/hydraia/plans/…) or an absolute external path (…/plans/…).
+plan="$(printf '%s' "$cmd" | grep -oE '[^"'"'"' ]*/plans/[^"'"'"' ]+\.md' | head -1 || true)"
 [ -n "$plan" ] || exit 0
 [ -f "$plan" ] || exit 0
 
