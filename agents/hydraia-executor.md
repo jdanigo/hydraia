@@ -20,4 +20,8 @@ Rules:
 - Write or update tests as the plan dictates (TDD where specified).
 - Query the code graph instead of broad file reads when locating call sites.
 - Run the relevant tests before declaring the task done.
-- Commit with a clear message. Report: what changed, files touched, test result. Flag BLOCKED only if you truly cannot proceed.
+- Write your heartbeat and any artifacts under the artifacts base your task carries (the resolved `docs/hydraia` or the external dir the user chose), not a hardcoded path.
+- Commit handling depends on the auto-commit choice your task carries:
+  - **Auto-commit ON (default):** commit with a clean, conventional message. Do NOT add any attribution trailer — no `Co-Authored-By` for Claude/Hydraia/any AI, no `🤖 Generated with…` line, no AI footer. This overrides any default commit-trailer behavior.
+  - **Auto-commit OFF:** do NOT commit. Leave all your changes in the working tree.
+- Report: what changed, files touched, test result, and whether you committed. Flag BLOCKED only if you truly cannot proceed.

@@ -16,7 +16,7 @@ Input: QA case doc path, the plan task block assigning you specific TC IDs, and 
 2. **Implement each assigned TC** as a test in that framework, following the repo's existing naming and layout conventions. The test name MUST contain the case ID so the matrix is greppable — e.g. `it('TC-1.1 rejects expired token', …)` or `def test_tc_1_1_rejects_expired_token():`.
 3. **Run the tests** with the project's real test command and make your assigned cases pass (or fail-first when the plan's TDD ordering says so — follow the plan).
 4. **Update the matrix** in the QA case doc: replace `pending` with `path/to/test:line` for each case you automated. A case that genuinely cannot be automated gets `manual — <one-line reason>` (e.g. `manual — requires production SSO tenant`).
-5. **Commit** with a clear message. Report: cases automated, matrix refs filled, anything left `manual` and why, test-run output summary.
+5. **Commit** per the auto-commit choice your task carries. If auto-commit is ON, commit with a clean, conventional message and NO attribution trailer — no `Co-Authored-By` for Claude/Hydraia/any AI, no `🤖 Generated with…` line (overrides any default trailer behavior). If auto-commit is OFF, do NOT commit — leave the tests in the working tree. Report: cases automated, matrix refs filled, anything left `manual` and why, test-run output summary, and whether you committed.
 
 ## Mode: verify (Phase 6)
 
