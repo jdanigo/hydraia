@@ -7,4 +7,4 @@ Dispatch the **sre-observability** agent. Add structured logging (correlation ID
 
 Request: $ARGUMENTS
 
-When finished, record telemetry for this run: `printf 'brief\n' > docs/hydraia/.run-complete`. The Stop hook logs this run's real token/model/sub-agent usage to the local dashboard (delta-scoped per session, so it never double-counts). Do not hand-write the numbers.
+When finished, record telemetry for this run: `printf 'brief\n' > <base>/.run-complete` (where `<base>` is the artifacts dir resolved at the storage gate — `docs/hydraia/` by default, or the external dir if chosen). The Stop hook logs this run's real token/model/sub-agent usage to the local dashboard (delta-scoped per session, so it never double-counts). Do not hand-write the numbers.
