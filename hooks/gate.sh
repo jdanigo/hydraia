@@ -6,10 +6,11 @@
 # model can rationalize past.
 #
 # It BLOCKS a code edit only when ALL of these hold:
-#   - the target repo opts in (has a docs/hydraia/ directory), AND
+#   - the target repo opts in (registered in the global config, or has a resolved
+#     artifacts dir / legacy docs/hydraia/ directory), AND
 #   - the human bypass is NOT set (HYDRAIA_ALLOW_DIRECT is empty/unset), AND
-#   - the target is source code (not markdown, not under docs/hydraia/), AND
-#   - no frozen plan is active (docs/hydraia/.active-plan missing or stale).
+#   - the target is source code (not markdown, not under the artifacts dir), AND
+#   - no frozen plan is active (<artifacts dir>/.active-plan missing or stale).
 #
 # The bypass is deliberately an env var, not a command: the decision to skip the
 # pipeline is the human's, not the model's. To allow a direct edit:
@@ -56,8 +57,20 @@ dir="$(dirname "$file_path" 2>/dev/null || echo .)"
 repo="$(git -C "$dir" rev-parse --show-toplevel 2>/dev/null || true)"
 [ -n "$repo" ] || exit 0   # not in a git repo → not a Hydraia-managed edit, allow
 
-# Opt-in: only enforce in repos that use Hydraia.
-[ -d "$repo/docs/hydraia" ] || exit 0
+# Resolve the artifacts base (in-repo docs/hydraia by default, or the external dir
+# the user chose at the storage gate). Run from the repo so git-root resolution is
+# correct even when the hook's cwd differs.
+adir="$(cd "$repo" 2>/dev/null && hy_artifacts_dir)"
+[ -n "$adir" ] || adir="$repo/docs/hydraia"
+
+# Opt-in: enforce only in repos that use Hydraia — the resolved artifacts dir exists,
+# OR the repo is registered in the global config (external mode leaves nothing in the
+# repo), OR the legacy in-repo docs/hydraia/ exists.
+if [ ! -d "$adir" ] \
+   && [ -z "$(cd "$repo" 2>/dev/null && hy_repo_config artifactsDir "")" ] \
+   && [ ! -d "$repo/docs/hydraia" ]; then
+  exit 0
+fi
 
 # Spec-drive mode (config): off = never gate; relaxed = warn but allow;
 # strict (default) = block. Env HYDRAIA_SPEC_DRIVE overrides the file.
@@ -71,7 +84,7 @@ case "$file_path" in
   *.md|*.markdown) exit 0 ;;
 esac
 case "$file_path" in
-  "$repo"/docs/hydraia/*|docs/hydraia/*) exit 0 ;;
+  "$adir"/*|"$repo"/docs/hydraia/*|docs/hydraia/*) exit 0 ;;
 esac
 
 now="$(date +%s)"
@@ -83,13 +96,13 @@ fresh() { # $1=marker path, $2=max age secs → 0 if present and fresh
 }
 
 # Allow when a frozen plan is active (normal pipeline, Phase 3+).
-fresh "$repo/docs/hydraia/.active-plan" "$FRESH_SECS" && exit 0
+fresh "$adir/.active-plan" "$FRESH_SECS" && exit 0
 
 # Allow when the human approved a one-off quick edit in-conversation. This marker
 # is written by the model ONLY after an explicit AskUserQuestion approval (see
 # SKILL.md "Quick-mode"). It is short-lived and meant to be removed right after the
 # edit — it is a convenience channel, not the hard bypass (that is the env var).
-fresh "$repo/docs/hydraia/.quick-approved" "$QUICK_SECS" && exit 0
+fresh "$adir/.quick-approved" "$QUICK_SECS" && exit 0
 
 # Relaxed mode: note the missing plan but allow the edit (no block).
 if [ "$SPEC_DRIVE" = "relaxed" ]; then
@@ -114,7 +127,7 @@ Recover with ONE of:
     AskUserQuestion whether to skip the design ceremony (pro: far fewer tokens;
     con: no spec-drive record, no double review). If they approve, write the
     approval marker and retry, then run the real build/tests and remove it:
-        printf 'reason\n' > docs/hydraia/.quick-approved
+        printf 'reason\n' > "$adir/.quick-approved"
     Never write this marker without an explicit human "yes".
   • Human hard bypass (set by YOU in the shell, un-forgeable by the model):
         export HYDRAIA_ALLOW_DIRECT=1
