@@ -263,22 +263,34 @@ calls, and secrets. Note the OWASP categories at risk. Bake the mitigations into
 the spec so they become plan tasks, not afterthoughts. Catching a design-level
 security flaw here is far cheaper than at review time.
 
-**Frontend design (mandatory when UI is in scope, before freezing the spec):**
-visual quality is decided at design time, not patched on at markup-writing time — a
-landing or screen that reads "flat / generic" was already flat in the spec. So when
-this change creates or touches any UI, consult the **ui-ux-pro-max** skill NOW, during
-design, and record its output in the spec's *UX / visual direction* section: the chosen
-style, palette, type scale, spacing/layout system, key component and interaction
-states, and the WCAG accessibility floor. This is the design-time source of truth that
-Phase 3 inlines into every UI task and Phase 4 executes against — the Phase 4
-"consult ui-ux-pro-max before markup" rule enforces the *floor*, but the intent must be
-set here or the executor is left guessing. Skipping this for a UI change is the exact
-gap that produces generic output. (Purely back-end / non-visual changes skip it.)
+**Frontend design (HARD GATE when UI is in scope — a precondition for freezing the
+spec, not a suggestion):** visual quality is decided at design time, not patched on at
+markup-writing time — a landing or screen that reads "flat / generic" was already flat
+in the spec. This is the ONLY point in the whole pipeline where **ui-ux-pro-max** runs:
+the executor subagents in Phase 4 have no Skill tool and cannot invoke it, so if you do
+not run it HERE, nothing downstream will — the front end ships generic. That is the
+exact failure this gate exists to stop.
+
+So when this change creates or touches any UI, you (the interactive main thread, which
+DOES have the Skill tool) MUST invoke **ui-ux-pro-max** during design and record its
+output in the spec's *UX / visual direction* section: the chosen style, palette, type
+scale, spacing/layout system, key component and interaction states, and the WCAG
+accessibility floor — concrete values, not adjectives (exact hex, named font pairing,
+spacing scale). **Enforcement:** the spec MUST NOT be frozen and Phase 3 MUST NOT start
+until this section exists and is filled from ui-ux-pro-max output. A spec that reaches
+Phase 3 with an empty or hand-waved *UX / visual direction* section for in-scope UI is a
+gate failure — stop and run the skill. Phase 3 inlines this section verbatim into every
+UI task and Phase 4 implements it exactly. (Purely back-end / non-visual changes skip
+this gate entirely.)
 
 ## Phase 3 — Plan + self-review loop (the "todo bien hechesito" gate)
 
 0. **Precondition:** the Phase 2 spec file must already exist. If it does not, go
-   back and write it — do not plan without a spec.
+   back and write it — do not plan without a spec. **UI gate:** if the change touches
+   any UI, the spec's *UX / visual direction* section must already be filled from
+   ui-ux-pro-max output (see the Phase 2 Frontend-design hard gate). If it is empty or
+   hand-waved, stop and run ui-ux-pro-max now — do not plan UI tasks against a missing
+   visual system, because Phase 4 executors cannot recover it (they have no Skill tool).
 1. Use **writing-plans** to write the implementation plan, saved to
    `docs/hydraia/plans/YYYY-MM-DD-<feature>.md`. Follow the writing-plans structure
    in FULL — a thin plan is a failed plan. The plan MUST contain:
@@ -352,9 +364,10 @@ gap that produces generic output. (Purely back-end / non-visual changes skip it.
 
    **Every UI task carries its visual direction inline.** A task that creates or
    changes UI MUST embed the concrete decisions from the Phase 2 *UX / visual
-   direction* section — the exact style, palette values, type scale, spacing, and
-   component/interaction states it must produce — plus an instruction to consult
-   **ui-ux-pro-max** for implementation-level accessibility and interaction states.
+   direction* section — the exact style, palette values, type scale, spacing,
+   component/interaction states it must produce, and the WCAG accessibility floor to
+   verify. The executor implements these values directly and does NOT invoke
+   ui-ux-pro-max (it has no Skill tool); the inlined direction IS the visual system.
    Because Phase 4 runs autonomously on a weak executor, "make it look good" or
    "see the spec for styling" is NOT self-contained — the executor cannot open the
    spec and will fall back to generic defaults. Inline the values, per the
@@ -515,12 +528,16 @@ recover automatically at every wave boundary:
   whole plan down with it.
 
 **Frontend rule (hard gate, not optional):** any task that creates or changes UI —
-markup, components, styles, or templates — the executor consults the **ui-ux-pro-max**
-skill BEFORE writing a single line of markup, and implements the *UX / visual
+markup, components, styles, or templates — the executor implements the *UX / visual
 direction* the task carries from the Phase 2 spec (style, palette, type scale, spacing,
-interaction states, accessibility floor). This is not conditional on the executor
-self-classifying the task as "UI enough" — if the task touches anything a user sees, the
-gate applies. Writing markup first and styling later is the failure this prevents.
+interaction states) EXACTLY, then verifies the WCAG accessibility floor. This is not
+conditional on the executor self-classifying the task as "UI enough" — if the task
+touches anything a user sees, the gate applies. Writing markup first and styling later
+is the failure this prevents. The executor does NOT invoke ui-ux-pro-max itself —
+executor subagents have no Skill tool, so the visual system is decided ONCE at design
+time (Phase 2, below) and inlined into every UI task; the spec is the executor's single
+source of truth. A UI task that reaches Phase 4 with no visual direction is a plan
+defect — the executor reports it BLOCKED rather than inventing a generic look.
 
 **Stack best-practices rule:** before writing non-trivial code, the executor
 consults the matching patterns/standards skill so idioms are right the first time —

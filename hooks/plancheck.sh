@@ -100,8 +100,10 @@ Offending tasks:
 $ui_smells
 
 Fix: embed the concrete visual decisions from the Phase 2 spec's UX / visual direction
-section into each UI task body, and instruct the executor to consult ui-ux-pro-max for
-implementation-level accessibility and interaction states.
+section into each UI task body (exact style, palette values, type scale, spacing,
+interaction states, WCAG floor). The executor implements these inline values directly —
+it has no Skill tool and does not invoke ui-ux-pro-max; that skill runs once at Phase 2
+design time and the inlined direction IS the visual system.
 EOF
     echo
   fi

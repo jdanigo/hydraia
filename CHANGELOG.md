@@ -6,6 +6,30 @@ All notable changes to Hydraia are documented here. Format follows
 
 ## [Unreleased]
 
+## 0.12.1 — 2026-07-17
+
+Fixes the gap left by 0.12.0: the Phase 4 rule told the `hydraia-executor` to "consult
+`ui-ux-pro-max` before markup", but executor subagents have no Skill tool and cannot
+invoke it — so the instruction was a dead letter and executors silently fell back to the
+spec text (or, when the spec's visual direction was thin, to generic output). This aligns
+the prose with the actual mechanism: `ui-ux-pro-max` runs **once** at design time and the
+inlined visual direction is the single source of truth.
+
+- **Phase 2 (design):** the `ui-ux-pro-max` consult is now a hard gate — the spec MUST
+  NOT freeze and Phase 3 MUST NOT start until the *UX / visual direction* section is
+  filled from the skill's output with concrete values (exact hex, named font pairing,
+  spacing scale). This is the only point in the pipeline where the skill runs; skip it
+  and nothing downstream can recover the visual system.
+- **Phase 3 (plan):** the stale "instruct the executor to consult `ui-ux-pro-max`" line
+  is removed. UI tasks embed concrete visual values inline plus the WCAG floor to verify;
+  the inlined direction IS the visual system.
+- **Phase 4 (execution):** the `hydraia-executor` prose no longer asks the subagent to
+  invoke a skill it cannot reach. It implements the task's inlined visual direction
+  exactly, verifies the accessibility floor, and reports BLOCKED on a UI task that
+  carries no direction.
+- **Hook + docs:** `hooks/plancheck.sh`'s help string and both READMEs' frontend rows
+  now describe the design-time-once model instead of the impossible per-executor consult.
+
 ## 0.12.0 — 2026-07-07
 
 Guarantees UI work is design-guided end to end. The `ui-ux-pro-max` rule used to

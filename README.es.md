@@ -1,7 +1,7 @@
 # Hydraia
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)
-![Plugin version](https://img.shields.io/badge/plugin-v0.12.0-blue.svg)
+![Plugin version](https://img.shields.io/badge/plugin-v0.12.1-blue.svg)
 
 🇬🇧 [English](README.md) · 🇪🇸 Español
 
@@ -305,7 +305,7 @@ terminales.
 | Heredaste una rama (tuya o de un compañero) y quieres una revisión rigurosa y consciente de seguridad | `/hydraia:review` |
 | Estimar alcance / decidir si un refactor es seguro | `/hydraia:graph` |
 | Código sensible a seguridad (auth, input de usuario, llamadas externas) donde un fallo a nivel de diseño es caro | cualquier corrida del pipeline — el threat model + 3 gates de seguridad siempre están activos |
-| Trabajo de frontend | `/hydraia:feature` — los ejecutores consultan automáticamente `ui-ux-pro-max` para estilo, paleta, escala tipográfica, a11y |
+| Trabajo de frontend | `/hydraia:feature` — `ui-ux-pro-max` corre en diseño para fijar estilo, paleta, escala tipográfica y a11y en el spec; los ejecutores implementan esa dirección visual exactamente |
 | Convertir un ticket de Jira exportado como PDF en código entregado | `/hydraia:feature path/to/ticket.pdf …` — se convierte a markdown antes de planificar |
 | Servicio/módulo greenfield desde cero | `/hydraia:architect` — `greenfield-architect` guía elicitación → arquitectura (`architect` + `code-architect`, `microservices-architect` para divisiones) → stack → contrato de `api-design` → ADRs antes del spec |
 | Feature grande donde te preocupa el costo de tokens | cualquier corrida del pipeline — la división Opus/Sonnet mantiene automáticamente al modelo caro fuera del trabajo mecánico |
