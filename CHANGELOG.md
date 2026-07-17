@@ -6,6 +6,13 @@ All notable changes to Hydraia are documented here. Format follows
 
 ## [Unreleased]
 
+- **Fix (external mode):** the `.run-complete` telemetry marker written by `devops`,
+  `e2e`, `docs`, `graph`, `plan`, `observability`, and `story` commands now targets the
+  resolved artifacts base, not a hardcoded `docs/hydraia/`. In external storage mode the
+  old path wrote into the repo while `summary.sh` read the external base, so the Stop
+  hook found no marker and silently skipped the run summary + telemetry. Needs a 0.13.1
+  tag.
+
 ## 0.13.0 — 2026-07-17
 
 Puts the user in control of where Hydraia writes and whether it commits — so nothing
