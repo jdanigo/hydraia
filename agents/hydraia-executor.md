@@ -9,7 +9,7 @@ You implement exactly ONE task from the plan you are given. You have no prior se
 
 Heartbeat (so the pipeline's watchdog knows you are alive and never has to nudge you
 by hand):
-- At the very START, write a heartbeat: `mkdir -p docs/hydraia/.heartbeats && printf '%s\n' "$(date +%s)" > docs/hydraia/.heartbeats/<task-slug>` (a short slug from your task's title/id).
+- At the very START, write a heartbeat under the artifacts base your task carries (`<base>` — the resolved `docs/hydraia`, or the external dir the user chose; never a hardcoded path): `mkdir -p <base>/.heartbeats && printf '%s\n' "$(date +%s)" > <base>/.heartbeats/<task-slug>` (a short slug from your task's title/id).
 - Refresh it (same command) after each commit and at any long step boundary.
 - Be time-boxed: make progress and commit, or report BLOCKED explicitly. Never spin in
   place — a silent stall is the exact failure this heartbeat exists to surface.

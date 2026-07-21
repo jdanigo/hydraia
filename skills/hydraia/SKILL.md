@@ -87,7 +87,8 @@ credits line is separate and unaffected — it is printed to the user, not writt
 git.)
 
 **Artifacts base (path resolution).** Wherever this skill names a `docs/hydraia/<sub>`
-path (specs, plans, qa, runs, `.active-plan`, `.heartbeats`, config), that path is
+path (specs, plans, qa, runs, `.active-plan`, `.quick-approved`, `.run-complete`,
+`.heartbeats`, config), that path is
 relative to the **resolved artifacts base** from the Storage gate — `docs/hydraia/` in
 the repo by default, or the external dir when chosen. Resolve the base once at the
 gate and use it for the rest of the run; when dispatching a task to a sub-agent, pass
@@ -696,16 +697,21 @@ changed surface and reports what changed. This step never blocks the run — sta
 docs do not fail a build; the report tells you what was updated.
 
 **Disarm the gate.** Once the run is verified and done, remove the active-plan
-marker so a later unrelated edit is gated again: `rm -f docs/hydraia/.active-plan`.
+marker so a later unrelated edit is gated again: `rm -f <base>/.active-plan` (where
+`<base>` is the resolved artifacts base — `docs/hydraia/` by default, or the external
+dir if chosen; removing the in-repo path in external mode leaves the gate armed).
 On a genuine blocker that ends the run early, leave the marker so `/hydraia:resume`
 can continue without re-arming.
 
 **Emit the run summary.** As the final close step, drop the one-shot marker that tells
 the Stop hook to print the transcript-derived run summary (agents dispatched, models
 used, real token usage). **Write the summary depth the human chose in Phase 3 step 6
-as the marker's content** — `printf 'detailed\n' > docs/hydraia/.run-complete` for a
-detailed breakdown, or `printf 'brief\n' > docs/hydraia/.run-complete` for the compact
-box (default). The hook (`hooks/summary.sh`) reads that first line to pick verbosity,
+as the marker's content** — `printf 'detailed\n' > <base>/.run-complete` for a
+detailed breakdown, or `printf 'brief\n' > <base>/.run-complete` for the compact
+box (default), where `<base>` is the artifacts base resolved at the Storage gate
+(`docs/hydraia/` by default, or the external dir if chosen). Writing the in-repo path
+in external mode drops the marker where `summary.sh` never looks, so the run summary +
+telemetry are silently lost. The hook (`hooks/summary.sh`) reads that first line to pick verbosity,
 then reads the real numbers from the session transcript plus Claude Code's on-disk
 sub-agent transcripts (`<project>/<sessionId>/subagents/agent-*.jsonl`, one per
 dispatched sub-agent, with a `.meta.json` naming its `agentType`) — so sub-agent tokens

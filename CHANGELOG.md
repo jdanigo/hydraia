@@ -6,6 +6,20 @@ All notable changes to Hydraia are documented here. Format follows
 
 ## [Unreleased]
 
+## 0.13.2 — 2026-07-19
+
+- **Fix (external mode, main pipeline):** the 0.13.1 `.run-complete` fix covered the
+  standalone commands but missed `skills/hydraia/SKILL.md` and two agent heartbeats, so
+  the main `/hydraia:feature` route still wrote control-plane markers to a hardcoded
+  `docs/hydraia/` in external mode. SKILL.md now resolves `<base>` for the run-summary
+  marker and the active-plan disarm, the artifacts-base note enumerates `.run-complete`
+  and `.quick-approved`, and the `hydraia-executor` / `qa-automation` heartbeats write
+  under the carried base instead of a hardcoded path (which in external mode both
+  dirtied the repo tree and hid the heartbeat from the watchdog).
+- **Docs:** `architect`, `plan`, and `story` commands note that their artifact paths
+  (`adr/`, `specs/`, `plans/`, `stories/`, `qa/`) are relative to the resolved
+  artifacts base, not literally `docs/hydraia/`.
+
 ## 0.13.1 — 2026-07-17
 
 - **Fix (external mode):** the `.run-complete` telemetry marker written by `devops`,
