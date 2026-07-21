@@ -88,3 +88,58 @@ hy_artifacts_dir() {
     printf '%s' "docs/hydraia"
   fi
 }
+
+# Deterministically set repos[<root>].<key> in the GLOBAL config
+# (~/.config/hydraia/config.json), preserving every other repo and key. This is the
+# sanctioned way for the main thread to record the storage-gate choice — never
+# hand-edit the JSON, which risks clobbering other repos or writing malformed config.
+# Creates the file and its parent dir if missing; writes atomically (tmp + rename).
+# Value coercion: "true"/"false" → JSON bool, all-digits → JSON number, else string.
+# Returns non-zero (and leaves the file untouched) on any error.
+#
+#   hy_config_set "$repo_root" artifactsDir "/abs/external/base"   # external mode
+#   hy_config_set "$repo_root" artifactsDir docs/hydraia            # in-repo (or omit)
+#   hy_config_set "$repo_root" autoCommit false
+hy_config_set() {
+  local root="$1" key="$2" value="${3-}"
+  [ -n "$root" ] && [ -n "$key" ] || return 1
+  command -v python3 >/dev/null 2>&1 || return 1
+  local cfg="${HOME}/.config/hydraia/config.json"
+  mkdir -p "$(dirname "$cfg")" 2>/dev/null || return 1
+  HY_CFG="$cfg" HY_ROOT="$root" HY_KEY="$key" HY_VAL="$value" python3 - <<'PY'
+import json, os
+cfg  = os.environ["HY_CFG"]
+root = os.environ["HY_ROOT"]
+key  = os.environ["HY_KEY"]
+raw  = os.environ["HY_VAL"]
+if raw == "true":
+    val = True
+elif raw == "false":
+    val = False
+elif raw.lstrip("-").isdigit():
+    val = int(raw)
+else:
+    val = raw
+try:
+    with open(cfg) as f:
+        d = json.load(f)
+    if not isinstance(d, dict):
+        d = {}
+except Exception:
+    d = {}
+repos = d.get("repos")
+if not isinstance(repos, dict):
+    repos = {}
+    d["repos"] = repos
+entry = repos.get(root)
+if not isinstance(entry, dict):
+    entry = {}
+    repos[root] = entry
+entry[key] = val
+tmp = cfg + ".tmp"
+with open(tmp, "w") as f:
+    json.dump(d, f, indent=2)
+    f.write("\n")
+os.replace(tmp, cfg)
+PY
+}

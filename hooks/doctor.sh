@@ -146,6 +146,33 @@ else
 fi
 
 if [ "$MODE" = "--check" ]; then
+  echo "-- storage --"
+  # Report where THIS repo's Hydraia artifacts land and whether it auto-commits, using
+  # the same resolver the hooks use — so the doctor and the pipeline never disagree.
+  # shellcheck source=/dev/null
+  . "$(dirname "$0")/config.sh" 2>/dev/null || true
+  repo_root="$(git rev-parse --show-toplevel 2>/dev/null || true)"
+  if [ -n "$repo_root" ] && command -v hy_artifacts_dir >/dev/null 2>&1; then
+    sbase="$(cd "$repo_root" && hy_artifacts_dir)"
+    case "$sbase" in
+      "$repo_root"/docs/hydraia) smode="in-repo (tracked by git)" ;;
+      *)                          smode="external (not committed)" ;;
+    esac
+    if [ -n "${HYDRAIA_DOCS_DIR:-}" ]; then
+      ssrc="env HYDRAIA_DOCS_DIR"
+    elif [ -n "$(cd "$repo_root" && hy_repo_config artifactsDir "")" ]; then
+      ssrc="global config repos[]"
+    else
+      ssrc="built-in default"
+    fi
+    sac="$(cd "$repo_root" && hy_repo_config autoCommit true)"
+    echo "  artifacts base: $sbase"
+    echo "  mode:           $smode"
+    echo "  source:         $ssrc"
+    echo "  auto-commit:    $sac"
+  else
+    echo "  (not inside a git repo — storage resolves per-repo at session start)"
+  fi
   echo "-- discovery --"
   local_skills=$(find "$(dirname "$0")/../skills" -name SKILL.md 2>/dev/null | wc -l | tr -d ' ')
   local_agents=$(ls "$(dirname "$0")/../agents"/*.md 2>/dev/null | wc -l | tr -d ' ')

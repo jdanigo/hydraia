@@ -66,12 +66,21 @@ quality ones.
    - `No` → executors do NOT commit; all changes are left in the working tree for you
      to commit as you like.
 
-After the answers: write both to the GLOBAL config `~/.config/hydraia/config.json`
-under `repos["<absolute repo root>"]` as `artifactsDir` (omit or `docs/hydraia` for
-in-repo; the absolute external path otherwise) and `autoCommit` (`true`/`false`);
-create the external dir (with `specs/ plans/ qa/ runs/`) if chosen; then use the
-resolved absolute base as **the artifacts base** for the whole run (see *Artifacts
-base* below). If the user dismisses either question, default to in-repo + auto-commit
+After the answers: persist both to the GLOBAL config `~/.config/hydraia/config.json`
+under `repos["<absolute repo root>"]` — do NOT hand-edit that JSON. Use the
+`hy_config_set` helper in `hooks/config.sh`, which merges into the file atomically,
+preserving every other repo and key:
+
+```bash
+bash -c '. "$CLAUDE_PLUGIN_ROOT/hooks/config.sh"
+hy_config_set "<absolute repo root>" artifactsDir "<docs/hydraia | absolute external path>"
+hy_config_set "<absolute repo root>" autoCommit "<true|false>"'
+```
+
+Pass `artifactsDir docs/hydraia` (or skip it) for in-repo; the absolute external path
+otherwise. Then create the external dir (with `specs/ plans/ qa/ runs/`) if chosen, and
+use the resolved absolute base as **the artifacts base** for the whole run (see
+*Artifacts base* below). If the user dismisses either question, default to in-repo + auto-commit
 ON (behavior identical to prior versions). `/hydraia:resume` inherits both from the
 run log if recorded, otherwise re-asks. The hooks read the same choice via
 `hy_artifacts_dir` / `hy_repo_config` in `hooks/config.sh`, so the gate, agent caps,

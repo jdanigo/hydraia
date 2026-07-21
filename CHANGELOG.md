@@ -6,6 +6,19 @@ All notable changes to Hydraia are documented here. Format follows
 
 ## [Unreleased]
 
+## 0.14.0 — 2026-07-19
+
+- **New: `hy_config_set` helper (`hooks/config.sh`).** The storage/auto-commit gate now
+  records the user's choice deterministically instead of hand-editing JSON. The helper
+  merges `repos[<root>].{artifactsDir,autoCommit}` into the global config atomically
+  (tmp + rename), preserving every other repo and key, coercing bool/number types, and
+  creating the file if missing. SKILL.md's storage gate calls it rather than dictating
+  raw JSON.
+- **`/hydraia:doctor` reports storage.** `doctor.sh --check` gains a `-- storage --`
+  section showing the current repo's resolved artifacts base, mode (in-repo vs
+  external), where the base came from (env / global config / default), and the effective
+  auto-commit setting — resolved through the same `config.sh` functions the hooks use.
+
 ## 0.13.2 — 2026-07-19
 
 - **Fix (external mode, main pipeline):** the 0.13.1 `.run-complete` fix covered the
