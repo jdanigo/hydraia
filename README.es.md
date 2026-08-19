@@ -571,6 +571,26 @@ claude plugin install hydraia
 Eso es todo — cada skill y agente que usa Hydraia viene incluido dentro del
 plugin, así que no hay nada más que clonar o conectar.
 
+### Skills individuales con `npx skills`
+
+Cualquier skill de Hydraia se puede llevar a otros agentes (Claude Code, Codex,
+Cursor, Windsurf, Gemini, y 40+ más) mediante el CLI abierto de agent-skills —
+sin plugin. El repo ya usa el layout estándar `skills/<name>/SKILL.md`, así que
+es instalable tal cual:
+
+```bash
+npx skills add jdanigo/hydraia                       # todas las skills
+npx skills add jdanigo/hydraia/skills/design-to-code # una skill
+npx skills update                                    # actualizar skills instaladas
+```
+
+`npx skills` copia **solo los directorios de skills** — no los `agents/`,
+`commands/` ni `hooks/` del plugin. El pipeline completo `hydraia` (gate
+spec-drive, doble review, ejecución por sub-agentes) depende de esos, así que
+usa la instalación del plugin de arriba para el pipeline; usa `npx skills` para
+las skills autocontenidas (`design-to-code`, la familia de diseño, patrones de
+stack, security reviews, …).
+
 **No necesitas instalar las herramientas externas a mano.** La primera vez que
 corres `/hydraia:feature`, la Fase 0 detecta si `codegraph` y `markitdown` están
 presentes y ofrece instalarlos en línea — un clic, sin comandos que memorizar.
