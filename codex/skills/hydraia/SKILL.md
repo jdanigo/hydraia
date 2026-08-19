@@ -14,6 +14,24 @@ You are running the hydraia spec-drive pipeline on Codex. Host-specific mechanic
   runs `gpt-5.6-sol`.
 - **Skills:** invoke supporting skills with `$skill-name`.
 
+## Host translation table (READ BEFORE the contract)
+
+The contract below is the shared source of truth, kept byte-identical to the Claude
+orchestrator so it never drifts. It is written in Claude Code's vocabulary. Wherever the
+contract uses a Claude mechanic, execute the Codex equivalent from this table:
+
+| The contract says (Claude Code) | On Codex, do this |
+|---|---|
+| `/hydraia:feature`, `/hydraia:story`, `/hydraia:review`, … slash commands | The user invokes `$hydraia`; YOU infer the route in Phase -1 from intent. Treat each `/hydraia:X` as "route = X". |
+| "run the **X** skill" / Skill tool | Invoke `$X` (e.g. `$story-analysis`, `$systematic-debugging`, `$performance-tuning`). |
+| `AskUserQuestion` | Ask the user inline in plain text and wait for the answer. |
+| "dispatch a sub-agent" / Task tool / hydraia-executor | Spawn a Codex sub-agent: **executors** = agent `hydraia-executor` (`gpt-5.6-luna`, cheap) for plan tasks; **reviewers** at Phase 5 = agents `hydraia-reviewer` / `code-reviewer` / `security-reviewer` (`gpt-5.6-sol`, frontier). This orchestrator session runs `gpt-5.6-sol`. |
+| named agents (`perf-engineer`, `architect`, `code-architect`, `qa-*`, `db-*`, reviewers) | Spawn the same-named Codex agent if defined under `~/.codex/agents/`; otherwise run that role inline in this session, keeping its model tier (frontier for review/architecture, luna for mechanical execution). |
+| `Edit` / `Write` / `apply_patch` before a frozen plan | The `PreToolUse` gate blocks it. Same marker semantics as Claude (frozen plan / `.quick-approved` / `HYDRAIA_ALLOW_DIRECT`). |
+
+Model routing is non-negotiable and identical in spirit to Claude: **cheap `gpt-5.6-luna`
+executes, frontier `gpt-5.6-sol` plans/specs/designs/reviews.**
+
 Follow this contract exactly:
 
 <!-- BEGIN PIPELINE CONTRACT -->
