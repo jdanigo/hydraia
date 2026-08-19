@@ -6,6 +6,27 @@ All notable changes to Hydraia are documented here. Format follows
 
 ## [Unreleased]
 
+## 0.16.1 — 2026-08-19
+
+- **Fix (Codex gate — makes it actually enforce):** the gate hook read the tool name
+  from a `tool` field, but Codex's `PreToolUse` payload names it `tool_name` (with the
+  command under `tool_input.command`). The mis-read left the tool empty, so the gate
+  silently allowed every edit. Corrected to parse `tool_name`; verified against a real
+  captured Codex payload — `apply_patch` and write-`shell` (`printf … > file`, `tee`,
+  `rm`/`mv`/`cp`, `sed -i`, `git commit`/`apply`, …) are blocked without a frozen-plan
+  marker; read-only shell and non-edit tools pass; the marker opens the gate.
+- **Fix (Codex gate — closed a bypass):** even with `apply_patch` blocked, the model
+  could write via a shell redirect. The gate now inspects shell commands and gates writes
+  (fail-closed on an unparseable command), not just `apply_patch`.
+- **Fix (Codex hooks):** reverted an over-broad `.*` PreToolUse matcher (it stopped hooks
+  from firing) back to explicit `apply_patch` / `shell` / `local_shell` matchers; made the
+  `SessionStart` preflight a clean no-op (its JSON shape was rejected as "invalid session
+  start JSON output").
+- **Verification:** live interactive Codex confirmed the hook fires and blocks
+  `apply_patch`; the tool_name fix and shell-write gating are verified against Codex's
+  real payload format. Note: `codex exec` (headless) still does not run these hooks, so
+  headless runs are not gated — interactive use is the supported path.
+
 ## 0.16.0 — 2026-08-19
 
 - **New (experimental preview): Codex port under `codex/`.** A native layer to run the

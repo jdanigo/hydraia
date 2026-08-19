@@ -1,7 +1,7 @@
 # Hydraia
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)
-![Plugin version](https://img.shields.io/badge/plugin-v0.16.0-blue.svg)
+![Plugin version](https://img.shields.io/badge/plugin-v0.16.1-blue.svg)
 
 🇬🇧 English · 🇪🇸 [Español](README.es.md)
 
@@ -572,8 +572,10 @@ A native layer under `codex/` runs the pipeline on OpenAI Codex CLI using Codex'
 own hooks, sub-agents, and model routing (`gpt-5.6-sol` orchestrator/review,
 `gpt-5.6-luna` executors) — with zero changes to the Claude surface. Install
 user-level with `bash codex/setup.sh`; see [`codex/SETUP.md`](codex/SETUP.md).
-**Preview:** the spec-drive gate relies on Codex interactive hooks and is pending
-end-to-end verification (it does not gate `codex exec` headless runs).
+**Preview:** the spec-drive gate runs via Codex interactive hooks — verified to
+block `apply_patch` and write-`shell` before a plan is frozen. It does **not** gate
+`codex exec` headless runs (hooks don't fire there), so interactive use is the
+supported path.
 
 **You don't need to install the external tools by hand.** The first time you run
 `/hydraia:feature`, Phase 0 detects whether `codegraph` and `markitdown` are present
