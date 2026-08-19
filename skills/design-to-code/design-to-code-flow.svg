@@ -1,0 +1,166 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1240 720" font-family="'Segoe UI',system-ui,-apple-system,sans-serif" role="img" aria-label="design-to-code pipeline flow">
+  <defs>
+    <linearGradient id="panel" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0e1420"/>
+      <stop offset="1" stop-color="#161d2b"/>
+    </linearGradient>
+    <linearGradient id="title" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#5eead4"/>
+      <stop offset="0.55" stop-color="#38bdf8"/>
+      <stop offset="1" stop-color="#818cf8"/>
+    </linearGradient>
+    <linearGradient id="render" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#334155"/>
+      <stop offset="1" stop-color="#1e293b"/>
+    </linearGradient>
+    <linearGradient id="code" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0f766e"/>
+      <stop offset="1" stop-color="#155e63"/>
+    </linearGradient>
+    <linearGradient id="gate" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#3a2a12"/>
+      <stop offset="1" stop-color="#2b2010"/>
+    </linearGradient>
+    <marker id="arrow" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+      <path d="M0,0 L9,4.5 L0,9 Z" fill="#5eead4"/>
+    </marker>
+    <marker id="arrowAmber" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+      <path d="M0,0 L9,4.5 L0,9 Z" fill="#f5a524"/>
+    </marker>
+  </defs>
+
+  <rect x="8" y="8" width="1224" height="704" rx="26" fill="url(#panel)" stroke="#26334a" stroke-width="1.5"/>
+
+  <!-- header -->
+  <text x="48" y="62" font-size="34" font-weight="700" fill="url(#title)">design-to-code</text>
+  <text x="48" y="90" font-size="15" fill="#8b98a5">A finished render, distilled into real, reusable code — never embedded.</text>
+  <g transform="translate(902,44)">
+    <rect x="0" y="0" width="290" height="40" rx="20" fill="#1b2536" stroke="#3a2a12"/>
+    <circle cx="24" cy="20" r="6" fill="#f5a524"/>
+    <text x="42" y="25" font-size="13.5" fill="#f0c987" font-weight="600">NEVER embed the render · rebuild the DOM</text>
+  </g>
+
+  <!-- input / output chips -->
+  <g transform="translate(40,150)">
+    <rect x="0" y="0" width="150" height="92" rx="16" fill="url(#render)" stroke="#3b4a63"/>
+    <text x="75" y="40" text-anchor="middle" font-size="15" font-weight="700" fill="#e6edf3">RENDER</text>
+    <text x="75" y="62" text-anchor="middle" font-size="12" fill="#9fb0c3">jpg · png</text>
+  </g>
+  <g transform="translate(1050,470)">
+    <rect x="0" y="0" width="150" height="92" rx="16" fill="url(#code)" stroke="#2dd4bf"/>
+    <text x="75" y="40" text-anchor="middle" font-size="15" font-weight="700" fill="#eafff9">CODE</text>
+    <text x="75" y="62" text-anchor="middle" font-size="12" fill="#a7f3e4">components</text>
+  </g>
+
+  <!-- ROW A: y=150, stages 0,1,1.5,2 -->
+  <!-- stage card template drawn inline -->
+  <!-- 0 Context -->
+  <g transform="translate(230,150)">
+    <rect width="210" height="92" rx="16" fill="#1b2430" stroke="#2a3543"/>
+    <circle cx="26" cy="26" r="13" fill="#0f2b2b" stroke="#2dd4bf"/><text x="26" y="31" text-anchor="middle" font-size="13" font-weight="700" fill="#5eead4">0</text>
+    <text x="48" y="31" font-size="15" font-weight="700" fill="#e6edf3">Context</text>
+    <text x="18" y="58" font-size="11.5" fill="#8b98a5">auto-detect framework +</text>
+    <text x="18" y="74" font-size="11.5" fill="#8b98a5">styling + existing tokens</text>
+  </g>
+  <!-- 1 Ingest -->
+  <g transform="translate(480,150)">
+    <rect width="210" height="92" rx="16" fill="#1b2430" stroke="#2a3543"/>
+    <circle cx="26" cy="26" r="13" fill="#0f2b2b" stroke="#2dd4bf"/><text x="26" y="31" text-anchor="middle" font-size="13" font-weight="700" fill="#5eead4">1</text>
+    <text x="48" y="31" font-size="15" font-weight="700" fill="#e6edf3">Ingest</text>
+    <text x="18" y="58" font-size="11.5" fill="#8b98a5">receive the desktop</text>
+    <text x="18" y="74" font-size="11.5" fill="#8b98a5">render(s) from the user</text>
+  </g>
+  <!-- 1.5 Responsive gate -->
+  <g transform="translate(730,150)">
+    <rect width="210" height="92" rx="16" fill="url(#gate)" stroke="#5a4420"/>
+    <circle cx="30" cy="26" r="15" fill="#3a2a12" stroke="#f5a524"/><text x="30" y="31" text-anchor="middle" font-size="11" font-weight="700" fill="#f5a524">1.5</text>
+    <text x="52" y="31" font-size="14.5" font-weight="700" fill="#f0c987">Responsive gate</text>
+    <text x="18" y="58" font-size="11.5" fill="#cbb488">A have mobile · B infer</text>
+    <text x="18" y="74" font-size="11.5" fill="#cbb488">+ report · C design it</text>
+  </g>
+  <!-- 2 Segment -->
+  <g transform="translate(980,150)">
+    <rect width="210" height="92" rx="16" fill="#1b2430" stroke="#2a3543"/>
+    <circle cx="26" cy="26" r="13" fill="#0f2b2b" stroke="#2dd4bf"/><text x="26" y="31" text-anchor="middle" font-size="13" font-weight="700" fill="#5eead4">2</text>
+    <text x="48" y="31" font-size="15" font-weight="700" fill="#e6edf3">Segment</text>
+    <text x="18" y="58" font-size="11.5" fill="#8b98a5">component tree +</text>
+    <text x="18" y="74" font-size="11.5" fill="#8b98a5">asset inventory</text>
+  </g>
+
+  <!-- ROW B: y=340, stages 3,4,5,6 -->
+  <!-- 3 Tokens -->
+  <g transform="translate(230,340)">
+    <rect width="210" height="92" rx="16" fill="#1b2430" stroke="#2a3543"/>
+    <circle cx="26" cy="26" r="13" fill="#0f2b2b" stroke="#2dd4bf"/><text x="26" y="31" text-anchor="middle" font-size="13" font-weight="700" fill="#5eead4">3</text>
+    <text x="48" y="31" font-size="15" font-weight="700" fill="#e6edf3">Tokens</text>
+    <text x="18" y="58" font-size="11.5" fill="#8b98a5">palette · type · spacing</text>
+    <text x="18" y="74" font-size="11.5" fill="#8b98a5">radii · shadows → layer</text>
+  </g>
+  <!-- 4 Asset gate -->
+  <g transform="translate(480,340)">
+    <rect width="210" height="92" rx="16" fill="url(#gate)" stroke="#5a4420"/>
+    <circle cx="28" cy="26" r="13" fill="#3a2a12" stroke="#f5a524"/><text x="28" y="31" text-anchor="middle" font-size="13" font-weight="700" fill="#f5a524">4</text>
+    <text x="50" y="31" font-size="14.5" font-weight="700" fill="#f0c987">Asset gate</text>
+    <text x="18" y="58" font-size="11.5" fill="#cbb488">authorize? Higgsfield ·</text>
+    <text x="18" y="74" font-size="11.5" fill="#cbb488">fal.ai · MCP  /  provide</text>
+  </g>
+  <!-- 5 Build -->
+  <g transform="translate(730,340)">
+    <rect width="210" height="92" rx="16" fill="#1b2430" stroke="#2a3543"/>
+    <circle cx="26" cy="26" r="13" fill="#0f2b2b" stroke="#2dd4bf"/><text x="26" y="31" text-anchor="middle" font-size="13" font-weight="700" fill="#5eead4">5</text>
+    <text x="48" y="31" font-size="15" font-weight="700" fill="#e6edf3">Build</text>
+    <text x="18" y="58" font-size="11.5" fill="#8b98a5">reusable components +</text>
+    <text x="18" y="74" font-size="11.5" fill="#8b98a5">tokens · SVG · CSS</text>
+  </g>
+  <!-- 6 Verify -->
+  <g transform="translate(980,340)">
+    <rect width="210" height="92" rx="16" fill="#12262b" stroke="#2dd4bf" stroke-width="1.5"/>
+    <circle cx="26" cy="26" r="13" fill="#0f2b2b" stroke="#2dd4bf"/><text x="26" y="31" text-anchor="middle" font-size="13" font-weight="700" fill="#5eead4">6</text>
+    <text x="48" y="31" font-size="15" font-weight="700" fill="#eafff9">Verify</text>
+    <text x="18" y="58" font-size="11.5" fill="#9fe6da">screenshot-diff vs render</text>
+    <text x="18" y="74" font-size="11.5" fill="#9fe6da">· judges promotion</text>
+  </g>
+
+  <!-- 7 Report: y=470 -->
+  <g transform="translate(730,470)">
+    <rect width="210" height="70" rx="16" fill="#1b2430" stroke="#2a3543"/>
+    <circle cx="26" cy="24" r="13" fill="#0f2b2b" stroke="#2dd4bf"/><text x="26" y="29" text-anchor="middle" font-size="13" font-weight="700" fill="#5eead4">7</text>
+    <text x="48" y="29" font-size="15" font-weight="700" fill="#e6edf3">Report</text>
+    <text x="18" y="52" font-size="11.5" fill="#8b98a5">components · assets · tokens · fidelity notes</text>
+  </g>
+
+  <!-- connectors row A -->
+  <g fill="none" stroke="#5eead4" stroke-width="2">
+    <path d="M190,196 L228,196" marker-end="url(#arrow)"/>
+    <path d="M440,196 L478,196" marker-end="url(#arrow)"/>
+    <path d="M690,196 L728,196" marker-end="url(#arrow)"/>
+    <path d="M940,196 L978,196" marker-end="url(#arrow)"/>
+  </g>
+  <!-- snake: Segment(row A end) down to Tokens(row B start) -->
+  <path d="M1085,242 C1085,300 1085,300 800,300 C420,300 335,300 335,338" fill="none" stroke="#5eead4" stroke-width="2" marker-end="url(#arrow)" opacity="0.9"/>
+  <!-- connectors row B -->
+  <g fill="none" stroke="#5eead4" stroke-width="2">
+    <path d="M440,386 L478,386" marker-end="url(#arrow)"/>
+    <path d="M690,386 L728,386" marker-end="url(#arrow)"/>
+    <path d="M940,386 L978,386" marker-end="url(#arrow)"/>
+  </g>
+  <!-- Verify -> Report -->
+  <path d="M1010,432 C980,470 900,505 942,505" fill="none" stroke="#5eead4" stroke-width="2" marker-end="url(#arrow)"/>
+  <!-- Report -> CODE -->
+  <path d="M940,505 C1000,505 1010,516 1048,516" fill="none" stroke="#2dd4bf" stroke-width="2" marker-end="url(#arrow)"/>
+  <!-- RENDER -> Ingest (into stage 1) -->
+  <path d="M115,242 C115,300 300,300 460,240 L478,220" fill="none" stroke="#9fb0c3" stroke-width="2" marker-end="url(#arrow)" opacity="0.85"/>
+
+  <!-- promotion loop: Verify -> Asset gate -->
+  <path d="M985,340 C985,285 700,270 592,270 L588,336" fill="none" stroke="#f5a524" stroke-width="2" stroke-dasharray="5 4" marker-end="url(#arrowAmber)"/>
+  <text x="770" y="262" font-size="11.5" fill="#f5a524" font-weight="600">promote atomic element (fidelity fail)</text>
+
+  <!-- footer legend -->
+  <g transform="translate(48,600)" font-size="12.5">
+    <circle cx="6" cy="40" r="6" fill="#2dd4bf"/><text x="20" y="44" fill="#9fb0c3">code-first: text=DOM · icons=SVG · gradients/shadows/patterns=CSS</text>
+    <circle cx="6" cy="66" r="6" fill="#f5a524"/><text x="20" y="70" fill="#cbb488">gate = user decides (responsive mode · asset authorization + tool)</text>
+    <rect x="640" y="34" width="512" height="52" rx="12" fill="#12262b" stroke="#204a4a"/>
+    <text x="660" y="55" font-size="12.5" fill="#9fe6da" font-weight="600">Assets = only genuine image pieces or promoted atomic elements —</text>
+    <text x="660" y="74" font-size="12.5" fill="#9fe6da" font-weight="600">never the whole composition. web/mobile-design-frames produce renders; this consumes them.</text>
+  </g>
+</svg>

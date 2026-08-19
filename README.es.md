@@ -1,7 +1,7 @@
 # Hydraia
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)
-![Plugin version](https://img.shields.io/badge/plugin-v0.14.0-blue.svg)
+![Plugin version](https://img.shields.io/badge/plugin-v0.15.0-blue.svg)
 
 🇬🇧 [English](README.md) · 🇪🇸 Español
 
@@ -625,6 +625,8 @@ hydraia/
 │   ├── e2e (1)                   e2e-testing
 │   ├── ui / ux (7)              ui-ux-pro-max, ui-styling, design, design-system,
 │   │                            brand, banner-design, slides
+│   ├── generación de diseño (5) web-design-frames, mobile-design-frames,
+│   │                            design-to-code, agency-tier-ui, redesign-uplift
 │   └── token discipline (1)     caveman
 ├── agents/                       26 agents, all self-contained
 │   ├── hydraia-executor.md       per-task executor (Sonnet 5)
@@ -705,8 +707,23 @@ hydraia/
 | `brand` | Voz de marca, identidad visual, frameworks de mensajería |
 | `banner-design` | Banners para redes sociales, ads, heroes web, e impresos |
 | `slides` | Presentaciones HTML estratégicas con Chart.js |
+| **Generación de diseño** | |
+| `web-design-frames` | Imágenes de referencia de diseño web premium por sección (una imagen por sección) |
+| `mobile-design-frames` | Imágenes de pantallas y flujos de app móvil con mockups de teléfono limpios |
+| `design-to-code` | Destila el render terminado del usuario en componentes fieles y reutilizables del stack — nunca incrusta la imagen |
+| `agency-tier-ui` | Código UI nivel agencia — componentes double-bezel, coreografía de motion, anti-patrones bloqueados |
+| `redesign-uplift` | Audita un sitio/app existente y lo eleva a calidad premium sin romper el stack |
 | **Disciplina de tokens** | |
 | `caveman` | Estilo de compresión para el razonamiento interno, para ahorrar tokens |
+
+#### `design-to-code` — render → código fiel
+
+El usuario trae un render terminado; la skill lo destila en componentes reales
+y reutilizables del stack del repo — nunca incrusta la imagen. Code-first, con
+un escape de fidelidad que promueve a asset solo elementos atómicos, y un loop
+screenshot-diff que juzga la promoción.
+
+![flujo del pipeline design-to-code](skills/design-to-code/design-to-code-flow.svg)
 
 ### Referencia de agentes
 

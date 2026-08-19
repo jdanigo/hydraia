@@ -1,7 +1,7 @@
 # Hydraia
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)
-![Plugin version](https://img.shields.io/badge/plugin-v0.14.0-blue.svg)
+![Plugin version](https://img.shields.io/badge/plugin-v0.15.0-blue.svg)
 
 🇬🇧 English · 🇪🇸 [Español](README.es.md)
 
@@ -600,6 +600,8 @@ hydraia/
 │   ├── e2e (1)                   e2e-testing
 │   ├── ui / ux (7)              ui-ux-pro-max, ui-styling, design, design-system,
 │   │                            brand, banner-design, slides
+│   ├── design generation (5)   web-design-frames, mobile-design-frames,
+│   │                            design-to-code, agency-tier-ui, redesign-uplift
 │   └── token discipline (1)     caveman
 ├── agents/                       26 agents, all self-contained
 │   ├── hydraia-executor.md       per-task executor (Sonnet 5)
@@ -680,8 +682,23 @@ hydraia/
 | `brand` | Brand voice, visual identity, messaging frameworks |
 | `banner-design` | Banners for social, ads, web heroes, and print |
 | `slides` | Strategic HTML presentations with Chart.js |
+| **Design generation** | |
+| `web-design-frames` | Premium per-section website design reference images (one image per section) |
+| `mobile-design-frames` | App-native mobile screen and flow images with clean phone mockups |
+| `design-to-code` | Distill a user's finished render into faithful, reusable components for the repo's stack — never embeds the image |
+| `agency-tier-ui` | Agency-level UI code — double-bezel components, motion choreography, anti-patterns blocked |
+| `redesign-uplift` | Audit an existing site/app and upgrade it to premium quality without breaking the stack |
 | **Token discipline** | |
 | `caveman` | Compression style for internal reasoning to save tokens |
+
+#### `design-to-code` — render → faithful code
+
+A user brings a finished render; the skill distills it into real, reusable
+components for the repo's stack — it never embeds the image. Code-first, with a
+fidelity escape that promotes only atomic elements to assets, and a
+screenshot-diff loop that judges promotion.
+
+![design-to-code pipeline flow](skills/design-to-code/design-to-code-flow.svg)
 
 ### Agents reference
 

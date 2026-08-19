@@ -6,6 +6,26 @@ All notable changes to Hydraia are documented here. Format follows
 
 ## [Unreleased]
 
+## 0.15.0 — 2026-08-19
+
+- **New: five design-generation skills.** A `design generation` skill family joins the
+  bundle, covering image-led frontend work end to end:
+  - **`web-design-frames`** — premium per-section website design reference images (one
+    horizontal image per section, composition/hero-scale variety, single locked palette).
+  - **`mobile-design-frames`** — app-native mobile screen and flow images (iOS / Android /
+    cross-platform) inside clean phone mockups, multi-screen consistency, safe-area aware.
+  - **`design-to-code`** — distills a user's finished render (jpg/png) into faithful,
+    reusable components for the repo's detected stack (React/Next, Angular, Vue, Svelte,
+    Astro, plain HTML/CSS). Code-first with a fidelity escape (promotes only atomic
+    elements to assets), an authorization gate for asset generation, and a screenshot-diff
+    verification loop. Never embeds the render. Ships a flow diagram.
+  - **`agency-tier-ui`** — agency-level UI code with double-bezel component architecture,
+    motion choreography, and a strict anti-pattern block list.
+  - **`redesign-uplift`** — audits an existing site/app, flags generic AI design tells, and
+    upgrades it to premium quality in-place without migrating the stack.
+- **Docs:** README (EN + ES) skill tree and reference tables gain the `design generation`
+  category; plugin version bumped to 0.15.0.
+
 ## 0.14.0 — 2026-07-19
 
 - **New: `hy_config_set` helper (`hooks/config.sh`).** The storage/auto-commit gate now
