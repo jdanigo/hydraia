@@ -1,0 +1,10 @@
+# Merge this block into ~/.codex/config.toml (setup.sh does it non-destructively).
+# Orchestrator / plan / spec / design / review run on the frontier model.
+model = "gpt-5.6-sol"
+model_reasoning_effort = "high"
+
+[agents]
+enabled = true
+default_subagent_model = "gpt-5.6-luna"          # executors: fast & affordable
+default_subagent_reasoning_effort = "medium"
+max_depth = 1
