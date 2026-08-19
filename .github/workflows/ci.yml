@@ -84,3 +84,23 @@ jobs:
             *e2e_browsers=ok*) echo "PASS: playwright chromium installed" ;;
             *) echo "FAIL: browser binary did not install on ${{ matrix.os }}"; exit 1 ;;
           esac
+
+  codex-parity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Codex hooks + scripts syntax
+        run: |
+          bash -n codex/hooks/*.sh codex/setup.sh
+          python3 -m json.tool codex/hooks.json > /dev/null
+      - name: Codex TOML valid
+        run: |
+          for f in codex/agents/*.toml codex/config.sample.toml; do
+            python3 -c "import tomllib;tomllib.load(open('$f','rb'))" && echo "OK $f"
+          done
+      - name: Pipeline contract present
+        run: |
+          awk '/BEGIN PIPELINE CONTRACT/{f=1;next}/END PIPELINE CONTRACT/{f=0}f' \
+            codex/skills/hydraia/SKILL.md > /tmp/cx
+          test -s /tmp/cx || { echo "codex orchestrator missing PIPELINE CONTRACT block"; exit 1; }
+          echo "contract block present ($(wc -l < /tmp/cx) lines)"
