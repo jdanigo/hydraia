@@ -16,10 +16,12 @@ tool="$(printf '%s' "$payload" | sed -n 's/.*"tool_name"[[:space:]]*:[[:space:]]
 is_edit=0
 case "$tool" in
   apply_patch|patch|edit|write_file|create_file) is_edit=1 ;;
-  shell|local_shell|exec|bash|command|shell_command|container.exec)
-    # extract the command string from the payload (best-effort across arg shapes)
-    cmd="$(printf '%s' "$payload" | sed -n 's/.*"command"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -1)"
-    [ -z "$cmd" ] && cmd="$(printf '%s' "$payload" | grep -oE '"command"[^]]*' | head -1 || true)"
+  exec_command|shell|local_shell|exec|bash|command|shell_command|container.exec)
+    # extract the command string from the payload (best-effort across arg shapes).
+    # Codex's shell tool is `exec_command` and its arg key is `cmd`; others use `command`.
+    cmd="$(printf '%s' "$payload" | sed -n 's/.*"cmd"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -1)"
+    [ -z "$cmd" ] && cmd="$(printf '%s' "$payload" | sed -n 's/.*"command"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -1)"
+    [ -z "$cmd" ] && cmd="$(printf '%s' "$payload" | grep -oE '"(cmd|command)"[^]]*' | head -1 || true)"
     case "$cmd" in
       # write indicators anywhere in the command → gate it
       *">"*|*">>"*|*"|"*"tee"*|*" tee "*|*"rm "*|*"rm -"*|*"mv "*|*"cp "*|*"dd "*|\
