@@ -1,7 +1,7 @@
 # Hydraia
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)
-![Plugin version](https://img.shields.io/badge/plugin-v0.15.1-blue.svg)
+![Plugin version](https://img.shields.io/badge/plugin-v0.16.0-blue.svg)
 
 🇬🇧 English · 🇪🇸 [Español](README.es.md)
 
@@ -565,6 +565,15 @@ npx skills update                                    # update installed skills
 gate, double review, sub-agent execution) depends on those, so use the plugin
 install above for the pipeline; use `npx skills` for the self-contained skills
 (`design-to-code`, the design family, stack patterns, security reviews, …).
+
+### Codex (experimental preview)
+
+A native layer under `codex/` runs the pipeline on OpenAI Codex CLI using Codex's
+own hooks, sub-agents, and model routing (`gpt-5.6-sol` orchestrator/review,
+`gpt-5.6-luna` executors) — with zero changes to the Claude surface. Install
+user-level with `bash codex/setup.sh`; see [`codex/SETUP.md`](codex/SETUP.md).
+**Preview:** the spec-drive gate relies on Codex interactive hooks and is pending
+end-to-end verification (it does not gate `codex exec` headless runs).
 
 **You don't need to install the external tools by hand.** The first time you run
 `/hydraia:feature`, Phase 0 detects whether `codegraph` and `markitdown` are present

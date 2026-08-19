@@ -6,6 +6,27 @@ All notable changes to Hydraia are documented here. Format follows
 
 ## [Unreleased]
 
+## 0.16.0 — 2026-08-19
+
+- **New (experimental preview): Codex port under `codex/`.** A native layer to run the
+  hydraia pipeline on OpenAI Codex CLI using Codex's own primitives — separate from and
+  with **zero changes to** the Claude surface. Ships: `codex/hooks.json` +
+  `hooks/{gate,preflight,plancheck}.sh` (spec-drive gate on `apply_patch`/write-`shell`),
+  `codex/config.sample.toml` with `[agents.<name>]` model routing
+  (`gpt-5.6-sol` for orchestrator/plan/spec/review, `gpt-5.6-luna` for executor
+  sub-agents), a Codex-native `hydraia` orchestrator skill with a Claude→Codex host
+  translation table, `codex/setup.sh` (user-level installer), and `codex/SETUP.md`. A CI
+  `codex-parity` job validates the hooks/JSON/TOML and the orchestrator's contract block.
+- **Status / caveat:** validated offline (feature flags `hooks`/`multi_agent` are stable
+  and enabled; gate script logic; config schema loads clean under `codex doctor`). **The
+  runtime gate is NOT yet verified end-to-end:** in `codex exec` (headless) no user-level
+  hook fires, so edits are not gated there. Codex hooks appear to run in interactive
+  sessions; interactive gate enforcement is pending verification. Treat the Codex port as
+  a preview — install via `bash codex/setup.sh`, see `codex/SETUP.md`.
+- **Fixed during bring-up:** the initial `[agents]` config used a settings-style block
+  that Codex 0.139 rejects (`expected struct AgentRoleToml`); corrected to
+  `[agents.<name>]` role tables with the model routing inlined.
+
 ## 0.15.1 — 2026-08-19
 
 - **Fix (`doctor.sh`, Windows):** `--install-e2e` reported `e2e_browsers=missing`
