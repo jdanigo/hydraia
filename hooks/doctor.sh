@@ -118,18 +118,25 @@ detect_e2e_framework() {
   fi
 }
 # Cache dirs Playwright/Cypress download browser binaries into — existence of
-# any versioned subdir means at least one browser is already cached.
+# any versioned subdir means at least one browser is already cached. Covers
+# Linux (XDG/.cache), macOS (Library/Caches), and Windows: Playwright caches
+# under %LOCALAPPDATA%\ms-playwright — reachable as $HOME/AppData/Local/... in
+# Git-bash on the runner, with ${LOCALAPPDATA} as a fallback. Without the
+# Windows dir the post-install check reported 'missing' even after a clean
+# install, failing the install-e2e-browsers (windows) CI job.
 playwright_browsers_cached() {
   local d
-  for d in "${XDG_CACHE_HOME:-$HOME/.cache}/ms-playwright" "$HOME/Library/Caches/ms-playwright"; do
-    [ -d "$d" ] && [ -n "$(ls -A "$d" 2>/dev/null)" ] && return 0
+  for d in "${XDG_CACHE_HOME:-$HOME/.cache}/ms-playwright" "$HOME/Library/Caches/ms-playwright" \
+           "$HOME/AppData/Local/ms-playwright" "${LOCALAPPDATA:-}/ms-playwright"; do
+    [ -n "$d" ] && [ "$d" != "/ms-playwright" ] && [ -d "$d" ] && [ -n "$(ls -A "$d" 2>/dev/null)" ] && return 0
   done
   return 1
 }
 cypress_binary_cached() {
   local d
-  for d in "${XDG_CACHE_HOME:-$HOME/.cache}/Cypress" "$HOME/Library/Caches/Cypress"; do
-    [ -d "$d" ] && [ -n "$(ls -A "$d" 2>/dev/null)" ] && return 0
+  for d in "${XDG_CACHE_HOME:-$HOME/.cache}/Cypress" "$HOME/Library/Caches/Cypress" \
+           "$HOME/AppData/Local/Cypress/Cache" "${LOCALAPPDATA:-}/Cypress/Cache"; do
+    [ -n "$d" ] && [ "$d" != "/Cypress/Cache" ] && [ -d "$d" ] && [ -n "$(ls -A "$d" 2>/dev/null)" ] && return 0
   done
   return 1
 }
