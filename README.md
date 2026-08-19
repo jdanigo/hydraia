@@ -573,9 +573,10 @@ own hooks, sub-agents, and model routing (`gpt-5.6-sol` orchestrator/review,
 `gpt-5.6-luna` executors) — with zero changes to the Claude surface. Install
 user-level with `bash codex/setup.sh`; see [`codex/SETUP.md`](codex/SETUP.md).
 **Preview:** the spec-drive gate runs via Codex interactive hooks — verified to
-block `apply_patch` and write-`shell` before a plan is frozen. It does **not** gate
-`codex exec` headless runs (hooks don't fire there), so interactive use is the
-supported path.
+block `apply_patch` (the edit tool) before a plan is frozen. Codex does **not** run
+hooks for its built-in shell (`exec_command`), so a shell redirect can still write;
+closing that (via a `PermissionRequest` hook / sandbox mode) is on the roadmap. Hooks
+also don't fire under `codex exec` headless. See [`codex/SETUP.md`](codex/SETUP.md).
 
 **You don't need to install the external tools by hand.** The first time you run
 `/hydraia:feature`, Phase 0 detects whether `codegraph` and `markitdown` are present
