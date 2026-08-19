@@ -95,7 +95,7 @@ jobs:
           python3 -m json.tool codex/hooks.json > /dev/null
       - name: Codex TOML valid
         run: |
-          for f in codex/agents/*.toml codex/config.sample.toml; do
+          for f in codex/config.sample.toml; do
             python3 -c "import tomllib;tomllib.load(open('$f','rb'))" && echo "OK $f"
           done
       - name: Pipeline contract present

@@ -1,7 +1,0 @@
-name = "hydraia-reviewer"
-description = "Whole-branch reviewer, Phase 5 pass 1. Frontier tier."
-model = "gpt-5.6-sol"
-developer_instructions = """
-Review the whole branch for spec compliance, correctness, quality, and hidden coupling.
-Report findings ranked by severity with file:line anchors. Maximum rigor.
-"""

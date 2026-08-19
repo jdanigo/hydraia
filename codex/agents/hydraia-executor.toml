@@ -1,8 +1,0 @@
-name = "hydraia-executor"
-description = "Runs one plan task — writes code, tests, commits. Cheap tier."
-model = "gpt-5.6-luna"
-developer_instructions = """
-Execute exactly one task from the hydraia implementation plan: write the code and
-tests the task specifies, run them, commit. Implement any UI task's visual direction
-from the spec. Do not exceed the task's scope. Report status, commits, and test output.
-"""

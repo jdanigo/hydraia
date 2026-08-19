@@ -1,10 +1,44 @@
 # Merge this block into ~/.codex/config.toml (setup.sh does it non-destructively).
-# Orchestrator / plan / spec / design / review run on the frontier model.
+# Validated against Codex CLI 0.139.0: `[agents]` MUST be a table of named role
+# tables (`[agents.<name>]`), not a settings block. Model routing lives in each
+# role's `model` field — orchestrator/session runs the frontier model, executor
+# sub-agents run the cheap model.
+
+# Orchestrator / plan / spec / design / review session:
 model = "gpt-5.6-sol"
 model_reasoning_effort = "high"
 
-[agents]
-enabled = true
-default_subagent_model = "gpt-5.6-luna"          # executors: fast & affordable
-default_subagent_reasoning_effort = "medium"
-max_depth = 1
+# Executor sub-agents (per plan task) — fast & affordable:
+[agents.hydraia-executor]
+model = "gpt-5.6-luna"
+description = "Runs one hydraia plan task — writes code, tests, commits. Cheap tier."
+developer_instructions = """
+Execute exactly one task from the hydraia implementation plan: write the code and tests
+the task specifies, run them, commit. Do not exceed the task's scope. Report status,
+commits, and test output.
+"""
+
+# Reviewers (Phase 5, double review) — frontier tier:
+[agents.hydraia-reviewer]
+model = "gpt-5.6-sol"
+description = "Whole-branch reviewer, Phase 5 pass 1. Frontier tier."
+developer_instructions = """
+Review the whole branch for spec compliance, correctness, quality, and hidden coupling.
+Report findings ranked by severity with file:line anchors. Maximum rigor.
+"""
+
+[agents.code-reviewer]
+model = "gpt-5.6-sol"
+description = "General code-quality reviewer. Frontier tier."
+developer_instructions = """
+Review changed code for quality, security, and maintainability. Report concrete,
+actionable findings with file:line anchors. No praise, no scope creep.
+"""
+
+[agents.security-reviewer]
+model = "gpt-5.6-sol"
+description = "Security vulnerability detection. Frontier tier."
+developer_instructions = """
+Hunt exploitable vulnerabilities in code that handles input, auth, secrets, or APIs.
+Flag injection, SSRF, unsafe crypto, secrets, and OWASP Top 10 with file:line anchors.
+"""

@@ -6,11 +6,11 @@ HOME_DIR="${HOME}"; while [ $# -gt 0 ]; do case "$1" in --home) HOME_DIR="$2"; s
 SRC="$(cd "$(dirname "$0")" && pwd)"
 CODEX_HOME="${CODEX_HOME:-$HOME_DIR/.codex}"
 SKILLS_DIR="${HOME_SKILLS:-$HOME_DIR/.agents/skills}"
-mkdir -p "$CODEX_HOME/hooks" "$CODEX_HOME/agents" "$SKILLS_DIR"
+mkdir -p "$CODEX_HOME/hooks" "$SKILLS_DIR"
 # hooks: expand $CODEX_HOME to the absolute path
 sed "s|\$CODEX_HOME|$CODEX_HOME|g" "$SRC/hooks.json" > "$CODEX_HOME/hooks.json"
 cp "$SRC/hooks/"*.sh "$CODEX_HOME/hooks/"; chmod +x "$CODEX_HOME/hooks/"*.sh
-cp "$SRC/agents/"*.toml "$CODEX_HOME/agents/"
+# agent roles ship inside config.sample.toml as [agents.<name>] tables (merged below)
 # config merge: append the sample block once
 touch "$CODEX_HOME/config.toml"
 if ! grep -q 'default_subagent_model = "gpt-5.6-luna"' "$CODEX_HOME/config.toml"; then
@@ -20,7 +20,7 @@ fi
 cp -R "$SRC/skills/"* "$SKILLS_DIR/"
 echo "hydraia Codex layer installed."
 echo "  hooks   : $CODEX_HOME/hooks.json"
-echo "  agents  : $CODEX_HOME/agents/"
+echo "  agents  : [agents.*] roles in $CODEX_HOME/config.toml"
 echo "  config  : $CODEX_HOME/config.toml (merged)"
 echo "  skills  : $SKILLS_DIR/hydraia"
 echo "Invoke in Codex with: \$hydraia <what to build>"
