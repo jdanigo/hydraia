@@ -6,6 +6,22 @@ All notable changes to Hydraia are documented here. Format follows
 
 ## [Unreleased]
 
+## 0.15.1 — 2026-08-19
+
+- **Fix (`doctor.sh`, Windows):** `--install-e2e` reported `e2e_browsers=missing`
+  on Windows even after a clean install. The install ran fine; the post-install
+  cache check only looked in the Linux/macOS Playwright/Cypress cache dirs. Added
+  the Windows location (`%LOCALAPPDATA%\ms-playwright`, reachable as
+  `$HOME/AppData/Local/…` under Git-bash, with `${LOCALAPPDATA}` as fallback) —
+  fixes the chronically-red `install-e2e-browsers (windows)` CI job.
+- **Fix (CI):** the `validate` job's skill-count assertion was 46; the 0.15.0
+  design-generation skills brought the total to 51. Updated so CI passes.
+- **Docs:** README (EN + ES) gains an `npx skills` section — install any Hydraia
+  skill into other agents via the open agent-skills CLI
+  (`npx skills add jdanigo/hydraia`), install a single skill by path, and update
+  with `npx skills update`. Notes that `npx skills` carries the skill
+  directories only; the full pipeline still needs the plugin install.
+
 ## 0.15.0 — 2026-08-19
 
 - **New: five design-generation skills.** A `design generation` skill family joins the
