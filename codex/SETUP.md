@@ -14,6 +14,10 @@ without touching the shipped Claude surface.
 
   Enable any that are off in your Codex config before installing.
 
+- **Windows:** the hooks and installer are bash scripts, so native Windows needs
+  **Git Bash or WSL** (a `bash` on PATH). With that, everything works as-is. A native
+  PowerShell port is on the roadmap (see below).
+
 ## Install
 
 Run the installer from the repo root. It writes everything **user-level**
@@ -57,10 +61,26 @@ spec + threat model, plan + self-review, sub-agent execution, double review, ver
 
 ## Gate
 
-A `PreToolUse` hook blocks `apply_patch` and write `shell` commands until a plan is
-frozen — the same spec-drive discipline as the Claude plugin. Approval markers (any
-one opens the gate): `.gate-approved`, `docs/hydraia/.quick-approved`,
-`.hydraia/plan-frozen`. Escape hatch: `HYDRAIA_ALLOW_DIRECT=1`.
+A `PreToolUse` hook blocks `apply_patch` (the edit tool) until a plan is frozen — the
+same spec-drive discipline as the Claude plugin. Approval markers (any one opens the
+gate): `.gate-approved`, `docs/hydraia/.quick-approved`, `.hydraia/plan-frozen`. Escape
+hatch: `HYDRAIA_ALLOW_DIRECT=1`. Verified live: interactive Codex fires the hook and
+blocks `apply_patch`.
+
+**Known limitation (shell escape).** Codex's built-in shell tool (`exec_command`) does
+**not** run `PreToolUse` hooks — shell execution is governed by Codex's sandbox/approval
+layer, not the hook layer. So a determined model can still write via a shell redirect
+(`printf … > file`). The gate hook already contains the shell-write detection logic, and
+`hooks.json` matches `exec_command`, but Codex never invokes the hook for it. Closing this
+is a roadmap item (below): gate shell via a `PermissionRequest` hook, and/or run Codex
+with `sandbox_mode = read-only` until the plan is frozen.
+
+## Roadmap
+
+- **Airtight shell gate:** intercept `exec_command` via a `PermissionRequest` hook and/or
+  a sandbox-mode flip on plan freeze, since `PreToolUse` does not cover the shell tool.
+- **Native Windows:** PowerShell (`gate.ps1` / `setup.ps1`) equivalents so Git Bash / WSL
+  is not required, with PowerShell-aware write detection (`Out-File`, `Set-Content`, `>`).
 
 ## Uninstall
 
