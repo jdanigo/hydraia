@@ -10,20 +10,44 @@
 #
 # Airtight model: setup.sh pins sandbox_mode=read-only, so the macOS seatbelt kernel
 # blocks all writes at the OS level (printf>, python -c, node, heredoc alike) and every
-# write escalates to PermissionRequest. This hook is the deterministic, fail-closed
-# arbiter. The sandbox is never flipped: with a frozen-plan marker the hook allows
-# writes (autonomous half); without one it denies source edits (apply_patch) and asks
-# the human for anything else (interactive design half / plan-marker bootstrap).
+# write escalates to PermissionRequest. This hook is the deterministic, FAIL-CLOSED
+# arbiter: any payload it cannot parse is blocked, never allowed. The sandbox is never
+# flipped — the model cannot self-elevate.
+#
+# Pre-freeze policy (no marker): apply_patch -> deny; shell write -> ask (a human is
+# present, because Codex hooks are interactive-only), or deny when HYDRAIA_GATE_STRICT=1.
+# The frozen-plan marker is created by the HUMAN (or HYDRAIA_ALLOW_DIRECT=1), never by the
+# model — that is the trust anchor. With a marker present every write is allowed
+# (autonomous half). Reads never escalate, so they run free.
 set -euo pipefail
 
 payload="$(cat 2>/dev/null || true)"
 
 _log() { [ -n "${HYDRAIA_GATE_LOG:-}" ] || return 0; printf '%s\n' "$*" >> "$HYDRAIA_GATE_LOG" 2>/dev/null || true; }
-_field() { printf '%s' "$payload" | sed -n "s/.*\"$1\"[[:space:]]*:[[:space:]]*\"\\([^\"]*\\)\".*/\\1/p" | head -1; }
+# _field: first quoted-scalar match for a key. Ends with `sed -n '1p'` (consumes all
+# input, so the upstream sed never takes SIGPIPE) — safe under `set -euo pipefail`.
+_field() { printf '%s' "$payload" | sed -n "s/.*\"$1\"[[:space:]]*:[[:space:]]*\"\\([^\"]*\\)\".*/\\1/p" | sed -n '1p'; }
+
+# emit a fail-closed block for BOTH event shapes, then exit non-zero.
+_fail_closed() {
+  local why="$1"
+  _log "{\"event\":\"unparsed\",\"decision\":\"deny\",\"reason\":\"$why\"}"
+  printf '{"hookSpecificOutput":{"hookEventName":"PermissionRequest","permissionDecision":"deny","permissionDecisionReason":"[hydraia] %s"}}\n' "$why"
+  echo "{\"decision\":\"block\",\"reason\":\"[hydraia] $why\"}"
+  echo "[hydraia] BLOCKED (fail-closed): $why" >&2
+  exit 2
+}
 
 proj="$(_field cwd)"; [ -z "$proj" ] && proj="${PWD}"
 tool="$(_field tool_name)"
 event="$(_field hook_event_name)"; [ -z "$event" ] && event="$(_field hookEventName)"
+
+# Fail closed: a hook fired but the payload is unparseable (empty stdin, garbled, or an
+# unrecognized shape yielding neither tool nor event). Default for "cannot understand
+# the request" is BLOCK, never allow. (A genuine read carries a tool_name, so this never
+# false-blocks reads.)
+[ -z "$payload" ] && _fail_closed "empty hook payload"
+{ [ -z "$tool" ] && [ -z "$event" ]; } && _fail_closed "hook payload names neither tool nor event"
 
 # shared marker check
 gate_open=0
@@ -39,8 +63,12 @@ case "$event" in
       decision="allow"; reason="[hydraia] frozen-plan marker present — write allowed."
     elif [ "$tool" = "apply_patch" ]; then
       decision="deny";  reason="[hydraia] spec-drive gate: no frozen plan — source edits (apply_patch) blocked."
+    elif [ -z "$tool" ]; then
+      decision="deny";  reason="[hydraia] spec-drive gate: unidentified write tool — blocked (fail-closed)."
+    elif [ "${HYDRAIA_GATE_STRICT:-}" = "1" ]; then
+      decision="deny";  reason="[hydraia] spec-drive gate (strict): no frozen plan — write blocked. Freeze a plan or set HYDRAIA_ALLOW_DIRECT=1."
     else
-      decision="ask";   reason="[hydraia] spec-drive gate: no frozen plan — write needs approval (interactive design half). Freeze a plan for autonomous writes."
+      decision="ask";   reason="[hydraia] spec-drive gate: no frozen plan — write needs human approval (interactive design half)."
     fi
     _log "{\"event\":\"PermissionRequest\",\"tool\":\"$tool\",\"decision\":\"$decision\",\"cwd\":\"$proj\"}"
     printf '{"hookSpecificOutput":{"hookEventName":"PermissionRequest","permissionDecision":"%s","permissionDecisionReason":"%s"}}\n' "$decision" "$reason"

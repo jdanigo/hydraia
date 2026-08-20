@@ -113,18 +113,37 @@ what closes the shell bypass: `PreToolUse` never fires for Codex's `exec_command
 - **No marker, `apply_patch`** → **deny** (source edits blocked before a plan exists).
 - **No marker, shell write** → **ask** (you approve in the interactive design half; this
   is also how the plan-marker bootstrap write is approved). Post-freeze it flips to allow.
+- **Unparseable payload** (empty/garbled, or naming neither tool nor event) → **deny**,
+  fail-closed. The gate blocks anything it cannot understand.
 
 The sandbox is **never flipped to workspace-write** — the model cannot self-elevate.
 Reads run free (they do not escalate).
+
+**The marker is the trust anchor — create it yourself, not via the model.** The frozen-plan
+marker is what opens the gate, so it must be created by a human (or `HYDRAIA_ALLOW_DIRECT=1`,
+an env var the model cannot forge), never written by the model through the gated tools.
+The `ask` on pre-freeze shell writes is **human-gated by construction**: Codex hooks fire
+only in interactive TUI/desktop (not `codex exec`), so a human is always present to answer.
+
+**`apply_patch` is hard-`deny` but shell writes are `ask`** — an asymmetry: a model could
+prefer `printf > src/x` (→ ask) over `apply_patch` (→ deny) to attempt a pre-freeze source
+write. `ask` still requires your approval, but if you want a symmetric hard block set
+**`HYDRAIA_GATE_STRICT=1`** — pre-freeze shell writes then `deny` too (you then bootstrap
+the plan-marker with `HYDRAIA_ALLOW_DIRECT=1` or by creating the marker file yourself).
 
 **Codex UI desktop:** the desktop app uses the same core (`CODEX_CLI_PATH` → ChatGPT.app)
 and reads the same `~/.codex/config.toml` + hooks, but routes approvals to its own UI and
 uses the app-server, which can override the sandbox per turn. Verify the three gate checks
 there too; if it differs, that difference is a known limitation, not a silent pass.
 
-**Populated-config edge:** if your `~/.codex/config.toml` already sets a root `model`,
-the merge's prepended `model` would duplicate it. Install hydraia against a config without
-a root `model`, or move hydraia's root keys into a `[profiles.hydraia]` table and launch
-with `codex --profile hydraia`.
+**Populated-config edge (security-critical):** the merge prepends root keys. If your
+`~/.codex/config.toml` already sets a root `sandbox_mode`, `model`, or `approval_policy`,
+a blind prepend would DUPLICATE those keys — invalid TOML, or (last-wins) a **silent
+sandbox downgrade** back to `workspace-write` that defeats the gate. `setup.sh` detects
+this and **refuses** to touch root keys (it installs only the agent tables and prints a
+warning). In that case, set `sandbox_mode = "read-only"` and `approval_policy = "on-request"`
+yourself, or move hydraia's root keys into a `[profiles.hydraia]` table and launch with
+`codex --profile hydraia`. After install, confirm: `grep sandbox_mode ~/.codex/config.toml`
+shows exactly one line, `= "read-only"`.
 
 **Windows:** Git Bash or WSL for now (native PowerShell hooks are on the roadmap).

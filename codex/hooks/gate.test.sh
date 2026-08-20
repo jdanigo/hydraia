@@ -32,5 +32,15 @@ run "PTU apply_patch blocked"          "$(J PreToolUse apply_patch '')"         
 run "PTU shell read allowed"           "$(J PreToolUse exec_command 'ls -la')"                        ''                             0
 run "PTU shell write blocked"          "$(J PreToolUse exec_command 'printf hi > x')"                 '"decision":"block"'           2
 
+# Fail-closed on unparseable input (the reviewed fail-open):
+run "empty payload fails closed"       ""                                                             '"permissionDecision":"deny"' 2
+run "no tool nor event fails closed"   '{"cwd":"/x","foo":"bar"}'                                     '"permissionDecision":"deny"' 2
+run "PR empty tool fails closed"       "$(J PermissionRequest '' 'printf hi > x')"                    '"permissionDecision":"deny"' 0
+
+# Strict knob: shell source write pre-freeze becomes deny instead of ask:
+strict() { local out rc; out="$(printf '%s' "$2" | HYDRAIA_ALLOW_DIRECT= HYDRAIA_GATE_STRICT=1 bash "$GATE" 2>/dev/null)"; rc=$?
+  if printf '%s' "$out" | grep -q "$3" && [ "$rc" = "$4" ]; then echo "  ok: $1"; pass=$((pass+1)); else echo "  FAIL: $1 (rc=$rc out=$out)"; fail=$((fail+1)); fi; }
+strict "PR shell strict=deny"          "$(J PermissionRequest exec_command 'printf hi > x')"          '"permissionDecision":"deny"' 0
+
 echo "gate.test: $pass passed, $fail failed"
 [ "$fail" = 0 ]

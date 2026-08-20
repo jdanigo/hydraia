@@ -16,12 +16,26 @@ cp "$SRC/hooks/"*.sh "$CODEX_HOME/hooks/"; chmod +x "$CODEX_HOME/hooks/"*.sh
 # see SETUP.md; a fresh Codex config merges cleanly.)
 CFG="$CODEX_HOME/config.toml"; touch "$CFG"
 if ! grep -q 'sandbox_mode = "read-only"' "$CFG"; then
-  ROOT_PART="$(awk '/^\[agents\./{exit} {print}' "$SRC/config.sample.toml")"
   TABLES_PART="$(awk 'f||/^\[agents\./{f=1; print}' "$SRC/config.sample.toml")"
-  tmp="$(mktemp)"
-  { printf '# --- hydraia root (added by codex/setup.sh) ---\n'; printf '%s\n\n' "$ROOT_PART"; cat "$CFG"; } > "$tmp"
-  { printf '\n# --- hydraia agents (added by codex/setup.sh) ---\n'; printf '%s\n' "$TABLES_PART"; } >> "$tmp"
-  mv "$tmp" "$CFG"
+  # Root scalar keys must precede any [table]. A pre-existing root sandbox_mode / model /
+  # approval_policy would DUPLICATE on prepend → invalid TOML, or (last-wins) silently
+  # downgrade the sandbox and defeat the gate. Detect that and refuse to touch root keys
+  # — install only the agent tables (safe to append) and tell the user what to do.
+  if grep -qE '^[[:space:]]*(sandbox_mode|model|approval_policy)[[:space:]]*=' "$CFG"; then
+    echo "WARNING: $CFG already sets a root sandbox_mode/model/approval_policy." >&2
+    echo "  Skipping the hydraia root-key merge to avoid duplicate TOML keys and a SILENT" >&2
+    echo "  sandbox downgrade (which would defeat the write-gate)." >&2
+    echo "  Set 'sandbox_mode = \"read-only\"' and 'approval_policy = \"on-request\"' yourself," >&2
+    echo "  or move hydraia's keys into a [profiles.hydraia] table and run 'codex --profile hydraia'." >&2
+    echo "  See codex/SETUP.md > Airtight write-gate." >&2
+    { printf '\n# --- hydraia agents (added by codex/setup.sh) ---\n'; printf '%s\n' "$TABLES_PART"; } >> "$CFG"
+  else
+    ROOT_PART="$(awk '/^\[agents\./{exit} {print}' "$SRC/config.sample.toml")"
+    tmp="$(mktemp)"
+    { printf '# --- hydraia root (added by codex/setup.sh) ---\n'; printf '%s\n\n' "$ROOT_PART"; cat "$CFG"; } > "$tmp"
+    { printf '\n# --- hydraia agents (added by codex/setup.sh) ---\n'; printf '%s\n' "$TABLES_PART"; } >> "$tmp"
+    mv "$tmp" "$CFG"
+  fi
 fi
 # skills
 cp -R "$SRC/skills/"* "$SKILLS_DIR/"
