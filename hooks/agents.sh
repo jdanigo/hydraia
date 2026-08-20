@@ -227,23 +227,36 @@ except Exception:
 sub_type="$(printf '%s' "$brk" | awk -F'\t' '{print $1}')"
 sub_desc="$(printf '%s' "$brk" | awk -F'\t' '{print $2}')"
 
-# Role: reviewer agent types use a per-run review-cycle key; everything else is an
-# executor keyed by its [task:<slug>] tag (fallback: hash of the description).
+# Role classifier — three buckets:
+#   review  → ONLY the whole-branch Pass-1 reviewer (hydraia-reviewer), dispatched once
+#             per review cycle. It alone is cycle-counted against maxReviewCycles.
+#   exempt  → every other reviewer / analysis fan-out agent. Phase 5 fires FIVE reviewers
+#             in the FIRST pass; they run once per pass and are already bounded by the
+#             total/concurrent agent caps, so they must NEVER be review-cycle-counted
+#             (counting dispatches would block the 3rd reviewer of the very first pass).
+#   task    → executor, keyed by its [task:<slug>] tag (fallback: hash of the description).
+# Order matters: hydraia-reviewer MUST match before the generic *reviewer* exempt pattern.
 case "$sub_type" in
-  *review*|*reviewer*|silent-failure-hunter|security-scan) role="review" ;;
+  hydraia-reviewer) role="review" ;;
+  *reviewer*|*review*|*reviewer|silent-failure-hunter|security-scan|type-design-analyzer|*-analyzer|database-*) role="exempt" ;;
   *) role="task" ;;
 esac
-if [ "$role" = "review" ]; then
-  key="review:run"; cap="$MAX_REVIEW"
-else
-  slug="$(printf '%s' "$sub_desc" | grep -oE '\[task:[^]]+\]' | head -1 | sed 's/\[task:\(.*\)\]/\1/' || true)"
-  [ -n "$slug" ] || slug="h$(printf '%s' "$sub_desc" | cksum | awk '{print $1}')"
-  key="task:$slug"; cap="$MAX_RETRIES"
-fi
 
-# Read the current count for key, decide, then (if allowed) increment — all under the
-# lock already held. Corrupt/missing ledger → treat as 0 (fail-open).
-cur="$(HY_L="$ledger" HY_K="$key" python3 -c '
+# Breaker decision + increment apply only to review/task roles. An exempt role skips the
+# key/cap resolution, the cur>=cap block, and the increment entirely, falling straight
+# through to the total/concurrent cap logic below (never counted, never review-blocked).
+if [ "$role" != "exempt" ]; then
+  if [ "$role" = "review" ]; then
+    key="review:run"; cap="$MAX_REVIEW"
+  else
+    slug="$(printf '%s' "$sub_desc" | grep -oE '\[task:[^]]+\]' | head -1 | sed 's/\[task:\(.*\)\]/\1/' || true)"
+    [ -n "$slug" ] || slug="h$(printf '%s' "$sub_desc" | cksum | awk '{print $1}')"
+    key="task:$slug"; cap="$MAX_RETRIES"
+  fi
+
+  # Read the current count for key and decide — under the lock already held.
+  # Corrupt/missing ledger → treat as 0 (fail-open).
+  cur="$(HY_L="$ledger" HY_K="$key" python3 -c '
 import os, json
 try:
     d = json.load(open(os.environ["HY_L"]))
@@ -251,11 +264,11 @@ try:
 except Exception:
     print(0)
 ' 2>/dev/null || echo 0)"
-case "$cur" in ''|*[!0-9]*) cur=0 ;; esac
+  case "$cur" in ''|*[!0-9]*) cur=0 ;; esac
 
-if [ "$cur" -ge "$cap" ]; then
-  if [ "$role" = "review" ]; then
-    cat >&2 <<EOF
+  if [ "$cur" -ge "$cap" ]; then
+    if [ "$role" = "review" ]; then
+      cat >&2 <<EOF
 [hydraia] BLOCKED: circuit breaker — review cycles exhausted ($cur/$cap this run).
 
 The review→fix loop has run its allotted cycles without converging. Do NOT dispatch
@@ -263,8 +276,8 @@ another review pass. STOP and surface the remaining findings to the human with t
 evidence (which findings persist, what was tried). Raise the ceiling only if the human
 decides: export HYDRAIA_MAX_REVIEW_CYCLES=3
 EOF
-  else
-    cat >&2 <<EOF
+    else
+      cat >&2 <<EOF
 [hydraia] BLOCKED: circuit breaker — task "$slug" exhausted its attempts ($cur/$cap).
 
 This task has been retried its maximum times without landing. Do NOT re-dispatch it.
@@ -272,25 +285,10 @@ STOP and surface it as a genuine BLOCKER to the human with the evidence (no comm
 attempt count). Raise the ceiling only if the human decides:
   export HYDRAIA_MAX_TASK_RETRIES=3
 EOF
+    fi
+    exit 2
   fi
-  exit 2
 fi
-
-# Allow: increment the ledger count for this key (atomic tmp+rename).
-HY_L="$ledger" HY_K="$key" HY_RID="$pm" python3 -c '
-import os, json
-p=os.environ["HY_L"]
-try: d=json.load(open(p))
-except Exception: d={}
-if not isinstance(d,dict): d={}
-d["runId"]=os.environ["HY_RID"]
-items=d.setdefault("items",{})
-it=items.setdefault(os.environ["HY_K"],{"n":0})
-it["n"]=int(it.get("n",0))+1
-tmp=p+".tmp"
-json.dump(d,open(tmp,"w"))
-os.replace(tmp,p)
-' 2>/dev/null || true
 
 disp="$(wc -l < "$adir/dispatched" 2>/dev/null | tr -d ' ')"; disp="${disp:-0}"
 fin="$(wc -l < "$adir/finished" 2>/dev/null | tr -d ' ')";   fin="${fin:-0}"
@@ -337,6 +335,27 @@ EOF
   exit 2
 fi
 
-# Allow: record the dispatch and let it run.
+# Allow (final path): the total/concurrent cap has passed, so this dispatch will run.
+# Only NOW increment the breaker ledger for review/task roles — a dispatch blocked by the
+# breaker or the total/concurrent cap above must never burn a breaker attempt. Exempt
+# roles are never counted. Still under the held lock.
+if [ "$role" != "exempt" ]; then
+  HY_L="$ledger" HY_K="$key" HY_RID="$pm" python3 -c '
+import os, json
+p=os.environ["HY_L"]
+try: d=json.load(open(p))
+except Exception: d={}
+if not isinstance(d,dict): d={}
+d["runId"]=os.environ["HY_RID"]
+items=d.setdefault("items",{})
+it=items.setdefault(os.environ["HY_K"],{"n":0})
+it["n"]=int(it.get("n",0))+1
+tmp=p+".tmp"
+json.dump(d,open(tmp,"w"))
+os.replace(tmp,p)
+' 2>/dev/null || true
+fi
+
+# Record the dispatch and let it run.
 printf '1\n' >> "$adir/dispatched" 2>/dev/null || true
 exit 0

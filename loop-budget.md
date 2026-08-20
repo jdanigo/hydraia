@@ -9,6 +9,8 @@ Human-readable companion to the token-cap config keys (enforced by hooks/agents.
 | `perRunTokenCap` | Same, scoped to the current run. |
 | `loopPause` / `HYDRAIA_PAUSE` | Kill switch — blocks all sub-agent dispatch immediately. |
 
+Token caps act on **completed-run** telemetry: `summary.sh` writes spend only at run close, so the caps throttle the NEXT sub-agent dispatch based on recent spend — they do not halt the current run mid-flight. `perRunTokenCap` therefore bites once the in-flight run's own telemetry has been recorded (i.e. on a subsequent run of the same plan), and `dailyTokenCap` throttles once the rolling-24h total of closed runs crosses the ceiling.
+
 ## On cap exceed
 1. Hooks block new Task dispatch; the orchestrator switches to report-only and surfaces the blocker.
 2. Raise the cap (`export HYDRAIA_DAILY_TOKEN_CAP=…`) or clear the pause to resume — the human's call.

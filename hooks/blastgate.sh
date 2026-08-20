@@ -106,6 +106,16 @@ plan="$adir/.active-plan"
 [ -f "$plan" ] || exit 0                 # only meaningful during an active run
 acount_dir="$adir/.agents"; mkdir -p "$acount_dir" 2>/dev/null || exit 0
 efile="$acount_dir/edited-files"
+# Reset the maxFiles set per run, like the other counters. The run id is the .active-plan
+# mtime; when it changes (a new run armed the plan) the previous run's file set is stale,
+# so truncate it and record the new run id before counting. Fail-open on any error.
+rid_file="$acount_dir/edited-files.runid"
+cur_runid="$(stat -f %m "$plan" 2>/dev/null || stat -c %Y "$plan" 2>/dev/null || echo 0)"
+prev_runid="$(cat "$rid_file" 2>/dev/null || echo)"
+if [ "$cur_runid" != "$prev_runid" ]; then
+  : > "$efile" 2>/dev/null || true
+  printf '%s' "$cur_runid" > "$rid_file" 2>/dev/null || true
+fi
 grep -qxF "$rel" "$efile" 2>/dev/null || printf '%s\n' "$rel" >> "$efile" 2>/dev/null || true
 MAXF="10"; command -v hy_config >/dev/null 2>&1 && MAXF="$(hy_config maxFiles 10)"
 case "$MAXF" in ''|*[!0-9]*) MAXF=10 ;; esac
