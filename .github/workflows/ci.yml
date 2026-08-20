@@ -104,3 +104,17 @@ jobs:
             codex/skills/hydraia/SKILL.md > /tmp/cx
           test -s /tmp/cx || { echo "codex orchestrator missing PIPELINE CONTRACT block"; exit 1; }
           echo "contract block present ($(wc -l < /tmp/cx) lines)"
+      - name: Shell-gate airtight checks
+        run: |
+          set -euo pipefail
+          echo "gate.sh has PermissionRequest branch"
+          grep -q 'permissionDecision' codex/hooks/gate.sh
+          echo "hooks.json registers PermissionRequest"
+          python3 -c "import json; d=json.load(open('codex/hooks.json')); assert 'PermissionRequest' in d['hooks'] and len(d['hooks']['PermissionRequest'])==2"
+          echo "no catch-all matcher"
+          test "$(grep -c '"matcher": "\.\*"' codex/hooks.json)" = "0"
+          echo "config pins read-only sandbox + on-request approval"
+          grep -q 'sandbox_mode = "read-only"' codex/config.sample.toml
+          grep -q 'approval_policy = "on-request"' codex/config.sample.toml
+          echo "run the fixture tests"
+          bash codex/hooks/gate.test.sh
