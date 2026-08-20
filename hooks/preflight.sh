@@ -93,4 +93,28 @@ if [ -n "$local_ver" ] && [ -n "$latest_ver" ] && [ "$local_ver" != "$latest_ver
   fi
 fi
 
+# --- 4. Binding constraints injection (SessionStart additionalContext) --------
+# If the repo has a constraints.md, inject it as binding context for the whole session.
+# Read via config so a repo can disable it. Fail-silent: never break SessionStart.
+CINJECT="true"
+command -v hy_config >/dev/null 2>&1 && CINJECT="$(hy_config constraintsInject true HYDRAIA_CONSTRAINTS)"
+if [ "$CINJECT" = "true" ]; then
+  croot="$(git rev-parse --show-toplevel 2>/dev/null || true)"
+  if [ -n "$croot" ]; then
+    cbase="$(cd "$croot" 2>/dev/null && hy_artifacts_dir 2>/dev/null)"; [ -n "$cbase" ] || cbase="$croot/docs/hydraia"
+    cfile="$cbase/constraints.md"; [ -f "$cfile" ] || cfile="$croot/docs/hydraia/constraints.md"
+    if [ -f "$cfile" ]; then
+      CF="$cfile" python3 -c '
+import os, json, sys
+try:
+    txt=open(os.environ["CF"]).read()[:8192]
+    ctx="[hydraia binding constraints — read constraints.md; these rules are binding for this session]\n\n"+txt
+    print(json.dumps({"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":ctx}}))
+except Exception:
+    sys.exit(0)
+' 2>/dev/null || true
+    fi
+  fi
+fi
+
 exit 0
