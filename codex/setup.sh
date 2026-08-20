@@ -10,11 +10,18 @@ mkdir -p "$CODEX_HOME/hooks" "$SKILLS_DIR"
 # hooks: expand $CODEX_HOME to the absolute path
 sed "s|\$CODEX_HOME|$CODEX_HOME|g" "$SRC/hooks.json" > "$CODEX_HOME/hooks.json"
 cp "$SRC/hooks/"*.sh "$CODEX_HOME/hooks/"; chmod +x "$CODEX_HOME/hooks/"*.sh
-# agent roles ship inside config.sample.toml as [agents.<name>] tables (merged below)
-# config merge: append the sample block once
-touch "$CODEX_HOME/config.toml"
-if ! grep -q 'default_subagent_model = "gpt-5.6-luna"' "$CODEX_HOME/config.toml"; then
-  { echo ""; echo "# --- hydraia (added by codex/setup.sh) ---"; cat "$SRC/config.sample.toml"; } >> "$CODEX_HOME/config.toml"
+# config merge: root scalar keys MUST precede any [table] in TOML, so prepend them at
+# the very top; append the [agents.*] role tables at the bottom. Sentinel makes it
+# idempotent. (A pre-existing root `model` in the user's config is a documented edge —
+# see SETUP.md; a fresh Codex config merges cleanly.)
+CFG="$CODEX_HOME/config.toml"; touch "$CFG"
+if ! grep -q 'sandbox_mode = "read-only"' "$CFG"; then
+  ROOT_PART="$(awk '/^\[agents\./{exit} {print}' "$SRC/config.sample.toml")"
+  TABLES_PART="$(awk 'f||/^\[agents\./{f=1; print}' "$SRC/config.sample.toml")"
+  tmp="$(mktemp)"
+  { printf '# --- hydraia root (added by codex/setup.sh) ---\n'; printf '%s\n\n' "$ROOT_PART"; cat "$CFG"; } > "$tmp"
+  { printf '\n# --- hydraia agents (added by codex/setup.sh) ---\n'; printf '%s\n' "$TABLES_PART"; } >> "$tmp"
+  mv "$tmp" "$CFG"
 fi
 # skills
 cp -R "$SRC/skills/"* "$SKILLS_DIR/"

@@ -8,6 +8,11 @@
 model = "gpt-5.6-sol"
 model_reasoning_effort = "high"
 
+# Airtight spec-drive gate: read-only sandbox forces every write to escalate to the
+# PermissionRequest hook (gate.sh); the sandbox is never flipped. See codex/SETUP.md.
+sandbox_mode = "read-only"
+approval_policy = "on-request"
+
 # Executor sub-agents (per plan task) — fast & affordable:
 [agents.hydraia-executor]
 model = "gpt-5.6-luna"
