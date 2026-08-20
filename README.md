@@ -566,17 +566,36 @@ gate, double review, sub-agent execution) depends on those, so use the plugin
 install above for the pipeline; use `npx skills` for the self-contained skills
 (`design-to-code`, the design family, stack patterns, security reviews, …).
 
-### Codex (experimental preview)
+### Codex CLI (experimental preview)
 
-A native layer under `codex/` runs the pipeline on OpenAI Codex CLI using Codex's
-own hooks, sub-agents, and model routing (`gpt-5.6-sol` orchestrator/review,
-`gpt-5.6-luna` executors) — with zero changes to the Claude surface. Install
-user-level with `bash codex/setup.sh`; see [`codex/SETUP.md`](codex/SETUP.md).
-**Preview:** the spec-drive gate runs via Codex interactive hooks — verified to
-block `apply_patch` (the edit tool) before a plan is frozen. Codex does **not** run
-hooks for its built-in shell (`exec_command`), so a shell redirect can still write;
-closing that (via a `PermissionRequest` hook / sandbox mode) is on the roadmap. Hooks
-also don't fire under `codex exec` headless. See [`codex/SETUP.md`](codex/SETUP.md).
+The pipeline also runs natively on **OpenAI Codex CLI** — a layer under `codex/`
+using Codex's own hooks, sub-agents, and model routing (`gpt-5.6-sol`
+orchestrator/review, `gpt-5.6-luna` executors), with zero changes to the Claude
+surface. Codex does **not** use Claude's plugin system, so install the layer
+standalone (from scratch — no Claude plugin needed):
+
+```bash
+git clone https://github.com/jdanigo/hydraia
+bash hydraia/codex/setup.sh
+```
+
+`setup.sh` installs, user-level into `~/.codex`: the spec-drive gate hooks
+(`hooks.json` + `hooks/gate.sh`), the model-routing + sandbox config merged into
+`config.toml`, and the `hydraia` skill into `~/.agents/skills`. Then:
+
+1. **Restart Codex** so a new session picks up the config and hooks.
+2. **Trust the hooks** when Codex prompts (`N hooks new or changed` → *Trust all*).
+3. Invoke the pipeline with **`$hydraia <what to build>`** — it is a *skill*
+   (`$` prefix), not a `/` slash command.
+
+**Airtight write-gate:** setup pins `sandbox_mode = "read-only"` +
+`approval_policy = "on-request"`, so every write escalates to a `PermissionRequest`
+hook — this closes the shell bypass (`printf … > file`) that `PreToolUse` alone
+missed, making both `apply_patch` and shell writes gated before a plan is frozen.
+Note the read-only posture applies to **all** your Codex sessions; to scope it to
+hydraia only, put those two keys in a `[profiles.hydraia]` table and launch with
+`codex --profile hydraia`. Hooks fire in interactive TUI/desktop only (not
+`codex exec` headless). See [`codex/SETUP.md`](codex/SETUP.md).
 
 **You don't need to install the external tools by hand.** The first time you run
 `/hydraia:feature`, Phase 0 detects whether `codegraph` and `markitdown` are present
