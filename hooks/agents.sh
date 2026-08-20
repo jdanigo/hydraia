@@ -119,6 +119,57 @@ fi
 # Human bypass lifts the caps.
 [ -n "${HYDRAIA_ALLOW_DIRECT:-}" ] && exit 0
 
+# --- Kill switch + token caps ------------------------------------------------
+# Kill switch: config loopPause or env HYDRAIA_PAUSE blocks ALL dispatch immediately.
+PAUSED="false"; command -v hy_config >/dev/null 2>&1 && PAUSED="$(hy_config loopPause false HYDRAIA_PAUSE)"
+if [ "$PAUSED" = "true" ] || [ -n "${HYDRAIA_PAUSE:-}" ]; then
+  cat >&2 <<EOF
+[hydraia] BLOCKED: loop paused (kill switch).
+
+Sub-agent dispatch is disabled (loopPause / HYDRAIA_PAUSE). Switch to report-only.
+Clear the pause to resume: unset HYDRAIA_PAUSE (or set loopPause=false in config).
+EOF
+  exit 2
+fi
+
+# Token caps (default 0 = off). Sum today's spend from the telemetry summary.sh writes.
+DAILY_CAP="$(hy_config dailyTokenCap 0 HYDRAIA_DAILY_TOKEN_CAP 2>/dev/null || echo 0)"
+RUN_CAP="$(hy_config perRunTokenCap 0 HYDRAIA_RUN_TOKEN_CAP 2>/dev/null || echo 0)"
+case "$DAILY_CAP" in ''|*[!0-9]*) DAILY_CAP=0 ;; esac
+case "$RUN_CAP" in ''|*[!0-9]*) RUN_CAP=0 ;; esac
+TELEM="${HOME}/.cache/hydraia/telemetry.jsonl"
+if { [ "$DAILY_CAP" -gt 0 ] || [ "$RUN_CAP" -gt 0 ]; } && [ -f "$TELEM" ]; then
+  over="$(HY_T="$TELEM" HY_NOW="$now" HY_DC="$DAILY_CAP" HY_RC="$RUN_CAP" HY_RS="$pm" python3 -c '
+import os
+t=os.environ["HY_T"]; now=int(os.environ["HY_NOW"]); dc=int(os.environ["HY_DC"]); rc=int(os.environ["HY_RC"]); rs=int(os.environ.get("HY_RS") or 0)
+import json
+day=0; run=0
+try:
+    for line in open(t):
+        try: r=json.loads(line)
+        except Exception: continue
+        ts=int(r.get("ts") or 0); tok=int(r.get("tokensIn") or 0)+int(r.get("tokensOut") or 0)
+        if now-ts <= 86400: day+=tok
+        if rs and ts>=rs: run+=tok
+    if dc and day>=dc: print("daily "+str(day)+"/"+str(dc))
+    elif rc and run>=rc: print("run "+str(run)+"/"+str(rc))
+    else: print("")
+except Exception:
+    print("")
+' 2>/dev/null || true)"
+  if [ -n "$over" ]; then
+    scope="${over%% *}"; nums="${over#* }"
+    cat >&2 <<EOF
+[hydraia] BLOCKED: token budget — ${scope} cap reached (${nums} tokens).
+
+New sub-agent dispatch would exceed the configured ${scope} token cap. Switch to
+report-only and surface where the run stands. The HUMAN raises the ceiling if warranted:
+  export HYDRAIA_DAILY_TOKEN_CAP=…   (or HYDRAIA_RUN_TOKEN_CAP=…)
+EOF
+    exit 2
+  fi
+fi
+
 # Acquire a portable lock (mkdir is atomic; macOS has no flock) so a same-turn
 # burst of Task calls is serialized through the count-and-decide critical section.
 lock="$adir/lock"
