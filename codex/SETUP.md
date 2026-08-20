@@ -90,6 +90,41 @@ rm -rf ~/.codex/hooks ~/.codex/agents
 rm -rf ~/.agents/skills/hydraia
 ```
 
-Then remove the `# --- hydraia (added by codex/setup.sh) ---` block from
-`~/.codex/config.toml` by hand (it is appended, not overwritten, so the rest of your
+Then remove the `# --- hydraia root ---` and `# --- hydraia agents ---` blocks from
+`~/.codex/config.toml` by hand (they are merged in, not overwritten, so the rest of your
 config is untouched).
+
+## Airtight write-gate (read-only sandbox)
+
+`setup.sh` pins two keys in `~/.codex/config.toml`:
+
+```toml
+sandbox_mode = "read-only"
+approval_policy = "on-request"
+```
+
+Under read-only, the OS sandbox blocks every filesystem write, so each write escalates
+to Codex's approval path and fires the **`PermissionRequest`** hook (`gate.sh`). This is
+what closes the shell bypass: `PreToolUse` never fires for Codex's `exec_command`, but
+`PermissionRequest` does. The decision is deterministic and fail-closed:
+
+- **Frozen-plan marker present** (`.gate-approved`, `docs/hydraia/.quick-approved`,
+  `.hydraia/plan-frozen`, or `HYDRAIA_ALLOW_DIRECT=1`) → **allow** (autonomous half).
+- **No marker, `apply_patch`** → **deny** (source edits blocked before a plan exists).
+- **No marker, shell write** → **ask** (you approve in the interactive design half; this
+  is also how the plan-marker bootstrap write is approved). Post-freeze it flips to allow.
+
+The sandbox is **never flipped to workspace-write** — the model cannot self-elevate.
+Reads run free (they do not escalate).
+
+**Codex UI desktop:** the desktop app uses the same core (`CODEX_CLI_PATH` → ChatGPT.app)
+and reads the same `~/.codex/config.toml` + hooks, but routes approvals to its own UI and
+uses the app-server, which can override the sandbox per turn. Verify the three gate checks
+there too; if it differs, that difference is a known limitation, not a silent pass.
+
+**Populated-config edge:** if your `~/.codex/config.toml` already sets a root `model`,
+the merge's prepended `model` would duplicate it. Install hydraia against a config without
+a root `model`, or move hydraia's root keys into a `[profiles.hydraia]` table and launch
+with `codex --profile hydraia`.
+
+**Windows:** Git Bash or WSL for now (native PowerShell hooks are on the roadmap).
