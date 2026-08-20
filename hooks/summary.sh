@@ -73,6 +73,7 @@ if command -v hy_config >/dev/null 2>&1; then
   RUN_SUMMARY="$(hy_config runSummary true)"
   TELEMETRY="$(hy_config telemetry true)"
 fi
+DAILY_CAP="$(hy_config dailyTokenCap 0 HYDRAIA_DAILY_TOKEN_CAP 2>/dev/null || echo 0)"
 TELEM_FILE=""
 if [ "$TELEMETRY" = "true" ]; then
   mkdir -p "${HOME}/.cache/hydraia" 2>/dev/null && TELEM_FILE="${HOME}/.cache/hydraia/telemetry.jsonl"
@@ -109,7 +110,7 @@ fi
 # --- Build the summary (and append telemetry) --------------------------------
 summary="$(printf '%s' "$transcript_path" \
   | HY_REPO="$repo" HY_TELEM="$TELEM_FILE" HY_NOW="$NOW" HY_RUNSTART="$RUNSTART" \
-    HY_DEPTH="$DEPTH" HY_GITSTAT="$GITSTAT" HY_REQUEST="$REQUEST" python3 -c '
+    HY_DEPTH="$DEPTH" HY_GITSTAT="$GITSTAT" HY_REQUEST="$REQUEST" HY_DAILY_CAP="$DAILY_CAP" python3 -c '
 import sys, json, os, glob
 
 path  = sys.stdin.read().strip()
@@ -391,6 +392,13 @@ lines = [
     f"Agents:  {agent_line}",
     f"Tokens:  {h(tot_in)} in · {h(tot_out)} out · {h(tot_cr)} cache-read",
 ]
+try:
+    _dc = int(os.environ.get("HY_DAILY_CAP", "0") or "0")
+except Exception:
+    _dc = 0
+if _dc > 0:
+    _spent = tot_in + tot_out
+    lines.append(f"Budget:  {h(_spent)} this run · daily cap {h(_dc)}")
 if skills:
     skill_items = sorted(skills.items(), key=lambda x: (-x[1], x[0]))
     if depth == "detailed":
