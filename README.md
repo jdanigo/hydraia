@@ -464,6 +464,17 @@ Security is enforced at three points, not just at the end:
 
 ---
 
+## Loop-Hardening
+
+Five runtime guarantees adapted from loop-engineering:
+- **Blast-radius gate** (`gate.yaml`): blocks edits to secrets/auth/payments/migrations. `pathGate=off` to disable; `HYDRAIA_ALLOW_DIRECT=1` to bypass (human).
+- **Circuit breaker**: caps per-task retries (`maxTaskRetries`) and review cycles (`maxReviewCycles`), then escalates instead of looping.
+- **Token caps + kill switch**: `dailyTokenCap` / `perRunTokenCap` (default off) and `HYDRAIA_PAUSE=1` stop sub-agent dispatch.
+- **Binding constraints**: copy `docs/hydraia/constraints.sample.md` to `constraints.md`; it is injected as binding context every session.
+- **Autonomy tiers**: Phase -1 estimates a size/risk tier + token cost and pre-selects review depth.
+
+---
+
 ## Spec-drive, enforced
 
 "Never skip a phase" is not just a prompt Hydraia hopes the model obeys — it's a

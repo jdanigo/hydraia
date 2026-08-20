@@ -1,0 +1,27 @@
+# Hydraia blast-radius gate. Machine-readable path denylist + file-count guard,
+# enforced by hooks/blastgate.sh. Denylisted paths are BLOCKED for Edit/Write/MultiEdit
+# unless the human sets HYDRAIA_ALLOW_DIRECT=1. Ported from loop-engineering gate.yaml.
+version: 1
+
+denylist:
+  - ".env"
+  - ".env.*"
+  - "**/secrets/**"
+  - "**/credentials/**"
+  - "**/*_key*"
+  - "**/*_secret*"
+  - ".terraform/**"
+  - "k8s/production/**"
+  - "**/migrations/**"
+  - "auth/**"
+  - "payments/**"
+  - "billing/**"
+
+# Max distinct files an active-plan run may touch before blastgate warns (advisory by
+# default; set maxFilesEnforce=true in config to make it a hard block).
+maxFiles: 10
+
+# Data only — reserved for the future loop patterns (item #6). Nothing consumes it yet.
+autoMergeAllowlist:
+  - "docs/**"
+  - "**/*.md"

@@ -180,6 +180,14 @@ if [ "$MODE" = "--check" ]; then
   else
     echo "  (not inside a git repo — storage resolves per-repo at session start)"
   fi
+  echo "-- loop-hardening --"
+  # Loop-hardening artifacts (informational; all optional/opt-in).
+  _root="$(git rev-parse --show-toplevel 2>/dev/null || true)"
+  if [ -n "$_root" ]; then
+    [ -f "$_root/gate.yaml" ] && echo "  gate.yaml: present" || echo "  gate.yaml: absent (built-in denylist default in use)"
+    _cb="$(cd "$_root" 2>/dev/null && hy_artifacts_dir 2>/dev/null)"; [ -n "$_cb" ] || _cb="$_root/docs/hydraia"
+    [ -f "$_cb/constraints.md" ] && echo "  constraints.md: present (injected each session)" || echo "  constraints.md: absent (copy constraints.sample.md to enable)"
+  fi
   echo "-- discovery --"
   local_skills=$(find "$(dirname "$0")/../skills" -name SKILL.md 2>/dev/null | wc -l | tr -d ' ')
   local_agents=$(ls "$(dirname "$0")/../agents"/*.md 2>/dev/null | wc -l | tr -d ' ')

@@ -38,6 +38,35 @@ Triage is ONE classification step, not a conversation — at most a single
 routing question, and only when genuinely ambiguous. Route chosen, proceed
 to the start-of-run guards below.
 
+### Autonomy tier + cost (after route, before the guards)
+
+Once the route is chosen, estimate a **tier** from cheap signals and show a cost
+estimate. This maps to hydraia's EXISTING controls — it adds no new enforcement axis.
+
+**Early-exit (noop) first.** If the route's target is empty, do not spin the pipeline:
+- `review` / `graph`: if `git diff --name-only` against the branch point is empty (or the
+  named target does not exist), report "nothing to review", drop the run-complete marker
+  (`printf 'brief\n' > <base>/.run-complete`), and stop. No Phases 0–6.
+- `perf` / `db`: if the named symptom target is absent or already within a stated
+  threshold, report and stop.
+
+**Tier (feature-shaped routes).** Classify from: likely files touched, overlap with the
+`gate.yaml` denylist (risk), new-logic vs mechanical, presence of UI surfaces:
+- **Tier S (trivial):** no new logic, no new file, no risk-path, ≤ ~2 files → propose
+  quick-mode (the `.quick-approved` path) or a Lite review. Minimal ceremony.
+- **Tier M (standard):** default — full pipeline, Full review.
+- **Tier L (large / risky):** many files, risk-path overlap, or a new service → full
+  pipeline + all gates; the human may raise the agent ceiling.
+
+**Cost estimate.** Read `patterns/cost.yaml` for the route × tier and state a one-line
+token estimate (e.g. "≈200k tokens, Tier S"). It is a rough anchor, not a promise.
+
+**Confirm once.** Present the tier + estimate in a single `AskUserQuestion`,
+pre-selecting the review depth for the Phase-3 run-controls picker. The human confirms
+with one tap or overrides. Honor `autoTier` config (`off` → always Tier M, today's
+behavior). A tier NEVER removes the security floor (Phase 5 mandatory reviewers, threat
+model) — Tier S only trims optional ceremony, exactly as quick-mode already does.
+
 ## Start-of-run guards (before Phase 0)
 
 **Language gate (first action, before anything else).** Call the
@@ -194,6 +223,12 @@ ran), `pdfConversion` (false → skip markitdown), `cavemanInternal`,
 `heartbeatStaleSecs` (Phase 4 watchdog: seconds before a commit-less task is deemed
 hung, default 300), `maxTaskRetries` (Phase 4 watchdog: auto re-push attempts before a
 stall becomes a blocker, default 2). Defaults apply when a key is absent.
+
+**Binding constraints (read first).** If `docs/hydraia/constraints.md` (or the external
+artifacts base's `constraints.md`) exists, read it and treat every rule as BINDING for
+this run — it is the repo's own "we don't do it this way" ledger and overrides default
+behavior (never the safety gates). The SessionStart hook already injected it as context;
+reading it here guarantees the full file is honored even if that injection was truncated.
 
 0. **Dependency check + one-click install (do this once, silently if all present).**
    The user should never have to run install commands by hand. Detect what is
@@ -543,6 +578,10 @@ Use **subagent-driven-development**. Dispatch a fresh `hydraia-executor` subagen
 per task (these run on Sonnet 5). Give each exactly the context it needs from the
 plan and the graph — never your session history. Execute all tasks continuously.
 TDD where the plan calls for it. Commit frequently.
+Tag each executor dispatch's description with a machine-readable `[task:<slug>]` marker
+(the same `<slug>` the executor uses for its heartbeat file). The circuit-breaker hook
+(`hooks/agents.sh`) reads this tag to count per-task attempts; without it the breaker
+falls back to a description hash and still counts, but the tag makes escalation precise.
 
 **Dispatch in bounded waves — never fan out the whole plan at once.** Each subagent
 loads its own context, so N parallel agents multiply token cost by ~N. Send at most
@@ -581,6 +620,11 @@ recover automatically at every wave boundary:
   surface it with the evidence (no commit, stale heartbeat, retry count) — never spin
   on it silently. Bounded waves (`HYDRAIA_MAX_CONCURRENT`) keep a stall from taking the
   whole plan down with it.
+  The attempt cap is now also a RUNTIME guarantee: `hooks/agents.sh` blocks the
+  (maxTaskRetries+1)-th dispatch of the same `[task:<slug>]` and tells you to stop. When
+  you see that block, do NOT keep retrying — read the ledger (`<base>/.agents/ledger.json`),
+  surface the task as a blocker with its attempt count and the missing-commit evidence, and
+  escalate to the human.
 
 **Frontend rule (hard gate, not optional):** any task that creates or changes UI —
 markup, components, styles, or templates — the executor implements the *UX / visual
@@ -675,8 +719,10 @@ Mechanical passes (style/lint-level nits, doc-comment checks) run on **Sonnet** 
    cause) into one entry BEFORE triage, so you spend triage tokens once per real
    problem, not once per report. Then use **receiving-code-review** to triage: fix
    everything correct-and-material; high-severity security findings are
-   non-negotiable. Re-review only the changed surface if fixes were substantial (max
-   one re-review cycle).
+   non-negotiable. Re-review only the changed surface if fixes were substantial (max `maxReviewCycles`
+   cycles, default 2). This cap is now enforced: `hooks/agents.sh` blocks a reviewer
+   dispatch past the cap for this run. If you hit that block, STOP re-reviewing — surface
+   the persisting findings to the human with what was tried, rather than looping.
 
 ## Phase 6 — Verify & close
 

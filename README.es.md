@@ -482,6 +482,17 @@ La seguridad se aplica en tres puntos, no solo al final:
 
 ---
 
+## Loop-Hardening
+
+Cinco garantías de runtime adaptadas de loop-engineering:
+- **Gate de radio de impacto** (`gate.yaml`): bloquea ediciones a secretos/auth/pagos/migraciones. `pathGate=off` para desactivarlo; `HYDRAIA_ALLOW_DIRECT=1` para saltarlo (humano).
+- **Circuit breaker**: limita los reintentos por tarea (`maxTaskRetries`) y los ciclos de revisión (`maxReviewCycles`), y luego escala en vez de seguir en bucle.
+- **Topes de tokens + interruptor de emergencia**: `dailyTokenCap` / `perRunTokenCap` (desactivados por defecto) y `HYDRAIA_PAUSE=1` detienen el despacho de sub-agentes.
+- **Restricciones vinculantes**: copiá `docs/hydraia/constraints.sample.md` a `constraints.md`; se inyecta como contexto vinculante en cada sesión.
+- **Niveles de autonomía**: la Fase -1 estima un nivel de tamaño/riesgo y un costo en tokens, y preselecciona la profundidad de revisión.
+
+---
+
 ## Spec-drive, forzado
 
 "Nunca te saltes una fase" no es solo un prompt que Hydraia espera que el modelo

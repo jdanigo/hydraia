@@ -95,6 +95,7 @@ reset_if_new_run() {
   if [ "$cur" != "$pm" ]; then
     : > "$adir/dispatched" 2>/dev/null || true
     : > "$adir/finished"   2>/dev/null || true
+    : > "$adir/ledger.json" 2>/dev/null || true
     printf '%s' "$pm" > "$rid" 2>/dev/null || true
   fi
 }
@@ -117,6 +118,57 @@ fi
 
 # Human bypass lifts the caps.
 [ -n "${HYDRAIA_ALLOW_DIRECT:-}" ] && exit 0
+
+# --- Kill switch + token caps ------------------------------------------------
+# Kill switch: config loopPause or env HYDRAIA_PAUSE blocks ALL dispatch immediately.
+PAUSED="false"; command -v hy_config >/dev/null 2>&1 && PAUSED="$(hy_config loopPause false HYDRAIA_PAUSE)"
+if [ "$PAUSED" = "true" ] || [ -n "${HYDRAIA_PAUSE:-}" ]; then
+  cat >&2 <<EOF
+[hydraia] BLOCKED: loop paused (kill switch).
+
+Sub-agent dispatch is disabled (loopPause / HYDRAIA_PAUSE). Switch to report-only.
+Clear the pause to resume: unset HYDRAIA_PAUSE (or set loopPause=false in config).
+EOF
+  exit 2
+fi
+
+# Token caps (default 0 = off). Sum today's spend from the telemetry summary.sh writes.
+DAILY_CAP="$(hy_config dailyTokenCap 0 HYDRAIA_DAILY_TOKEN_CAP 2>/dev/null || echo 0)"
+RUN_CAP="$(hy_config perRunTokenCap 0 HYDRAIA_RUN_TOKEN_CAP 2>/dev/null || echo 0)"
+case "$DAILY_CAP" in ''|*[!0-9]*) DAILY_CAP=0 ;; esac
+case "$RUN_CAP" in ''|*[!0-9]*) RUN_CAP=0 ;; esac
+TELEM="${HOME}/.cache/hydraia/telemetry.jsonl"
+if { [ "$DAILY_CAP" -gt 0 ] || [ "$RUN_CAP" -gt 0 ]; } && [ -f "$TELEM" ]; then
+  over="$(HY_T="$TELEM" HY_NOW="$now" HY_DC="$DAILY_CAP" HY_RC="$RUN_CAP" HY_RS="$pm" python3 -c '
+import os
+t=os.environ["HY_T"]; now=int(os.environ["HY_NOW"]); dc=int(os.environ["HY_DC"]); rc=int(os.environ["HY_RC"]); rs=int(os.environ.get("HY_RS") or 0)
+import json
+day=0; run=0
+try:
+    for line in open(t):
+        try: r=json.loads(line)
+        except Exception: continue
+        ts=int(r.get("ts") or 0); tok=int(r.get("tokensIn") or 0)+int(r.get("tokensOut") or 0)
+        if now-ts <= 86400: day+=tok
+        if rs and ts>=rs: run+=tok
+    if dc and day>=dc: print("daily "+str(day)+"/"+str(dc))
+    elif rc and run>=rc: print("run "+str(run)+"/"+str(rc))
+    else: print("")
+except Exception:
+    print("")
+' 2>/dev/null || true)"
+  if [ -n "$over" ]; then
+    scope="${over%% *}"; nums="${over#* }"
+    cat >&2 <<EOF
+[hydraia] BLOCKED: token budget — ${scope} cap reached (${nums} tokens).
+
+New sub-agent dispatch would exceed the configured ${scope} token cap. Switch to
+report-only and surface where the run stands. The HUMAN raises the ceiling if warranted:
+  export HYDRAIA_DAILY_TOKEN_CAP=…   (or HYDRAIA_RUN_TOKEN_CAP=…)
+EOF
+    exit 2
+  fi
+fi
 
 # Acquire a portable lock (mkdir is atomic; macOS has no flock) so a same-turn
 # burst of Task calls is serialized through the count-and-decide critical section.
@@ -153,6 +205,90 @@ trap 'rmdir "$lock" 2>/dev/null || true' EXIT
 
 # Reset the counters (and the sub-agent telemetry sidecar) on a new run.
 reset_if_new_run
+
+# --- Circuit breaker: per-item attempt ledger --------------------------------
+# Count executor attempts per task-slug and reviewer cycles per run. Block past the
+# caps and tell the orchestrator to escalate, mechanizing the Phase 4/5 soft caps.
+MAX_RETRIES="$(hy_config maxTaskRetries 2 HYDRAIA_MAX_TASK_RETRIES 2>/dev/null || echo 2)"
+MAX_REVIEW="$(hy_config maxReviewCycles 2 HYDRAIA_MAX_REVIEW_CYCLES 2>/dev/null || echo 2)"
+case "$MAX_RETRIES" in ''|*[!0-9]*) MAX_RETRIES=2 ;; esac
+case "$MAX_REVIEW" in ''|*[!0-9]*) MAX_REVIEW=2 ;; esac
+ledger="$adir/ledger.json"
+
+# Extract subagent_type + description from the payload for slug/role resolution.
+brk="$(printf '%s' "$payload" | python3 -c '
+import sys, json
+try:
+    d = json.load(sys.stdin); ti = d.get("tool_input") or {}
+    print((ti.get("subagent_type") or "") + "\t" + (ti.get("description") or ""))
+except Exception:
+    print("\t")
+' 2>/dev/null || true)"
+sub_type="$(printf '%s' "$brk" | awk -F'\t' '{print $1}')"
+sub_desc="$(printf '%s' "$brk" | awk -F'\t' '{print $2}')"
+
+# Role classifier — three buckets:
+#   review  → ONLY the whole-branch Pass-1 reviewer (hydraia-reviewer), dispatched once
+#             per review cycle. It alone is cycle-counted against maxReviewCycles.
+#   exempt  → every other reviewer / analysis fan-out agent. Phase 5 fires FIVE reviewers
+#             in the FIRST pass; they run once per pass and are already bounded by the
+#             total/concurrent agent caps, so they must NEVER be review-cycle-counted
+#             (counting dispatches would block the 3rd reviewer of the very first pass).
+#   task    → executor, keyed by its [task:<slug>] tag (fallback: hash of the description).
+# Order matters: hydraia-reviewer MUST match before the generic *reviewer* exempt pattern.
+case "$sub_type" in
+  hydraia-reviewer) role="review" ;;
+  *reviewer*|*review*|*reviewer|silent-failure-hunter|security-scan|type-design-analyzer|*-analyzer|database-*) role="exempt" ;;
+  *) role="task" ;;
+esac
+
+# Breaker decision + increment apply only to review/task roles. An exempt role skips the
+# key/cap resolution, the cur>=cap block, and the increment entirely, falling straight
+# through to the total/concurrent cap logic below (never counted, never review-blocked).
+if [ "$role" != "exempt" ]; then
+  if [ "$role" = "review" ]; then
+    key="review:run"; cap="$MAX_REVIEW"
+  else
+    slug="$(printf '%s' "$sub_desc" | grep -oE '\[task:[^]]+\]' | head -1 | sed 's/\[task:\(.*\)\]/\1/' || true)"
+    [ -n "$slug" ] || slug="h$(printf '%s' "$sub_desc" | cksum | awk '{print $1}')"
+    key="task:$slug"; cap="$MAX_RETRIES"
+  fi
+
+  # Read the current count for key and decide — under the lock already held.
+  # Corrupt/missing ledger → treat as 0 (fail-open).
+  cur="$(HY_L="$ledger" HY_K="$key" python3 -c '
+import os, json
+try:
+    d = json.load(open(os.environ["HY_L"]))
+    print(int((d.get("items") or {}).get(os.environ["HY_K"], {}).get("n", 0)))
+except Exception:
+    print(0)
+' 2>/dev/null || echo 0)"
+  case "$cur" in ''|*[!0-9]*) cur=0 ;; esac
+
+  if [ "$cur" -ge "$cap" ]; then
+    if [ "$role" = "review" ]; then
+      cat >&2 <<EOF
+[hydraia] BLOCKED: circuit breaker — review cycles exhausted ($cur/$cap this run).
+
+The review→fix loop has run its allotted cycles without converging. Do NOT dispatch
+another review pass. STOP and surface the remaining findings to the human with the
+evidence (which findings persist, what was tried). Raise the ceiling only if the human
+decides: export HYDRAIA_MAX_REVIEW_CYCLES=3
+EOF
+    else
+      cat >&2 <<EOF
+[hydraia] BLOCKED: circuit breaker — task "$slug" exhausted its attempts ($cur/$cap).
+
+This task has been retried its maximum times without landing. Do NOT re-dispatch it.
+STOP and surface it as a genuine BLOCKER to the human with the evidence (no commit,
+attempt count). Raise the ceiling only if the human decides:
+  export HYDRAIA_MAX_TASK_RETRIES=3
+EOF
+    fi
+    exit 2
+  fi
+fi
 
 disp="$(wc -l < "$adir/dispatched" 2>/dev/null | tr -d ' ')"; disp="${disp:-0}"
 fin="$(wc -l < "$adir/finished" 2>/dev/null | tr -d ' ')";   fin="${fin:-0}"
@@ -199,6 +335,27 @@ EOF
   exit 2
 fi
 
-# Allow: record the dispatch and let it run.
+# Allow (final path): the total/concurrent cap has passed, so this dispatch will run.
+# Only NOW increment the breaker ledger for review/task roles — a dispatch blocked by the
+# breaker or the total/concurrent cap above must never burn a breaker attempt. Exempt
+# roles are never counted. Still under the held lock.
+if [ "$role" != "exempt" ]; then
+  HY_L="$ledger" HY_K="$key" HY_RID="$pm" python3 -c '
+import os, json
+p=os.environ["HY_L"]
+try: d=json.load(open(p))
+except Exception: d={}
+if not isinstance(d,dict): d={}
+d["runId"]=os.environ["HY_RID"]
+items=d.setdefault("items",{})
+it=items.setdefault(os.environ["HY_K"],{"n":0})
+it["n"]=int(it.get("n",0))+1
+tmp=p+".tmp"
+json.dump(d,open(tmp,"w"))
+os.replace(tmp,p)
+' 2>/dev/null || true
+fi
+
+# Record the dispatch and let it run.
 printf '1\n' >> "$adir/dispatched" 2>/dev/null || true
 exit 0

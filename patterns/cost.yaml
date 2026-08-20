@@ -1,0 +1,23 @@
+# Hydraia pre-flight cost model. Rough order-of-magnitude token anchors per route × tier,
+# printed by the orchestrator at Phase -1. Editable data — not a promise. Ported/adapted
+# from loop-engineering patterns/registry.yaml cost blocks.
+version: 1
+
+routes:
+  feature:
+    S: { tokens_noop: 5000, tokens_report: 40000, tokens_action: 200000 }
+    M: { tokens_noop: 5000, tokens_report: 60000, tokens_action: 600000 }
+    L: { tokens_noop: 5000, tokens_report: 80000, tokens_action: 1500000 }
+  review:
+    any: { tokens_noop: 5000, tokens_action: 120000 }
+  perf:
+    any: { tokens_noop: 5000, tokens_action: 300000 }
+  db:
+    any: { tokens_noop: 5000, tokens_action: 300000 }
+  story:
+    any: { tokens_noop: 5000, tokens_action: 150000 }
+  architect:
+    any: { tokens_noop: 5000, tokens_action: 400000 }
+
+defaults:
+  suggested_daily_cap: 0     # 0 = off (opt-in); mirrors dailyTokenCap default
