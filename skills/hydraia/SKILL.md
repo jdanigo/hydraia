@@ -719,8 +719,10 @@ Mechanical passes (style/lint-level nits, doc-comment checks) run on **Sonnet** 
    cause) into one entry BEFORE triage, so you spend triage tokens once per real
    problem, not once per report. Then use **receiving-code-review** to triage: fix
    everything correct-and-material; high-severity security findings are
-   non-negotiable. Re-review only the changed surface if fixes were substantial (max
-   one re-review cycle).
+   non-negotiable. Re-review only the changed surface if fixes were substantial (max `maxReviewCycles`
+   cycles, default 2). This cap is now enforced: `hooks/agents.sh` blocks a reviewer
+   dispatch past the cap for this run. If you hit that block, STOP re-reviewing — surface
+   the persisting findings to the human with what was tried, rather than looping.
 
 ## Phase 6 — Verify & close
 
