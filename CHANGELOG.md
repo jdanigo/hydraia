@@ -6,6 +6,8 @@ All notable changes to Hydraia are documented here. Format follows
 
 ## [Unreleased]
 
+## 0.18.0 — 2026-08-20
+
 ### Added
 - Loop-Hardening: blast-radius path gate (`gate.yaml`), circuit breaker (per-item attempt ledger), token caps + kill switch, binding constraints injection, and Phase -1 autonomy tiers + cost estimate. Shared data files are Codex-port compatible (see `loop-hardening-codex-parity.md`).
 

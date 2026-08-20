@@ -1,7 +1,7 @@
 # Hydraia
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)
-![Plugin version](https://img.shields.io/badge/plugin-v0.17.0-blue.svg)
+![Plugin version](https://img.shields.io/badge/plugin-v0.18.0-blue.svg)
 
 🇬🇧 [English](README.md) · 🇪🇸 Español
 
