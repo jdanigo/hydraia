@@ -95,6 +95,7 @@ reset_if_new_run() {
   if [ "$cur" != "$pm" ]; then
     : > "$adir/dispatched" 2>/dev/null || true
     : > "$adir/finished"   2>/dev/null || true
+    : > "$adir/ledger.json" 2>/dev/null || true
     printf '%s' "$pm" > "$rid" 2>/dev/null || true
   fi
 }
@@ -153,6 +154,92 @@ trap 'rmdir "$lock" 2>/dev/null || true' EXIT
 
 # Reset the counters (and the sub-agent telemetry sidecar) on a new run.
 reset_if_new_run
+
+# --- Circuit breaker: per-item attempt ledger --------------------------------
+# Count executor attempts per task-slug and reviewer cycles per run. Block past the
+# caps and tell the orchestrator to escalate, mechanizing the Phase 4/5 soft caps.
+MAX_RETRIES="$(hy_config maxTaskRetries 2 HYDRAIA_MAX_TASK_RETRIES 2>/dev/null || echo 2)"
+MAX_REVIEW="$(hy_config maxReviewCycles 2 HYDRAIA_MAX_REVIEW_CYCLES 2>/dev/null || echo 2)"
+case "$MAX_RETRIES" in ''|*[!0-9]*) MAX_RETRIES=2 ;; esac
+case "$MAX_REVIEW" in ''|*[!0-9]*) MAX_REVIEW=2 ;; esac
+ledger="$adir/ledger.json"
+
+# Extract subagent_type + description from the payload for slug/role resolution.
+brk="$(printf '%s' "$payload" | python3 -c '
+import sys, json
+try:
+    d = json.load(sys.stdin); ti = d.get("tool_input") or {}
+    print((ti.get("subagent_type") or "") + "\t" + (ti.get("description") or ""))
+except Exception:
+    print("\t")
+' 2>/dev/null || true)"
+sub_type="$(printf '%s' "$brk" | awk -F'\t' '{print $1}')"
+sub_desc="$(printf '%s' "$brk" | awk -F'\t' '{print $2}')"
+
+# Role: reviewer agent types use a per-run review-cycle key; everything else is an
+# executor keyed by its [task:<slug>] tag (fallback: hash of the description).
+case "$sub_type" in
+  *review*|*reviewer*|silent-failure-hunter|security-scan) role="review" ;;
+  *) role="task" ;;
+esac
+if [ "$role" = "review" ]; then
+  key="review:run"; cap="$MAX_REVIEW"
+else
+  slug="$(printf '%s' "$sub_desc" | grep -oE '\[task:[^]]+\]' | head -1 | sed 's/\[task:\(.*\)\]/\1/' || true)"
+  [ -n "$slug" ] || slug="h$(printf '%s' "$sub_desc" | cksum | awk '{print $1}')"
+  key="task:$slug"; cap="$MAX_RETRIES"
+fi
+
+# Read the current count for key, decide, then (if allowed) increment — all under the
+# lock already held. Corrupt/missing ledger → treat as 0 (fail-open).
+cur="$(HY_L="$ledger" HY_K="$key" python3 -c '
+import os, json
+try:
+    d = json.load(open(os.environ["HY_L"]))
+    print(int((d.get("items") or {}).get(os.environ["HY_K"], {}).get("n", 0)))
+except Exception:
+    print(0)
+' 2>/dev/null || echo 0)"
+case "$cur" in ''|*[!0-9]*) cur=0 ;; esac
+
+if [ "$cur" -ge "$cap" ]; then
+  if [ "$role" = "review" ]; then
+    cat >&2 <<EOF
+[hydraia] BLOCKED: circuit breaker — review cycles exhausted ($cur/$cap this run).
+
+The review→fix loop has run its allotted cycles without converging. Do NOT dispatch
+another review pass. STOP and surface the remaining findings to the human with the
+evidence (which findings persist, what was tried). Raise the ceiling only if the human
+decides: export HYDRAIA_MAX_REVIEW_CYCLES=3
+EOF
+  else
+    cat >&2 <<EOF
+[hydraia] BLOCKED: circuit breaker — task "$slug" exhausted its attempts ($cur/$cap).
+
+This task has been retried its maximum times without landing. Do NOT re-dispatch it.
+STOP and surface it as a genuine BLOCKER to the human with the evidence (no commit,
+attempt count). Raise the ceiling only if the human decides:
+  export HYDRAIA_MAX_TASK_RETRIES=3
+EOF
+  fi
+  exit 2
+fi
+
+# Allow: increment the ledger count for this key (atomic tmp+rename).
+HY_L="$ledger" HY_K="$key" HY_RID="$pm" python3 -c '
+import os, json
+p=os.environ["HY_L"]
+try: d=json.load(open(p))
+except Exception: d={}
+if not isinstance(d,dict): d={}
+d["runId"]=os.environ["HY_RID"]
+items=d.setdefault("items",{})
+it=items.setdefault(os.environ["HY_K"],{"n":0})
+it["n"]=int(it.get("n",0))+1
+tmp=p+".tmp"
+json.dump(d,open(tmp,"w"))
+os.replace(tmp,p)
+' 2>/dev/null || true
 
 disp="$(wc -l < "$adir/dispatched" 2>/dev/null | tr -d ' ')"; disp="${disp:-0}"
 fin="$(wc -l < "$adir/finished" 2>/dev/null | tr -d ' ')";   fin="${fin:-0}"
