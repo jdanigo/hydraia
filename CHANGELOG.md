@@ -6,6 +6,34 @@ All notable changes to Hydraia are documented here. Format follows
 
 ## [Unreleased]
 
+## 0.17.0 — 2026-08-19
+
+- **Feature (Codex port — airtight shell-write gate):** closed the last write bypass.
+  Codex never fires `PreToolUse` for its `exec_command` shell built-in, so the model could
+  escape the spec-drive gate with `printf … > file`. The port now pins
+  `sandbox_mode = "read-only"` + `approval_policy = "on-request"`, so every write escalates
+  to Codex's approval path and fires a **`PermissionRequest`** hook. `gate.sh` gained a
+  PermissionRequest branch emitting `permissionDecision` (allow with a frozen-plan marker,
+  deny for `apply_patch` pre-freeze, ask for other writes) — the read-only sandbox is the
+  kernel-level airtight floor, the hook is the deterministic fail-closed arbiter, and the
+  sandbox is never flipped so the model cannot self-elevate.
+- **Fix (Codex gate — fail-closed):** the gate now fails closed on an unparseable payload
+  (empty/garbled stdin, or naming neither tool nor event) — previously it fell through and
+  silently allowed. `_field` no longer risks a SIGPIPE abort under `set -euo pipefail`.
+- **Fix (Codex setup — silent sandbox downgrade):** `setup.sh` no longer blind-prepends
+  root keys; a pre-existing root `sandbox_mode`/`model`/`approval_policy` would have
+  duplicated (invalid TOML) or, last-wins, silently downgraded the sandbox and defeated the
+  gate. Setup now detects the conflict, refuses to touch root keys, installs only the agent
+  tables, and warns. Also fixed the merge's idempotency sentinel.
+- **Config knob:** `HYDRAIA_GATE_STRICT=1` makes pre-freeze shell writes `deny` (symmetric
+  with `apply_patch`) instead of `ask`.
+- **CI:** `codex-parity` now runs a fixture suite (`codex/hooks/gate.test.sh`, 11 cases
+  incl. fail-closed + strict) and asserts the PermissionRequest wiring.
+- **Docs:** `codex/SETUP.md` documents the read-only posture, the human-created marker
+  trust anchor, the Codex UI desktop caveat, and the populated-config edge.
+- **Note:** live TUI/desktop confirmation (that a hook `allow` runs the write escalated,
+  and the exact input event-field key) is the remaining validation step.
+
 ## 0.16.1 — 2026-08-19
 
 - **Fix (Codex gate — makes it actually enforce):** the gate hook read the tool name
