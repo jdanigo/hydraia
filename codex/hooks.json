@@ -4,47 +4,46 @@
       {
         "matcher": "^apply_patch$",
         "hooks": [
-          {
-            "type": "command",
-            "command": "bash $CODEX_HOME/hooks/gate.sh"
-          }
+          { "type": "command", "command": "bash $CODEX_HOME/hooks/gate.sh" }
         ]
       },
       {
         "matcher": "^shell$",
         "hooks": [
-          {
-            "type": "command",
-            "command": "bash $CODEX_HOME/hooks/gate.sh"
-          }
+          { "type": "command", "command": "bash $CODEX_HOME/hooks/gate.sh" }
         ]
       },
       {
         "matcher": "^local_shell$",
         "hooks": [
-          {
-            "type": "command",
-            "command": "bash $CODEX_HOME/hooks/gate.sh"
-          }
+          { "type": "command", "command": "bash $CODEX_HOME/hooks/gate.sh" }
         ]
       },
       {
         "matcher": "^exec_command$",
         "hooks": [
-          {
-            "type": "command",
-            "command": "bash $CODEX_HOME/hooks/gate.sh"
-          }
+          { "type": "command", "command": "bash $CODEX_HOME/hooks/gate.sh" }
+        ]
+      }
+    ],
+    "PermissionRequest": [
+      {
+        "matcher": "^exec_command$",
+        "hooks": [
+          { "type": "command", "command": "bash $CODEX_HOME/hooks/gate.sh" }
+        ]
+      },
+      {
+        "matcher": "^apply_patch$",
+        "hooks": [
+          { "type": "command", "command": "bash $CODEX_HOME/hooks/gate.sh" }
         ]
       }
     ],
     "SessionStart": [
       {
         "hooks": [
-          {
-            "type": "command",
-            "command": "bash $CODEX_HOME/hooks/preflight.sh"
-          }
+          { "type": "command", "command": "bash $CODEX_HOME/hooks/preflight.sh" }
         ]
       }
     ]
