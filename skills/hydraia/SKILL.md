@@ -578,6 +578,10 @@ Use **subagent-driven-development**. Dispatch a fresh `hydraia-executor` subagen
 per task (these run on Sonnet 5). Give each exactly the context it needs from the
 plan and the graph — never your session history. Execute all tasks continuously.
 TDD where the plan calls for it. Commit frequently.
+Tag each executor dispatch's description with a machine-readable `[task:<slug>]` marker
+(the same `<slug>` the executor uses for its heartbeat file). The circuit-breaker hook
+(`hooks/agents.sh`) reads this tag to count per-task attempts; without it the breaker
+falls back to a description hash and still counts, but the tag makes escalation precise.
 
 **Dispatch in bounded waves — never fan out the whole plan at once.** Each subagent
 loads its own context, so N parallel agents multiply token cost by ~N. Send at most
@@ -616,6 +620,11 @@ recover automatically at every wave boundary:
   surface it with the evidence (no commit, stale heartbeat, retry count) — never spin
   on it silently. Bounded waves (`HYDRAIA_MAX_CONCURRENT`) keep a stall from taking the
   whole plan down with it.
+  The attempt cap is now also a RUNTIME guarantee: `hooks/agents.sh` blocks the
+  (maxTaskRetries+1)-th dispatch of the same `[task:<slug>]` and tells you to stop. When
+  you see that block, do NOT keep retrying — read the ledger (`<base>/.agents/ledger.json`),
+  surface the task as a blocker with its attempt count and the missing-commit evidence, and
+  escalate to the human.
 
 **Frontend rule (hard gate, not optional):** any task that creates or changes UI —
 markup, components, styles, or templates — the executor implements the *UX / visual
