@@ -604,6 +604,12 @@ git clone https://github.com/jdanigo/hydraia
 bash hydraia/codex/setup.sh
 ```
 
+> **`npx skills` NO instala el pipeline en Codex.** Copia solo directorios de
+> skills — no los hooks del gate, ni el config de sandbox, ni el routing de modelos —
+> y jala el `skills/hydraia` de Claude, no el orquestador de Codex en
+> `codex/skills/hydraia`. Úsalo para skills self-contained (`design-to-code`,
+> security reviews, patterns de stack) en Codex; usa `codex/setup.sh` para el pipeline.
+
 `setup.sh` instala, user-level en `~/.codex`: los hooks del gate spec-drive
 (`hooks.json` + `hooks/gate.sh`), el config de model-routing + sandbox mergeado en
 `config.toml`, y el skill `hydraia` en `~/.agents/skills`. Luego:
