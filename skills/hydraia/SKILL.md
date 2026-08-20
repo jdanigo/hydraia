@@ -224,6 +224,12 @@ ran), `pdfConversion` (false → skip markitdown), `cavemanInternal`,
 hung, default 300), `maxTaskRetries` (Phase 4 watchdog: auto re-push attempts before a
 stall becomes a blocker, default 2). Defaults apply when a key is absent.
 
+**Binding constraints (read first).** If `docs/hydraia/constraints.md` (or the external
+artifacts base's `constraints.md`) exists, read it and treat every rule as BINDING for
+this run — it is the repo's own "we don't do it this way" ledger and overrides default
+behavior (never the safety gates). The SessionStart hook already injected it as context;
+reading it here guarantees the full file is honored even if that injection was truncated.
+
 0. **Dependency check + one-click install (do this once, silently if all present).**
    The user should never have to run install commands by hand. Detect what is
    available: `command -v codegraph`, `command -v markitdown`, `command -v npm`,
