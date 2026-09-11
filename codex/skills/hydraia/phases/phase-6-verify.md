@@ -8,6 +8,19 @@ result. Confirm the feature meets the spec from Phase 2 (including the threat-mo
 mitigations), and summarize what shipped. If a build or test fails, the run is not
 done — fix and re-run.
 
+**Mechanical checks first, then judgment.** Run the deterministic gate (build → type →
+lint → tests) BEFORE leaning on any LLM judgment: a mechanical failure is a found bug
+that needs no AI opinion, and it is the cheapest place to catch one. An AI that wrote the
+code and then "reviews" it carries the same assumption into both steps — the machine does
+not, so it is the more trustworthy verifier. Never treat green CI alone as "correct"; it
+means nothing broke that a test watches, not that the behavior is right.
+
+**Regression test every bug you fixed.** For each defect fixed in Phase 5 or here, add a
+test that fails on the old behavior and passes on the fix, named after the bug (e.g.
+`test_<bug>_regression`). Test where bugs were actually found, not code that already
+works — the same regressions recur (path/schema drift, dropped SELECT fields, stale
+state, missing rollback) and a named test is what stops the fourth reintroduction.
+
 **QA matrix check (when `qaFunctional` is on and a QA case doc exists):**
 dispatch `qa-automation` (mode: verify) against the case doc. Every case must be
 either automated — its `Test ref` points at a real test that ran green in the

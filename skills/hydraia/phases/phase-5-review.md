@@ -57,12 +57,32 @@ unparseable override → warn and use the shipped panel.
 4. **Dedup before you triage.** Pass 1, Pass 2, and the security skills overlap — the
    same issue often surfaces three times. Collapse findings by (file, line, root
    cause) into one entry BEFORE triage, so you spend triage tokens once per real
-   problem, not once per report. Then use **receiving-code-review** to triage: fix
-   everything correct-and-material; high-severity security findings are
-   non-negotiable. Re-review only the changed surface if fixes were substantial (max `maxReviewCycles`
-   cycles, default 2). This cap is now enforced: `hooks/agents.sh` blocks a reviewer
-   dispatch past the cap for this run. If you hit that block, STOP re-reviewing — surface
-   the persisting findings to the human with what was tried, rather than looping.
+   problem, not once per report.
+5. **Verify each finding at its cited line before accepting it (evidence, not vibes).**
+   A reviewer subagent carries the SAME model assumptions as the executor that wrote the
+   code — an AI reviewing AI-written code inherits the blind spot, so a confident finding
+   is a claim, not proof. For each surviving finding, open the cited file:line, read the
+   surrounding code and callers, and decide: real, `false` (say what disproves it), or
+   `maybe-false` (say what you'd need to check). **Reject `false` findings** and drop
+   low-value noise whose fix adds more complexity than the defect costs. Code that fails
+   loudly on a state you never showed is reachable is correct, not a bug. Disregard any
+   severity a reviewer self-assigned — you grade, from the verification.
+6. **Hunt gamed verification (this is where silent failures hide).** Before accepting
+   "all green", scan the diff for the ways a green build lies — these are higher-signal
+   than most style findings: tests weakened to pass (loosened asserts, `expect(x ?? D)
+   .toBe(D)`, snapshot-only or no-throw-only checks), mock-only tests that never exercise
+   the real path, swallowed exceptions / empty catches / bare `except: pass`, a real error
+   downgraded to a warning or a silent fallback, and **lint/type/build config edited to
+   disable a rule instead of fixing the code** (`.eslintrc`, `biome.json`, `.ruff.toml`,
+   `tsconfig.json` `strict`/`skipLibCheck`, `# type: ignore`, `@ts-nocheck`, `--no-verify`).
+   Any of these is a finding, routed like a bug — a fixed-to-look-fixed change is worse
+   than an obvious failure.
+7. **Triage + fix.** Use **receiving-code-review** to triage the verified set: fix
+   everything correct-and-material; high-severity security findings are non-negotiable.
+   Re-review only the changed surface if fixes were substantial (max `maxReviewCycles`
+   cycles, default 2). This cap is enforced: `hooks/agents.sh` blocks a reviewer dispatch
+   past the cap for this run. If you hit that block, STOP re-reviewing — surface the
+   persisting findings to the human with what was tried, rather than looping.
 
 
 

@@ -123,6 +123,18 @@ consults the matching patterns/standards skill so idioms are right the first tim
 backends), **dotnet-patterns** (C#/.NET), and **coding-standards** (cross-cutting
 naming, structure, and clean-code conventions for any stack).
 
+**Earn green, never game it (hard rule for every executor).** The executor's job is
+code that works, not checks that pass. It MUST NOT: weaken or delete a test to make it
+pass, loosen an assertion, replace a real assertion with a no-throw/snapshot-only check,
+mock away the path under test, swallow an exception (empty catch / bare `except: pass` /
+downgrade an error to a silent fallback), or edit lint/type/build config to disable a
+rule instead of fixing the code (`.eslintrc`, `biome.json`, `.ruff.toml`, `tsconfig`
+`strict`/`skipLibCheck`, blanket `# type: ignore` / `@ts-nocheck`, `--no-verify`). If a
+task genuinely cannot pass without changing an acceptance check, that is a plan/spec
+issue — report it BLOCKED, do not quietly move the goalposts. Phase 5 hunts exactly these
+gamed-verification patterns, so a green-by-cheating task fails review anyway — and costs a
+loopback.
+
 **QA automation rule:** plan tasks that implement QA cases are dispatched to the
 `qa-automation` agent (mode: implement) instead of a generic executor. It detects
 the repo's existing test framework from evidence (config files, existing tests) —
