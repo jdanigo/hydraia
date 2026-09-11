@@ -65,10 +65,18 @@ file fully, execute it, then load the next only when its `## NEXT` directs you.*
   judgment (triage, design, plan, both reviews). Execution delegates to the
   Phase-4 executor — cheap by default, overridable via `customize.toml`.
   Full policy in `phases/model-policy.md`.
-- **Customization:** an optional `customize.toml` overrides the executor model /
-  dispatch recipe (read in Phase 4) and the Phase-5 pass-2 reviewer panel (read in
-  Phase 5). Precedence: repo `<artifacts-base>/custom/hydraia.toml` > global
-  `~/.config/hydraia/custom/hydraia.toml` > shipped `skills/hydraia/customize.toml`.
+- **Execution routing:** Phase 3's picker asks the user how Phase-4 tasks run —
+  **Balanced** (Sonnet all), **Economy** (Haiku for mechanical + Sonnet for logic/ui),
+  **Max quality** (Opus for logic/ui), or **Hand-off** (freeze the plan, execute later
+  on a cheap external runtime). On Codex these map onto the luna/sol tiers (mechanical →
+  `gpt-5.6-luna`, judgment → `gpt-5.6-sol`). The picker shows a computed recommendation
+  and what each option costs/gets. Each plan task carries an `Exec class`
+  (mechanical/logic/ui/qa) that Phase 4 maps to a model. `customize.toml`
+  `[executor].routing` can pin a choice and make the run non-interactive.
+- **Customization:** an optional `customize.toml` overrides the executor routing /
+  per-class model / dispatch recipe (read in Phase 4) and the Phase-5 pass-2 reviewer
+  panel (read in Phase 5). Precedence: repo `<artifacts-base>/custom/hydraia.toml` >
+  global `~/.config/hydraia/custom/hydraia.toml` > shipped `skills/hydraia/customize.toml`.
   Unparseable override → warn and fall back to shipped defaults. **The always-on
   security gate is NOT customizable.**
 - **Token discipline** is background and always on (summary in

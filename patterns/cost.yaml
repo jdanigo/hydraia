@@ -21,3 +21,23 @@ routes:
 
 defaults:
   suggested_daily_cap: 0     # 0 = off (opt-in); mirrors dailyTokenCap default
+
+# Relative output-token $ weights, used ONLY to show rough cost bands in the
+# Phase-3 execution-routing picker (not billing). Anchored to Sonnet = 1.0.
+# Update when provider pricing changes; these are order-of-magnitude.
+models:
+  opus: 5.0
+  sonnet: 1.0
+  haiku: 0.1
+  # cheap external runtimes for the hand-off option
+  codex-luna: 0.15
+  gemini-flash: 0.1
+
+# Rough routing-preset multipliers vs Balanced (Sonnet-all = 1.0), for a typical
+# mechanical-heavy plan. The orchestrator refines these from the actual task-class
+# mix at pick time; shown to the user as "≈ N×".
+routing_bands:
+  balanced: 1.0
+  economy: 0.45      # haiku on mechanical, sonnet on the rest
+  max-quality: 3.0   # opus on logic/ui
+  handoff: 0.0       # nothing runs in this session

@@ -25,6 +25,22 @@
        `Test: exact/path`. Exact paths, never "the relevant file".
      - `Interfaces:` — Consumes (signatures it uses from earlier tasks) and Produces
        (exact function names, parameter and return types later tasks rely on).
+     - `Exec class:` — one of **mechanical** | **logic** | **ui** | **qa**. This is
+       what makes per-task model routing possible in Phase 4 (§ the execution-routing
+       picker). Classify honestly, erring UP when unsure:
+       - **mechanical** — boilerplate, wiring, config, repetitive/CRUD edits, pure
+         data files, straightforward glue. Fully-specified enough that a cheap model
+         (Haiku / Codex luna / Gemini Flash) executes it in one shot. This is the
+         only class a cheap model may take.
+       - **logic** — non-trivial algorithms, tricky state, concurrency, parsing,
+         money/auth/crypto/security-sensitive code, anything with a design decision
+         still latent. Never route to Haiku.
+       - **ui** — any task touching markup/components/styles/templates (the Frontend
+         hard gate applies; the executor must honor the inlined visual direction).
+       - **qa** — implements QA cases → dispatched to `qa-automation`, not a generic
+         executor.
+       A task that lands on `logic` only because it is under-specified is a planning
+       smell — specify it further so it can drop to `mechanical`, or accept the cost.
      - **Bite-sized TDD steps** (2–5 min each): write failing test → run it, expect
        fail → minimal implementation → run, expect pass → commit. With the exact
        test command and expected result per step.
@@ -193,9 +209,56 @@
    **(b) Closing summary depth** — `Brief` (compact box) or `Detailed` (adds what
    shipped, per-agent-type counts, main-vs-sub token split, per-model in/out/cache).
 
-   Record both answers in the run log and honor them in Phases 5–6. On dismissal,
-   default to **Full** + **Brief**. This is the only question in the autonomous half's
-   run-up — after it, Phases 4–6 run to completion without pausing.
+   **(c) Execution routing** — which model executes each Phase-4 task, or whether to
+   hand the frozen plan off for cheap external execution. **Compute a recommendation
+   first** (logic below), pre-select it as the recommended option, and for EACH option
+   state plainly what the user gets: the models used, a rough cost band vs the Balanced
+   baseline (from `patterns/cost.yaml` `routes` × the `models:` weights and the plan's
+   task-class mix), and the quality/risk trade. Options:
+   - **Balanced — Sonnet 5 for every task.** Predictable quality, moderate cost. No
+     per-class splitting; every executor task on Sonnet. Baseline ≈ 1×.
+   - **Economy (mixed) — Haiku for `mechanical`, Sonnet for `logic`/`ui`,
+     `qa-automation` for `qa`.** The boring tasks run on the cheapest capable model
+     while judgment tasks stay on Sonnet. Biggest in-Claude saving on mechanical-heavy
+     plans (≈ 0.3–0.6× depending on the mechanical share). Risk: Haiku may need a retry
+     on a borderline task — the watchdog + circuit breaker (`hooks/agents.sh`) catch and
+     re-dispatch it, they do not stall.
+   - **Max quality — Sonnet for `mechanical`, Opus 4.8 for `logic`/`ui`.** Judgment
+     tasks get the strongest model. Most expensive (≈ 2–4×). Pick for high-risk /
+     security-critical / Tier-L changes.
+   - **Hand-off (plan only) — freeze the plan, do NOT execute here.** Phases 4–6 do not
+     run in this session; the user receives a self-contained portable plan and the exact
+     command to run it on a cheap external runtime (Codex `gpt-5.6-luna`, Gemini Flash,
+     or a second Claude session on Haiku/Sonnet). Lowest cost in THIS session, fully
+     async. Runs later via `/hydraia:resume` (Claude) or `$hydraia` after
+     `bash codex/setup.sh` (Codex).
+
+   **Recommendation logic (compute, then pre-select the winner):**
+   - High risk (a task touches `gate.yaml` denylist paths — auth, payments, migrations,
+     secrets) OR Tier L OR `logic`-heavy plan (≥ ~50% logic tasks) → **Balanced** (or
+     **Max quality** when the change is security-critical).
+   - Tier S/M AND mechanical-heavy (≥ ~60% `mechanical` tasks) AND low risk → **Economy**.
+   - User asked for lowest cost / async / a different runtime, or the run is the `plan`
+     route → **Hand-off**.
+   - Otherwise → **Balanced**.
+   Always show the one-line reason ("recommended: Tier S, 8/10 tasks mechanical, no
+   high-risk paths → Economy ≈ 0.4×").
+
+   **Non-interactive override:** if `customize.toml` `[executor].routing` is a concrete
+   value (not `ask`), SKIP this question and use it (keeps autonomous/CI runs silent).
+   `routing = "ask"` (default) means ask here. After the answer, offer ONCE to remember
+   it — "Save as the default for this repo?" → on yes, write `[executor].routing` (plus
+   `[executor.by_class]` for Economy/Custom) to `<artifacts-base>/custom/hydraia.toml`.
+
+   **If Hand-off is chosen:** finalize the plan, do NOT arm `.active-plan` for local
+   execution, and STOP after Phase 3 — print the hand-off block (plan path + the resume
+   command for each supported runtime) and end the run cleanly. This is the one case
+   where "Phases 4–6 run next" does not apply; the external runtime does them.
+
+   Record all three answers in the run log and honor them in Phases 4–6. On dismissal,
+   default to **Full** + **Brief** + the **computed routing recommendation**. This
+   picker is the only interactive moment in the autonomous half's run-up — after it,
+   Phases 4–6 run to completion without pausing (unless Hand-off was chosen).
 
 
 
