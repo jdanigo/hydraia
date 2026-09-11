@@ -1,5 +1,22 @@
 ## Phase 4 — Execution (delegated → Sonnet 5)
 
+### Executor customization (read before dispatch)
+
+Read the effective customize config, merging by precedence: repo
+`<artifacts-base>/custom/hydraia.toml` > global `~/.config/hydraia/custom/hydraia.toml`
+> shipped `skills/hydraia/customize.toml` (merge rules in the file header). If any
+override is unparseable, warn and fall back to the shipped defaults.
+
+- `[executor].model` — dispatch each `hydraia-executor` on this model, passing it
+  as the model at launch (overriding the agent's `sonnet` frontmatter default).
+  Default `sonnet`. Drop to `haiku` for mechanical work when a repo opts in.
+- `[executor].handoff` — if non-empty, follow it verbatim as the dispatch recipe
+  (substitute `{task_block}` and `{graph_context}`) instead of the default subagent
+  dispatch below — e.g. route the task to an external CLI via bash. It still runs
+  under the same blast-gate and spec-drive hooks.
+
+The wave caps, watchdog, and verification below are unchanged by customization.
+
 Use **subagent-driven-development**. Dispatch a fresh `hydraia-executor` subagent
 per task (these run on Sonnet 5). Give each exactly the context it needs from the
 plan and the graph — never your session history. Execute all tasks continuously.

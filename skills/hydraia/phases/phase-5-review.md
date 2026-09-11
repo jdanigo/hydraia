@@ -32,6 +32,17 @@ security-bearing reviewers (`hydraia-reviewer`, `security-reviewer`,
 Mechanical passes (style/lint-level nits, doc-comment checks) run on **Sonnet** or
 **Haiku** — never spend Opus on a formatting scan.
 
+### Reviewer panel customization (read before Pass 2)
+
+Read customize `[[reviewers]]` from the same config resolved in Phase 4 (repo >
+global > shipped). Entries merge **by `id`**: a matching `id` replaces a shipped
+pass-2 layer, a new `id` appends one, and `instruction = ""` disables that `id`.
+Apply this to the **Pass 2 panel only**. **The mandatory security floor —
+`security-scan`, `security-review`, `code-reviewer`, `silent-failure-hunter`,
+`security-reviewer`, the `hydraia-reviewer` pass, and stack security reviewers —
+is NOT customizable and always runs**, regardless of `customize.toml`. An
+unparseable override → warn and use the shipped panel.
+
 1. **Pass 1 — Superpowers review:** use **requesting-code-review** to dispatch the
    `hydraia-reviewer` subagent (Opus 4.8) against the whole branch.
 2. **Pass 2 — ECC review:** dispatch the diff-scoped reviewer set above (Opus for the
