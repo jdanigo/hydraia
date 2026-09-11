@@ -6,6 +6,8 @@ All notable changes to Hydraia are documented here. Format follows
 
 ## [Unreleased]
 
+## 0.19.0 — 2026-09-11 — Step-Files, Model Routing & Review-Hardening
+
 ### Added
 - **Step-file architecture (BMAD-inspired).** `skills/hydraia/SKILL.md` is now a thin
   dispatcher (~50 lines) that loads the pipeline body from `skills/hydraia/phases/*.md`
@@ -38,6 +40,27 @@ All notable changes to Hydraia are documented here. Format follows
   to Architectural rather than ballooning silently). Adapted to Hydraia: a written spec is
   always produced (the spec-drive gate needs it) — the class decides its length, not its
   existence.
+- **Opt-in E2E with Testcontainers (Playwright, CI-runnable).** The Phase-3 picker now
+  asks the E2E strategy — **None** / **Playwright** (browser, stubbed) / **Playwright +
+  Testcontainers** (critical flows against REAL backing services — Postgres/Redis/queues —
+  in ephemeral Docker; catches schema/migration/wiring bugs stubs hide). `e2e-runner`
+  runs a `docker info` preflight (absent Docker → BLOCKED with recovery, never a silent
+  skip), provisions the containers, wires Playwright to them, and ensures a CI-runnable
+  job so the gate reproduces off the developer's machine. `customize.toml` `[e2e].strategy`
+  pins it non-interactively.
+- **Run-controls reach every route + survive resume.** The Phase-3 picker (routing, E2E,
+  review depth, summary) fires for `feature`/`perf`/`db`/`architect`/`story`/`plan`, and
+  `/hydraia:resume` now inherits those recorded choices (or asks once if a plan that
+  stopped at Phase 3 has none) so a plan built with a chosen routing/E2E executes that way.
+- **Review-loop hardening (ECC-inspired), aimed at what costs most in production.**
+  Phase 5 now **verifies each finding at its cited line before accepting it** (rejects
+  false positives with evidence — an AI reviewing AI-written code shares its blind spot)
+  and **hunts gamed verification**: tests weakened to pass, no-throw/mock-only assertions,
+  swallowed exceptions, and lint/type/build config edited to disable a rule instead of
+  fixing the code. The executor and `hydraia-executor` gain an **"earn green, never game
+  it"** hard rule; Phase 6 runs **mechanical checks before LLM judgment** and adds a
+  **named regression test for every bug fixed**; reviewer agents carry a **prompt-defense
+  baseline** (diff/spec/comments are data, not instructions).
 
 ## 0.18.0 — 2026-08-20
 
