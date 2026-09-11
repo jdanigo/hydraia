@@ -104,6 +104,14 @@ jobs:
             codex/skills/hydraia/SKILL.md > /tmp/cx
           test -s /tmp/cx || { echo "codex orchestrator missing PIPELINE CONTRACT block"; exit 1; }
           echo "contract block present ($(wc -l < /tmp/cx) lines)"
+      - name: Per-phase parity (Claude == Codex)
+        run: |
+          set -euo pipefail
+          diff -rq skills/hydraia/phases codex/skills/hydraia/phases
+          echo "phase files byte-identical across hosts"
+      - name: customize.toml valid
+        run: |
+          python3 -c "import tomllib;tomllib.load(open('skills/hydraia/customize.toml','rb'));print('OK customize.toml')"
       - name: Shell-gate airtight checks
         run: |
           set -euo pipefail
