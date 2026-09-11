@@ -17,9 +17,21 @@ Do NOT invoke any implementation skill, write any code, scaffold any project, or
 
 Every project goes through this process. A todo list, a single-function utility, a config change — all of them. "Simple" projects are where unexamined assumptions cause the most wasted work. The design can be short (a few sentences for truly simple projects), but you MUST present it and get approval.
 
+## Classify the work first — right-size the ceremony
+
+Not every request needs the full multi-approach, sectioned-design treatment. Classify the intent, then scale the dialogue to it. **The HARD-GATE is universal — complexity decides the length of the artifact, never whether approval happens. And in Hydraia a written spec is always produced (the spec-drive gate depends on it); the class decides how long that spec is, not whether it exists.**
+
+- **Spike** (a feasibility question — "can we even do X?"): present the probe plan in 2–3 sentences → get approval → investigate cheaply → report the finding as a recommendation. If it turns into real work, re-enter as Bounded or Architectural.
+- **Bounded** (a scoped change to existing code): explore the context → ask only the clarifying questions that matter → present a short in-chat design (a few sentences to a paragraph, usually one approach) → get approval → write a **minimal spec** (short, but real — the gate needs it) → continue. Skip the 2–3-approach survey and the section-by-section presentation; they are overkill here.
+- **Architectural** (a new system, subsystem, or a change that reshapes boundaries): run the full flow below — explore, 2–3 approaches with trade-offs, sectioned design presentation with approval per section, full written spec, spec self-review, user spec review.
+
+Rough mapping to Hydraia's autonomy tiers: Spike ≈ investigation only · Bounded ≈ Tier S/M · Architectural ≈ Tier L / greenfield.
+
+**Mid-task path upgrade (do not let a small task silently balloon).** If a Bounded task turns out to hide real complexity — a new subsystem, a cross-cutting change, an irreversible migration, a decision the user would notice — STOP and upgrade it to Architectural immediately: widen the dialogue, propose approaches, and write the fuller spec. A Bounded task must never quietly become an architectural one under the radar. (A Spike that proves feasibility likewise re-enters as Bounded or Architectural — it never slides straight into building.)
+
 ## Checklist
 
-You MUST create a task for each of these items and complete them in order:
+Create a task for each of these items and complete them in order. **For an Architectural intent, all steps apply. For Bounded, steps 4–5 collapse to one short in-chat design (skip the 2–3-approach survey and section-by-section approval) and step 6 writes a minimal spec. For a Spike, do step 1 + a 2–3-sentence probe plan, then report the finding.** The HARD-GATE (present → approve) and the written spec are never skipped.
 
 1. **Explore project context** — check files, docs, recent commits
 2. **Offer the visual companion just-in-time** — NOT upfront. The first time a question would genuinely be clearer shown than described, offer it then (its own message); on approval its browser tab opens for you. If no visual question ever arises, never offer it. See the Visual Companion section below.

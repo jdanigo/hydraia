@@ -22,6 +22,22 @@ All notable changes to Hydraia are documented here. Format follows
   Set `[executor] model = "haiku"` to run mechanical work cheap, or `handoff` to route the
   executor to an external CLI. **The always-on security gate is not customizable.**
   `doctor.sh` reports override presence; CI validates the TOML.
+- **Interactive execution routing (user chooses, per task class).** Every Phase-3 plan
+  task now carries an `Exec class` (`mechanical`/`logic`/`ui`/`qa`). The Phase-3 picker
+  asks the user how Phase-4 tasks run — **Balanced** (Sonnet all), **Economy** (Haiku for
+  mechanical + Sonnet for logic/ui), **Max quality** (Opus for logic/ui), or **Hand-off**
+  (freeze the plan, execute later on a cheap external runtime like Codex `gpt-5.6-luna` or
+  Gemini Flash) — showing a computed recommendation and, per option, the models used, a
+  rough cost band (`patterns/cost.yaml` `models` + `routing_bands`), and the quality/risk
+  trade. Phase 4 maps each task's class → model via the chosen policy; `[executor].routing`
+  + `[executor.by_class]` in `customize.toml` can pin the choice and make a run
+  non-interactive. The security floor stays mandatory regardless of routing.
+- **Brainstorming right-sizing (from obra/superpowers).** `brainstorming` now classifies
+  intent into **Spike / Bounded / Architectural** and scales the dialogue to it, with an
+  explicit **mid-task path upgrade** (a Bounded task that hides real complexity escalates
+  to Architectural rather than ballooning silently). Adapted to Hydraia: a written spec is
+  always produced (the spec-drive gate needs it) — the class decides its length, not its
+  existence.
 
 ## 0.18.0 — 2026-08-20
 

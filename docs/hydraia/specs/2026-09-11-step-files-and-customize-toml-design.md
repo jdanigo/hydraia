@@ -199,3 +199,92 @@ model = "opus"
   it; setting a shipped layer's `instruction = ""` disables it.
 - Security gate remains non-customizable and always runs.
 - `doctor.sh` shows customize-override presence.
+
+---
+
+# Increment 2 — Interactive execution routing + brainstorming right-sizing
+
+## Goal
+
+Give Hydraia full, precise control over which model executes each Phase-4 task —
+Haiku / Sonnet / Opus per task **class**, or hand the frozen plan off to a cheap
+external runtime (Codex `gpt-5.6-luna`, Gemini Flash, second Claude session) — **with
+the user choosing via a question that shows options, a computed recommendation, and
+what each option costs and gets.** Plus: copy the brainstorming right-sizing
+(Spike/Bounded/Architectural + mid-task upgrade) from obra/superpowers.
+
+## Design
+
+### Per-task execution class (precision lever)
+
+Phase 3 tags every plan task with `Exec class`: `mechanical` | `logic` | `ui` | `qa`.
+Classification errs UP; only `mechanical` may run on a cheap model. `qa` always routes
+to `qa-automation`. An under-specified task that lands on `logic` is a planning smell —
+specify it down to `mechanical` or accept the cost.
+
+### Interactive routing picker (Phase 3, step 6c)
+
+A dedicated `AskUserQuestion` option-set, folded into the existing run-controls picker,
+with a **computed recommendation pre-selected** and per-option explanation (models used,
+rough cost band from `patterns/cost.yaml` `routes × models × routing_bands` and the
+task-class mix, quality/risk trade):
+
+| Preset | mechanical | logic / ui | Cost band | When recommended |
+|---|---|---|---|---|
+| **Balanced** | sonnet | sonnet | ≈ 1× | high-risk / Tier L / logic-heavy / default |
+| **Economy** | **haiku** | sonnet | ≈ 0.3–0.6× | Tier S/M, mechanical-heavy (≥60%), low risk |
+| **Max quality** | sonnet | **opus** | ≈ 2–4× | security-critical / Tier L |
+| **Hand-off** | — (external) | — (external) | ≈ 0× this session | lowest cost / async / other runtime |
+
+Recommendation logic: risk overlap with `gate.yaml` denylist, autonomy tier, and the
+logic-vs-mechanical mix → pre-selected preset + one-line reason.
+
+### Persistence & non-interactive
+
+`customize.toml` `[executor].routing` (`ask` default) pins a preset and skips the
+question (autonomous/CI silence); `[executor.by_class]` overrides the per-class map.
+After an interactive answer, offer once to save it to the repo `customize.toml`.
+
+### Hand-off
+
+If Hand-off is chosen: finalize the plan, do NOT arm `.active-plan`, STOP after Phase 3,
+print the plan path + resume command per runtime (`/hydraia:resume` for Claude,
+`bash codex/setup.sh` + `$hydraia` for Codex). The plan is already a portable,
+self-contained hand-off (plancheck enforces self-containment), so external cheap
+execution is safe.
+
+### Phase 4 application
+
+Map each task's `Exec class` → model via the active preset (or `[executor.by_class]`),
+dispatch `hydraia-executor` with that model. Cheap-model failures are caught by the
+existing watchdog + circuit breaker and re-dispatched; never silently upgrade a model
+mid-run without logging it.
+
+### Brainstorming right-sizing (copied, adapted)
+
+Add Spike / Bounded / Architectural classification + mid-task path upgrade to
+`skills/brainstorming/SKILL.md`. Adaptation vs superpowers: hydraia ALWAYS writes a
+spec (the spec-drive gate needs it) — the class decides its length, not its existence.
+Bounded collapses the 2–3-approach survey and section-by-section approval into one short
+in-chat design + a minimal spec; Spike is a probe plan + finding; Architectural is the
+full flow.
+
+## Files touched (increment 2)
+
+- `skills/hydraia/phases/phase-3-plan.md` — `Exec class` in task format; routing picker (6c).
+- `skills/hydraia/phases/phase-4-execute.md` — per-class routing table + application.
+- `skills/hydraia/customize.toml` — `[executor].routing` + `[executor.by_class]`.
+- `patterns/cost.yaml` — `models` weights + `routing_bands`.
+- `skills/hydraia/SKILL.md` + `codex/skills/hydraia/SKILL.md` — routing fact in dispatcher.
+- `skills/brainstorming/SKILL.md` — Spike/Bounded/Architectural + mid-task upgrade.
+- `codex/skills/hydraia/phases/*` — re-mirrored byte-identical.
+- `CHANGELOG.md` — increment-2 entries.
+
+## Success criteria (increment 2)
+
+- Phase 3 asks the routing question with a pre-selected recommendation + per-option cost/gets.
+- A plan task's `Exec class` drives the Phase-4 model per the chosen preset.
+- `[executor].routing = "economy"` runs non-interactively with Haiku on mechanical tasks.
+- Hand-off stops after Phase 3 with a runnable resume command; nothing executes locally.
+- Security floor runs regardless of routing.
+- brainstorming right-sizes by class but always yields a spec + approval.

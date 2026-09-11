@@ -283,3 +283,24 @@ Phase-file split map (current `skills/hydraia/SKILL.md` line ranges):
       pointers; no phase references another by "see spec"/dangling path.
 - [ ] `security-scan`/`security-review` still described as always-on and
       non-customizable in `phase-5-review.md`.
+
+---
+
+## Increment 2 — execution routing + brainstorming right-sizing (implemented)
+
+- [x] Task 7 — `Exec class` per task in `phase-3-plan.md`; routing picker (step 6c) with
+      recommendation + per-option cost/gets + hand-off stop.
+- [x] Task 8 — `phase-4-execute.md` per-class routing table + application + cheap-model
+      fallback note.
+- [x] Task 9 — `customize.toml` `[executor].routing` + `[executor.by_class]`; validated TOML.
+- [x] Task 10 — `patterns/cost.yaml` `models` weights + `routing_bands`.
+- [x] Task 11 — dispatcher routing fact (Claude + Codex); phases re-mirrored byte-identical.
+- [x] Task 12 — `brainstorming` Spike/Bounded/Architectural + mid-task upgrade (spec always written).
+- [x] Task 13 — CHANGELOG increment-2 entries.
+
+### Verification (increment 2)
+- [x] `customize.toml` valid TOML with `[executor].routing` + `[executor.by_class]`.
+- [x] phases Claude==Codex byte-identical after re-mirror.
+- [x] codex contract block present after dispatcher edits.
+- [x] `Exec class` + routing table present in phase-3/phase-4.
+- [x] brainstorming has Spike/Bounded/Architectural + mid-task upgrade.
