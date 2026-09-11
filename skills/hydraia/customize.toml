@@ -1,0 +1,30 @@
+# DO NOT EDIT — overwritten on every plugin update.
+# Override in <artifacts-base>/custom/hydraia.toml (repo) or
+# ~/.config/hydraia/custom/hydraia.toml (global).
+# Merge: strings replace · lists append · tables merge key-by-key ·
+# arrays-of-tables merge by `id` (matching id replaces, new id appends).
+# Unknown keys/tables are ignored (forward-compatible).
+
+[executor]
+# Model the Phase-4 executor runs on. Drop to "haiku" for mechanical work,
+# keep "sonnet" (default), or use handoff to route elsewhere.
+model = "sonnet"
+
+# Full override of the dispatch recipe. Empty = default subagent dispatch
+# (fresh hydraia-executor per task, task block + graph context only).
+# {task_block} and {graph_context} are substituted at run time.
+handoff = ""
+
+# Phase-5 pass-2 reviewer panel. Array-of-tables merged by id. Omit to keep the
+# shipped panel. instruction = "" disables a shipped layer by id.
+# The security gate is separate and always runs — it is not listed here.
+# [[reviewers]]
+# id = "correctness"
+# model = "opus"
+# instruction = ""
+
+# Reserved for a later version (ignored today):
+# [workflow]
+# activation_steps = []
+# persistent_facts = []
+# on_complete = ""
