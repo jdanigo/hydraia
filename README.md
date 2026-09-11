@@ -410,6 +410,32 @@ two modes: it forbids asking the user which model/skill/reviewer to use, require
 real design dialogue in Phases 1–3, and forbids pausing once execution starts
 (Phases 4–6). This is what makes one command drive the whole run.
 
+**Step-file architecture.** `SKILL.md` is a thin dispatcher; the pipeline body lives in
+`skills/hydraia/phases/*.md`, loaded just-in-time — one phase file at a time, never two.
+The orchestrator (Opus 4.8, the most expensive model in the run) stops carrying all seven
+phases in context on every turn. The Codex port mirrors `phases/*.md` byte-identical and
+CI enforces per-phase parity.
+
+**Customization without forking (`customize.toml`).** A declarative file overrides the
+Phase-4 executor model / dispatch recipe and the Phase-5 pass-2 reviewer panel per repo —
+read by the orchestrator, never by the fail-open hooks (no new runtime dependency).
+Precedence: repo `<artifacts-base>/custom/hydraia.toml` > global
+`~/.config/hydraia/custom/hydraia.toml` > shipped `skills/hydraia/customize.toml`.
+
+```toml
+[executor]
+model = "haiku"   # run mechanical work cheap; default is "sonnet"
+# handoff = "..." # or route the executor to an external CLI
+
+[[reviewers]]     # tune the Phase-5 pass-2 panel (merged by id)
+id = "correctness"
+model = "opus"
+```
+
+The always-on security gate (`security-scan` + `security-review`, plus stack security
+reviewers) is **not** customizable and always runs. `/hydraia:doctor` reports which
+override files are active.
+
 **Two subagents carry the load:**
 
 - `hydraia-executor` (`model: sonnet`) — dispatched fresh **per task** in Phase 4.

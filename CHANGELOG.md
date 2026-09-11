@@ -6,6 +6,23 @@ All notable changes to Hydraia are documented here. Format follows
 
 ## [Unreleased]
 
+### Added
+- **Step-file architecture (BMAD-inspired).** `skills/hydraia/SKILL.md` is now a thin
+  dispatcher (~50 lines) that loads the pipeline body from `skills/hydraia/phases/*.md`
+  just-in-time — one phase file at a time, never two at once. The orchestrator (Opus 4.8)
+  no longer carries all seven phases in context every turn; peak context on the most
+  expensive model drops sharply, with the same contract text moved verbatim. The Codex
+  port mirrors `phases/*.md` byte-identical, and CI now enforces per-phase Claude↔Codex
+  parity (`diff -q`) instead of a presence-only check.
+- **`customize.toml` override layer.** A declarative file — read by the orchestrator, not
+  by the fail-open bash hooks — overrides the Phase-4 executor model / dispatch recipe
+  (`[executor]`) and the Phase-5 pass-2 reviewer panel (`[[reviewers]]`) per repo, without
+  editing the skill or forking. Precedence: repo `<artifacts-base>/custom/hydraia.toml` >
+  global `~/.config/hydraia/custom/hydraia.toml` > shipped `skills/hydraia/customize.toml`.
+  Set `[executor] model = "haiku"` to run mechanical work cheap, or `handoff` to route the
+  executor to an external CLI. **The always-on security gate is not customizable.**
+  `doctor.sh` reports override presence; CI validates the TOML.
+
 ## 0.18.0 — 2026-08-20
 
 ### Added
