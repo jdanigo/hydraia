@@ -43,3 +43,42 @@ Only applies once a framework is already detected (its config exists in the repo
 1. If no E2E surface exists in the repo, report `SKIPPED — no E2E surface` (the gate does not apply) and stop.
 2. Otherwise ensure browser binaries (see above), then run the critical-flow suite with the real command. Every critical (non-quarantined) flow must pass green in this run.
 3. Report a table `flow → pass | fail | quarantined`. ANY failing critical flow = the run is NOT done: state it plainly. Never soften a FAIL.
+
+## Strategy: Playwright + Testcontainers (when the dispatch says `playwright-testcontainers`)
+
+The dispatch carries the E2E strategy chosen in the Phase-3 picker. When it is
+`playwright-testcontainers`, the critical flows run against REAL backing services in
+ephemeral Docker containers instead of stubs — the highest-fidelity gate, and the one
+that catches schema drift, migration gaps, connection/pool config, and cross-service
+wiring bugs that stubbed E2E hides.
+
+**Docker preflight (before anything, both modes).** Run `docker info` (or
+`docker version`). If the daemon is unreachable, report BLOCKED with the exact recovery
+(start Docker Desktop; on Linux `sudo systemctl start docker`, or install Docker) — do
+NOT silently downgrade to stubbed Playwright and do NOT skip a gate the user asked for.
+Docker is a hard requirement of this strategy, chosen with eyes open at the picker.
+
+**Provisioning.** Use the repo's existing Testcontainers integration if present
+(`testcontainers` in the language's deps: `@testcontainers/*` for Node, `testcontainers`
+for Python, `org.testcontainers` for JVM, `testcontainers-go`, etc.). If none exists,
+that is a plan-level decision — report a plan task ("add Testcontainers for E2E backing
+services"), do not add the dependency yourself. Spin only the services the spec's flows
+actually touch (Postgres/MySQL, Redis, Kafka/RabbitMQ, S3-compatible, …). One known-good
+state per suite; wait on container readiness with the library's wait strategies
+(health/log/port), never a fixed sleep. Reuse containers across specs in a run; tear down
+at the end.
+
+**Wiring.** Point the app-under-test at the container endpoints (env/connection strings
+injected for the test run), run the app's real migrations/seeds against the ephemeral DB,
+then drive the Playwright critical flows through the app as usual (page objects,
+role/testid selectors, condition-based waits — per the e2e-testing skill).
+
+**CI-runnable (mandatory for this strategy).** The suite must run in CI/CD, not only
+locally. Ensure a CI job exists (create or update it, following the repo's CI platform)
+that: installs deps + the Playwright browser (`npx playwright install --with-deps` or the
+detected framework's equivalent), relies on the runner's Docker (standard on GitHub
+Actions/GitLab; Testcontainers manages the containers itself — no `services:` block
+needed), and runs the same critical-flow command the gate uses. Commit the suite and the
+CI job so the gate is reproducible. Report the CI file touched and the exact command.
+
+For `playwright` (browser, stubbed) or `none`, ignore this section and behave as before.

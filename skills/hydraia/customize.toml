@@ -31,6 +31,15 @@ mechanical = "sonnet"
 logic = "sonnet"
 ui = "sonnet"
 
+# End-to-end test strategy for Phase 6. One of:
+#   "ask"                       — the Phase-3 picker asks (default).
+#   "none"                      — no E2E gate.
+#   "playwright"                — browser critical flows, external deps stubbed.
+#   "playwright-testcontainers" — critical flows against REAL backing services in
+#                                 ephemeral Docker containers (needs Docker; CI-runnable).
+[e2e]
+strategy = "ask"
+
 # Phase-5 pass-2 reviewer panel. Array-of-tables merged by id. Omit to keep the
 # shipped panel. instruction = "" disables a shipped layer by id.
 # The security gate is separate and always runs — it is not listed here.

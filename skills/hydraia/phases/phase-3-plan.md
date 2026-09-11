@@ -189,8 +189,12 @@
    self-contained it BLOCKS the arm — so a plan that would fail on a cheap executor
    cannot reach Phase 4. If it blocks, inline the referenced content and re-arm.**
 6. **Run-controls picker (LAST interactive step — the human sets the depth before the
-   autonomous half runs).** The autonomous half (Phases 4–6) must not pause, so ask
-   here, once, via a single `AskUserQuestion` with these two questions:
+   autonomous half runs).** This picker runs for **every route that reaches Phase 3** —
+   `feature`, `perf`, `db`, `architect`, `story`, `plan` — so the routing, E2E, and
+   review controls are available from all those commands, not just `feature`. (The
+   `review` route runs only Phases 5–6, so it skips this picker and instead honors the
+   `customize.toml` `[[reviewers]]` panel.) The autonomous half (Phases 4–6) must not
+   pause, so ask here, once, via a single `AskUserQuestion` with these questions:
 
    **(a) Review depth** — how much of the Phase 5/6 ceremony to run on this change:
    - **Full** — double review, all matched language reviewers, security gates, QA,
@@ -255,10 +259,31 @@
    command for each supported runtime) and end the run cleanly. This is the one case
    where "Phases 4–6 run next" does not apply; the external runtime does them.
 
-   Record all three answers in the run log and honor them in Phases 4–6. On dismissal,
-   default to **Full** + **Brief** + the **computed routing recommendation**. This
-   picker is the only interactive moment in the autonomous half's run-up — after it,
-   Phases 4–6 run to completion without pausing (unless Hand-off was chosen).
+   **(d) E2E strategy** — ask ONLY when the change has a user-facing or service surface
+   (UI, API, or backing-service integration); skip for pure library/internal changes and
+   note the skip. Pre-select the recommendation and state what each option gets/costs:
+   - **None** — no E2E this run (rely on unit/integration). Recommended for pure
+     logic/library changes with no user journey.
+   - **Playwright (browser)** — critical-flow browser tests against the app with external
+     deps stubbed. Recommended default when there is a UI and no real-service integration
+     is under test.
+   - **Playwright + Testcontainers** — critical flows against the app wired to REAL
+     backing services (Postgres, Redis, queues, …) spun up ephemerally in Docker; highest
+     fidelity, catches integration/schema/wiring bugs that stubs hide. **Requires Docker**
+     (verified at the Phase-6 gate; absent Docker → `e2e-runner` reports BLOCKED with the
+     recovery, never a silent skip). The generated suite is **CI-runnable** (Docker is
+     available on standard CI runners). Recommended when the change touches DB/queue/
+     external-service integration.
+   Record the choice; Phase 6's `e2e-runner` honors it (Testcontainers → it provisions the
+   containers, wires Playwright to them, and emits/updates a CI-runnable e2e job).
+   Non-interactive override: `customize.toml` `[e2e].strategy` (concrete value ≠ `ask`
+   skips this question).
+
+   Record all answers in the run log and honor them in Phases 4–6. On dismissal, default
+   to **Full** + **Brief** + the **computed routing recommendation** + **E2E = Playwright
+   when a UI/service surface exists, else None**. This picker is the only interactive
+   moment in the autonomous half's run-up — after it, Phases 4–6 run to completion
+   without pausing (unless Hand-off was chosen).
 
 
 

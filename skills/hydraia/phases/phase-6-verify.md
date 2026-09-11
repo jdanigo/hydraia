@@ -15,10 +15,21 @@ build above — or explicitly `manual — <reason>`. Any `pending`, missing ref,
 red case means the run is NOT done: fix and re-verify before closing.
 
 **E2E gate (when `e2eGate` is on AND the repo has an E2E surface):** dispatch
-`e2e-runner` (mode: verify). It runs the critical-flow suite with the real e2e
-command; every non-quarantined critical flow must pass green. A failing critical
-flow means the run is NOT done — fix and re-verify. If the repo has no E2E surface,
-the gate is skipped (note it in the run log); never fabricate a suite to satisfy it.
+`e2e-runner` (mode: verify), passing the **E2E strategy chosen in the Phase-3 picker**
+(`none` / `playwright` / `playwright-testcontainers`, or `customize.toml` `[e2e].strategy`).
+It runs the critical-flow suite with the real e2e command; every non-quarantined critical
+flow must pass green. A failing critical flow means the run is NOT done — fix and
+re-verify. If the strategy is `none`, or the repo has no E2E surface, the gate is skipped
+(note it in the run log); never fabricate a suite to satisfy it.
+
+- **`playwright-testcontainers`:** `e2e-runner` first verifies Docker is available and the
+  daemon is running (`docker info`). If Docker is absent/stopped, it reports BLOCKED with
+  the exact recovery (install/start Docker Desktop, or `sudo systemctl start docker` on
+  Linux) — it does NOT silently downgrade to stubbed Playwright or skip the gate. With
+  Docker present it spins the real backing services (Postgres/Redis/queues per the spec)
+  as ephemeral containers, wires the Playwright suite to them, runs the critical flows,
+  and ensures the suite + a CI job that provisions the same containers are committed so
+  the gate is reproducible in CI/CD.
 
 **Docs sync (when `docsSync` is on):** dispatch `docs-engineer` (mode: sync). It
 updates any README / API docs / CHANGELOG / ADR-index that drifted from the branch's
