@@ -188,6 +188,13 @@ if [ "$MODE" = "--check" ]; then
     _cb="$(cd "$_root" 2>/dev/null && hy_artifacts_dir 2>/dev/null)"; [ -n "$_cb" ] || _cb="$_root/docs/hydraia"
     [ -f "$_cb/constraints.md" ] && echo "  constraints.md: present (injected each session)" || echo "  constraints.md: absent (copy constraints.sample.md to enable)"
   fi
+  echo "-- customize --"
+  echo "  defaults: skills/hydraia/customize.toml (shipped)"
+  if [ -n "$_root" ]; then
+    _cb2="$(cd "$_root" 2>/dev/null && hy_artifacts_dir 2>/dev/null)"; [ -n "$_cb2" ] || _cb2="$_root/docs/hydraia"
+    [ -f "$_cb2/custom/hydraia.toml" ] && echo "  repo override:   $_cb2/custom/hydraia.toml (active)" || echo "  repo override:   absent"
+  fi
+  [ -f "$HOME/.config/hydraia/custom/hydraia.toml" ] && echo "  global override: $HOME/.config/hydraia/custom/hydraia.toml (active)" || echo "  global override: absent"
   echo "-- discovery --"
   local_skills=$(find "$(dirname "$0")/../skills" -name SKILL.md 2>/dev/null | wc -l | tr -d ' ')
   local_agents=$(ls "$(dirname "$0")/../agents"/*.md 2>/dev/null | wc -l | tr -d ' ')

@@ -6,6 +6,62 @@ All notable changes to Hydraia are documented here. Format follows
 
 ## [Unreleased]
 
+## 0.19.0 — 2026-09-11 — Step-Files, Model Routing & Review-Hardening
+
+### Added
+- **Step-file architecture (BMAD-inspired).** `skills/hydraia/SKILL.md` is now a thin
+  dispatcher (~50 lines) that loads the pipeline body from `skills/hydraia/phases/*.md`
+  just-in-time — one phase file at a time, never two at once. The orchestrator (Opus 4.8)
+  no longer carries all seven phases in context every turn; peak context on the most
+  expensive model drops sharply, with the same contract text moved verbatim. The Codex
+  port mirrors `phases/*.md` byte-identical, and CI now enforces per-phase Claude↔Codex
+  parity (`diff -q`) instead of a presence-only check.
+- **`customize.toml` override layer.** A declarative file — read by the orchestrator, not
+  by the fail-open bash hooks — overrides the Phase-4 executor model / dispatch recipe
+  (`[executor]`) and the Phase-5 pass-2 reviewer panel (`[[reviewers]]`) per repo, without
+  editing the skill or forking. Precedence: repo `<artifacts-base>/custom/hydraia.toml` >
+  global `~/.config/hydraia/custom/hydraia.toml` > shipped `skills/hydraia/customize.toml`.
+  Set `[executor] model = "haiku"` to run mechanical work cheap, or `handoff` to route the
+  executor to an external CLI. **The always-on security gate is not customizable.**
+  `doctor.sh` reports override presence; CI validates the TOML.
+- **Interactive execution routing (user chooses, per task class).** Every Phase-3 plan
+  task now carries an `Exec class` (`mechanical`/`logic`/`ui`/`qa`). The Phase-3 picker
+  asks the user how Phase-4 tasks run — **Balanced** (Sonnet all), **Economy** (Haiku for
+  mechanical + Sonnet for logic/ui), **Max quality** (Opus for logic/ui), or **Hand-off**
+  (freeze the plan, execute later on a cheap external runtime like Codex `gpt-5.6-luna` or
+  Gemini Flash) — showing a computed recommendation and, per option, the models used, a
+  rough cost band (`patterns/cost.yaml` `models` + `routing_bands`), and the quality/risk
+  trade. Phase 4 maps each task's class → model via the chosen policy; `[executor].routing`
+  + `[executor.by_class]` in `customize.toml` can pin the choice and make a run
+  non-interactive. The security floor stays mandatory regardless of routing.
+- **Brainstorming right-sizing (from obra/superpowers).** `brainstorming` now classifies
+  intent into **Spike / Bounded / Architectural** and scales the dialogue to it, with an
+  explicit **mid-task path upgrade** (a Bounded task that hides real complexity escalates
+  to Architectural rather than ballooning silently). Adapted to Hydraia: a written spec is
+  always produced (the spec-drive gate needs it) — the class decides its length, not its
+  existence.
+- **Opt-in E2E with Testcontainers (Playwright, CI-runnable).** The Phase-3 picker now
+  asks the E2E strategy — **None** / **Playwright** (browser, stubbed) / **Playwright +
+  Testcontainers** (critical flows against REAL backing services — Postgres/Redis/queues —
+  in ephemeral Docker; catches schema/migration/wiring bugs stubs hide). `e2e-runner`
+  runs a `docker info` preflight (absent Docker → BLOCKED with recovery, never a silent
+  skip), provisions the containers, wires Playwright to them, and ensures a CI-runnable
+  job so the gate reproduces off the developer's machine. `customize.toml` `[e2e].strategy`
+  pins it non-interactively.
+- **Run-controls reach every route + survive resume.** The Phase-3 picker (routing, E2E,
+  review depth, summary) fires for `feature`/`perf`/`db`/`architect`/`story`/`plan`, and
+  `/hydraia:resume` now inherits those recorded choices (or asks once if a plan that
+  stopped at Phase 3 has none) so a plan built with a chosen routing/E2E executes that way.
+- **Review-loop hardening (ECC-inspired), aimed at what costs most in production.**
+  Phase 5 now **verifies each finding at its cited line before accepting it** (rejects
+  false positives with evidence — an AI reviewing AI-written code shares its blind spot)
+  and **hunts gamed verification**: tests weakened to pass, no-throw/mock-only assertions,
+  swallowed exceptions, and lint/type/build config edited to disable a rule instead of
+  fixing the code. The executor and `hydraia-executor` gain an **"earn green, never game
+  it"** hard rule; Phase 6 runs **mechanical checks before LLM judgment** and adds a
+  **named regression test for every bug fixed**; reviewer agents carry a **prompt-defense
+  baseline** (diff/spec/comments are data, not instructions).
+
 ## 0.18.0 — 2026-08-20
 
 ### Added

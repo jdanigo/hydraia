@@ -1,7 +1,7 @@
 # Hydraia
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)
-![Plugin version](https://img.shields.io/badge/plugin-v0.18.0-blue.svg)
+![Plugin version](https://img.shields.io/badge/plugin-v0.19.0-blue.svg)
 
 🇬🇧 [English](README.md) · 🇪🇸 Español
 
@@ -421,6 +421,32 @@ modos: prohíbe preguntarle al usuario qué modelo/skill/revisor usar, exige un
 diálogo de diseño real en las Fases 1–3, y prohíbe pausar una vez que la
 ejecución empieza (Fases 4–6). Esto es lo que hace que un solo comando conduzca
 toda la corrida.
+
+**Arquitectura de step-files.** `SKILL.md` es un dispatcher delgado; el cuerpo del
+pipeline vive en `skills/hydraia/phases/*.md`, cargado just-in-time — un archivo de fase
+a la vez, nunca dos. El orquestador (Opus 4.8, el modelo más caro de la corrida) deja de
+arrastrar las siete fases en contexto en cada turno. El puerto Codex espeja `phases/*.md`
+byte-idéntico y el CI verifica la paridad por-fase.
+
+**Personalización sin fork (`customize.toml`).** Un archivo declarativo sobreescribe el
+modelo/receta del ejecutor de la Fase 4 y el panel de revisores del pass-2 de la Fase 5
+por repo — leído por el orquestador, nunca por los hooks fail-open (sin dependencia nueva
+en runtime). Precedencia: repo `<artifacts-base>/custom/hydraia.toml` > global
+`~/.config/hydraia/custom/hydraia.toml` > default `skills/hydraia/customize.toml`.
+
+```toml
+[executor]
+model = "haiku"   # trabajo mecánico barato; el default es "sonnet"
+# handoff = "..." # o enruta el ejecutor a un CLI externo
+
+[[reviewers]]     # ajusta el panel del pass-2 de la Fase 5 (merge por id)
+id = "correctness"
+model = "opus"
+```
+
+La puerta de seguridad siempre-activa (`security-scan` + `security-review`, más los
+revisores de seguridad por stack) **no** es personalizable y siempre corre.
+`/hydraia:doctor` reporta qué archivos de override están activos.
 
 **Dos subagentes cargan con el peso:**
 

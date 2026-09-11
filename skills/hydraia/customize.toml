@@ -1,0 +1,55 @@
+# DO NOT EDIT — overwritten on every plugin update.
+# Override in <artifacts-base>/custom/hydraia.toml (repo) or
+# ~/.config/hydraia/custom/hydraia.toml (global).
+# Merge: strings replace · lists append · tables merge key-by-key ·
+# arrays-of-tables merge by `id` (matching id replaces, new id appends).
+# Unknown keys/tables are ignored (forward-compatible).
+
+[executor]
+# Execution routing for Phase 4. One of:
+#   "ask"          — the Phase-3 picker asks the user (default; shows options +
+#                    a computed recommendation + what each option costs/gets).
+#   "balanced"     — Sonnet 5 for every task.
+#   "economy"      — Haiku for mechanical tasks, Sonnet for logic/ui, qa-automation for qa.
+#   "max-quality"  — Sonnet for mechanical, Opus 4.8 for logic/ui.
+#   "handoff"      — freeze the plan and stop; execute later on a cheap external runtime.
+# A concrete value (not "ask") makes the run non-interactive — the picker is skipped.
+routing = "ask"
+
+# Single-model fallback used only when no policy/class routing applies.
+model = "sonnet"
+
+# Full override of the dispatch recipe. Empty = default subagent dispatch
+# (fresh hydraia-executor per task, task block + graph context only).
+# {task_block}, {graph_context}, {model} are substituted at run time.
+handoff = ""
+
+# Per-task-class model map. Overrides the preset table for the classes you set.
+# Classes: mechanical | logic | ui  (qa always routes to qa-automation).
+[executor.by_class]
+mechanical = "sonnet"
+logic = "sonnet"
+ui = "sonnet"
+
+# End-to-end test strategy for Phase 6. One of:
+#   "ask"                       — the Phase-3 picker asks (default).
+#   "none"                      — no E2E gate.
+#   "playwright"                — browser critical flows, external deps stubbed.
+#   "playwright-testcontainers" — critical flows against REAL backing services in
+#                                 ephemeral Docker containers (needs Docker; CI-runnable).
+[e2e]
+strategy = "ask"
+
+# Phase-5 pass-2 reviewer panel. Array-of-tables merged by id. Omit to keep the
+# shipped panel. instruction = "" disables a shipped layer by id.
+# The security gate is separate and always runs — it is not listed here.
+# [[reviewers]]
+# id = "correctness"
+# model = "opus"
+# instruction = ""
+
+# Reserved for a later version (ignored today):
+# [workflow]
+# activation_steps = []
+# persistent_facts = []
+# on_complete = ""
