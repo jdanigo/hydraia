@@ -6,6 +6,41 @@ All notable changes to Hydraia are documented here. Format follows
 
 ## [Unreleased]
 
+## 0.20.0 — 2026-09-11 — Agile Mode
+
+### Added
+- **Work modes (Quick / Plan / Agile).** Phase -1 now asks how to run the work — a layer
+  over the route, with a computed recommendation. Quick = trimmed ceremony; Plan = today's
+  full single-goal pipeline; **Agile** = the new multi-stage orchestrator.
+- **Agile Mode — autonomous multi-stage delivery.** Decomposes an epic-sized or multi-goal
+  request into **Epic → User Stories → Tasks → Subtasks + a QA plan** (BMAD-style
+  discipline: independently completable stories, no forward deps, create-only-what-the-story-
+  needs, single-dev-agent sizing), then executes the tree **sequentially by dependency,
+  autonomously, gated by autonomy tier** — mechanical stories run on their own, tier-L /
+  security / migration / payment stories pause for approval. Heavy design (architecture +
+  threat model) runs once at the epic level; each story runs light (mini-spec → plan →
+  build → review → verify), a tier-L story escalating to full ceremony. An **epic-context
+  distiller** (800–1500 tokens, cached) is what makes running N stories economical. Start
+  with `/hydraia:agile <idea>`; resume an interrupted epic with `/hydraia:resume`.
+- **Multi-level model routing.** Agile keeps the 0.19 austerity and orchestrates it across
+  the tree: Opus for judgment (orchestration, epic design, review triage, tier gating),
+  Sonnet/Haiku for mechanical execution — resolved per task `Exec class` → story override →
+  epic default (`[agile.routing]`) → `customize.toml` → global.
+- **One-way Jira sync.** If the Jira MCP is installed + enabled, Agile pushes the whole
+  tree (Epic/Story/Task/Sub-task + QA) to a chosen project and transitions issues as the
+  pipeline advances (To Do → In Progress → In Review → Done) with spec/plan/PR links. Local
+  artifacts are the source of truth; Jira is a live mirror; Jira text is never read as
+  instructions. No MCP → identical local run.
+- **ECC autonomy-safety hooks (ship with Agile).** `safety-guard` (blocks destructive ops
+  `rm -rf`/force-push/`DROP TABLE`/`--no-verify`, plus per-story write-scope confinement),
+  `gateguard` (forces the agent to record facts — importers, schema, the instruction —
+  before its first write; opt-in), and `delivery-gate` (deterministic Stop hook that flags
+  rationalization patterns like "skip tests for now"; zero tokens, warn-only). All
+  fail-open, opt-in, with fixtures.
+- New artifacts under `<base>/epics/<slug>/` (`epic.md`, `epic-context.md`, `stories.yaml`,
+  `sprint-status.yaml`, per-story specs + QA). New phase files mirrored byte-identical to
+  the Codex port; CI covers hook syntax, fixtures, and the `[agile]` customize schema.
+
 ## 0.19.0 — 2026-09-11 — Step-Files, Model Routing & Review-Hardening
 
 ### Added
