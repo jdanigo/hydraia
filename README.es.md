@@ -63,19 +63,50 @@ externas. Listo — cada skill y agente vive dentro del plugin.
 
 ## Comandos
 
+### Más usados
+
 | Comando | Qué hace |
 |---------|----------|
 | `/hydraia:feature <desc>` | Pipeline completo: contexto → diseño → plan → build → doble review + seguridad → verify |
 | `/hydraia:plan <desc>` | Diseño + threat model + plan detallado, luego **para** (no ejecuta) |
 | `/hydraia:agile <idea>` | Descompone un épico en historias/tareas y lo entrega solo, por etapas |
-| `/hydraia:explainme <foco>` | Mapa HTML interactivo de un repo/PR (onboarding en 10 min) |
 | `/hydraia:review [foco]` | Doble review + gate de seguridad sobre la rama actual |
-| `/hydraia:graph <query>` | Consulta el code graph (call sites, blast radius) — sin correr el pipeline |
 | `/hydraia:resume` | Retoma un run interrumpido desde la última fase incompleta |
 
-`/hydraia:doctor` valida dependencias; hay más comandos especialistas (`perf`,
-`db`, `architect`, `story`, `e2e`, `devops`, `observability`, `docs`,
-`dashboard`) para trabajo enfocado.
+### Todos los comandos
+
+**Construir y planear**
+| Comando | Qué hace |
+|---------|----------|
+| `/hydraia:feature <desc>` | Pipeline completo de punta a punta: contexto → pensar → diseño + threat model → plan → ejecutar → doble review + gate de seguridad → verificar |
+| `/hydraia:plan <desc>` | Contexto + diseño + threat model + plan detallado (con auto-revisión), luego para. No ejecuta nada |
+| `/hydraia:agile <idea>` | Entrega autónoma multi-etapa: descompone un épico en historias → tareas y ejecuta el árbol por dependencias, gated por tier de autonomía |
+| `/hydraia:story <story>` | Análisis product-owner de una historia (INVEST, criterios de aceptación) → spec → casos de QA + matriz de trazabilidad → plan congelado, luego para |
+| `/hydraia:architect <idea>` | Greenfield: elicitación guiada → opciones de arquitectura → stack confirmado → contrato de API → ADRs → pipeline de build completo |
+
+**Diagnosticar y especializar**
+| Comando | Qué hace |
+|---------|----------|
+| `/hydraia:perf <síntoma>` | Run de performance measurement-first: baseline → diagnóstico por profiling → objetivo numérico → implementar → re-medir |
+| `/hydraia:db <síntoma>` | Run de cuello de botella en BD: detección de motor, evidencia read-only (EXPLAIN, stats, locks), migraciones expand-contract |
+| `/hydraia:e2e [foco]` | Genera y corre una suite E2E de flujos críticos con Playwright (framework autodetectado) |
+| `/hydraia:devops <request>` | Escribe CI/CD, Docker o IaC — deploy y secrets se marcan para aprobación humana |
+| `/hydraia:observability <request>` | Instrumenta logs / métricas / traces / alertas — OTel-first, nunca loguea secrets ni PII |
+
+**Revisar, entender y docs**
+| Comando | Qué hace |
+|---------|----------|
+| `/hydraia:review [foco]` | Doble code review + gate de seguridad sobre la rama actual (el código ya existe) |
+| `/hydraia:graph <query>` | Consulta el code graph — call sites, blast radius — sin correr el pipeline |
+| `/hydraia:explainme <foco>` | Mapa HTML interactivo de un repo, subsistema o PR (onboarding en 10 min) |
+| `/hydraia:docs [foco]` | Sincroniza README, docs de API, CHANGELOG y el índice de ADRs con el código — reporta drift |
+
+**Utilidades**
+| Comando | Qué hace |
+|---------|----------|
+| `/hydraia:resume [run]` | Retoma un pipeline interrumpido desde la última fase incompleta |
+| `/hydraia:doctor` | Valida, instala y actualiza dependencias externas (`codegraph`, `markitdown`), con consentimiento |
+| `/hydraia:dashboard [port]` | Levanta un dashboard web local (127.0.0.1): estado del plugin, telemetría de uso, run modes editables |
 
 ---
 

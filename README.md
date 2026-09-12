@@ -63,19 +63,50 @@ every skill and agent ships inside the plugin.
 
 ## Commands
 
+### Most used
+
 | Command | What it does |
 |---------|--------------|
 | `/hydraia:feature <desc>` | Full pipeline: context → design → plan → build → double review + security → verify |
 | `/hydraia:plan <desc>` | Design + threat model + detailed plan, then **stop** (nothing executed) |
 | `/hydraia:agile <idea>` | Decompose an epic into stories/tasks and deliver it autonomously, stage by stage |
-| `/hydraia:explainme <focus>` | Interactive HTML map of a codebase/PR (onboarding in 10 min) |
 | `/hydraia:review [focus]` | Double review + security gate on the current branch |
-| `/hydraia:graph <query>` | Query the code graph (call sites, blast radius) — no pipeline run |
 | `/hydraia:resume` | Continue an interrupted run from the last incomplete phase |
 
-`/hydraia:doctor` validates deps; more specialist entries (`perf`, `db`,
-`architect`, `story`, `e2e`, `devops`, `observability`, `docs`, `dashboard`)
-exist for focused work.
+### All commands
+
+**Build & plan**
+| Command | What it does |
+|---------|--------------|
+| `/hydraia:feature <desc>` | Full pipeline end to end: context → think → design + threat model → plan → execute → double review + security gate → verify |
+| `/hydraia:plan <desc>` | Context + design + threat model + detailed plan (with self-review), then stops. Nothing is executed |
+| `/hydraia:agile <idea>` | Multi-stage autonomous delivery: decomposes an epic into stories → tasks and executes the tree by dependency, gated by autonomy tier |
+| `/hydraia:story <story>` | Product-owner analysis of a user story (INVEST, acceptance criteria) → spec → QA cases + traceability matrix → frozen plan, then stops |
+| `/hydraia:architect <idea>` | Greenfield: guided elicitation → architecture options → confirmed stack → API contract → ADRs → full build pipeline |
+
+**Diagnose & specialize**
+| Command | What it does |
+|---------|--------------|
+| `/hydraia:perf <symptom>` | Measurement-first performance run: baseline → profile-driven diagnosis → numeric target → implement → re-measure |
+| `/hydraia:db <symptom>` | DB bottleneck run: engine detection, read-only evidence (EXPLAIN, stats, locks), expand-contract migrations |
+| `/hydraia:e2e [focus]` | Generate + run a Playwright critical-flow E2E suite (auto-detected framework) |
+| `/hydraia:devops <request>` | Author CI/CD, Docker, or IaC — deploy and secrets steps flagged for human approval |
+| `/hydraia:observability <request>` | Instrument logs / metrics / traces / alerts — OTel-first, never logs secrets or PII |
+
+**Review, understand & docs**
+| Command | What it does |
+|---------|--------------|
+| `/hydraia:review [focus]` | Double code review + security gate on the current branch (code already exists) |
+| `/hydraia:graph <query>` | Query the code graph — call sites, blast radius — without running the pipeline |
+| `/hydraia:explainme <focus>` | Interactive HTML map of a codebase, subsystem, or PR (onboarding in 10 min) |
+| `/hydraia:docs [focus]` | Sync README, API docs, CHANGELOG, and ADR index with the code — reports drift |
+
+**Utilities**
+| Command | What it does |
+|---------|--------------|
+| `/hydraia:resume [run]` | Continue an interrupted pipeline from the last incomplete phase |
+| `/hydraia:doctor` | Validate, install, and update external deps (`codegraph`, `markitdown`), with consent |
+| `/hydraia:dashboard [port]` | Launch a local (127.0.0.1) web dashboard: plugin status, usage telemetry, editable run modes |
 
 ---
 
