@@ -31,6 +31,18 @@ mechanical = "sonnet"
 logic = "sonnet"
 ui = "sonnet"
 
+# Agile Mode (work-mode selection + epic-level routing).
+[agile]
+# Work mode when not asked interactively: "ask" (default), "quick", "plan", "agile".
+# A concrete value skips the Phase -1 mode question. /hydraia:agile always forces "agile".
+mode = "ask"
+
+[agile.routing]
+# Epic-level default execution routing for Agile runs (same values as [executor].routing).
+# Resolution precedence (most specific first): task Exec class > story `routing` in
+# stories.yaml > this default > [executor] > global.
+default = "balanced"
+
 # End-to-end test strategy for Phase 6. One of:
 #   "ask"                       — the Phase-3 picker asks (default).
 #   "none"                      — no E2E gate.
