@@ -6,6 +6,26 @@ All notable changes to Hydraia are documented here. Format follows
 
 ## [Unreleased]
 
+## 0.21.0 — 2026-09-12 — Explainme
+
+### Added
+- **`explainme` — visual, verifiable code explanation.** A new skill + `/hydraia:explainme`
+  command + `explainme` agent (Sonnet) that turn a codebase, subsystem, or PR into a
+  **self-contained, interactive HTML map** (architecture / workflow / sequence / dataflow /
+  lifecycle) with guided walkthrough chapters, source-pinned nodes (click-through to real
+  `file:line`), dark/light themes, and PNG/SVG/WebM export. A deterministic CLI validates
+  every artifact before delivery and refuses one that is not geometrically clean and
+  semantically faithful — the diagram never invents topology.
+- **Grounded in codegraph.** Unlike a hand-drawn diagram, Explainme sources its topology
+  from Hydraia's code knowledge graph (verified components, call edges, entry points) and
+  pins nodes to the real source — so it is an onboarding artifact ("understand this system
+  in 10 minutes"), not decoration. It runs outside the build gates (an explanation, not a
+  code change).
+- **Vendored + rebranded from [Archify](https://github.com/tt-a1i/archify) (MIT)** — the
+  engine (schemas, renderers, viewer, validator) is upstream's; Hydraia adds codegraph
+  grounding and the onboarding framing. The MIT `LICENSE`, `THIRD_PARTY_NOTICES.md`, and
+  upstream attribution are kept. Requires **Node ≥ 18** (`/hydraia:doctor` reports it).
+
 ## 0.20.0 — 2026-09-11 — Agile Mode
 
 ### Added

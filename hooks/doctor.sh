@@ -205,6 +205,13 @@ if [ "$MODE" = "--check" ]; then
     fi
   done
   echo "  agile mode: customize.toml [agile].mode (default ask); Jira sync is offered in-run when the Jira MCP is available"
+  echo "-- explainme (visual code explanation) --"
+  if command -v node >/dev/null 2>&1; then
+    nv="$(node --version 2>/dev/null)"; maj="$(printf '%s' "$nv" | sed 's/^v//; s/\..*//')"
+    if [ "${maj:-0}" -ge 18 ] 2>/dev/null; then echo "  node: $nv (ok, >=18)"; else echo "  node: $nv (explainme needs >=18)"; fi
+  else
+    echo "  node: not found (explainme needs Node >=18 — install to use /hydraia:explainme)"
+  fi
   echo "-- discovery --"
   local_skills=$(find "$(dirname "$0")/../skills" -name SKILL.md 2>/dev/null | wc -l | tr -d ' ')
   local_agents=$(ls "$(dirname "$0")/../agents"/*.md 2>/dev/null | wc -l | tr -d ' ')
