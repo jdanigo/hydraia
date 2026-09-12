@@ -1,7 +1,7 @@
 # Hydraia
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)
-![Plugin version](https://img.shields.io/badge/plugin-v0.19.0-blue.svg)
+![Plugin version](https://img.shields.io/badge/plugin-v0.20.0-blue.svg)
 
 🇬🇧 English · 🇪🇸 [Español](README.es.md)
 
@@ -435,6 +435,28 @@ model = "opus"
 The always-on security gate (`security-scan` + `security-review`, plus stack security
 reviewers) is **not** customizable and always runs. `/hydraia:doctor` reports which
 override files are active.
+
+**Work modes — Quick / Plan / Agile.** Phase -1 asks how to run the work (a layer over
+the route, with a recommendation pre-selected):
+
+- **Quick** — a tiny low-risk change, trimmed ceremony.
+- **Plan** — the default: one cohesive goal, the full single-goal pipeline.
+- **Agile** — epic-sized or multi-goal work, or delivery you want run in phases. Hydraia
+  decomposes the idea into **Epic → User Stories → Tasks → Subtasks + a QA plan**, offers
+  to sync the whole tree to **Jira** (if the Jira MCP is enabled — one-way; local artifacts
+  stay the source of truth), then **executes it stage by stage, autonomously, gated by
+  autonomy tier**: mechanical stories run on their own; a tier-L / security / migration /
+  payment story pauses for your approval. The heavy design (architecture + threat model)
+  runs once at the epic level; each story then runs light (mini-spec → plan → build →
+  review → verify), with a tier-L story escalating to full ceremony. Model routing follows
+  the run's austerity across the tree — Opus for judgment, Sonnet/Haiku for mechanical
+  work — resolved per task → story → epic. Start it with `/hydraia:agile <big idea>`, and
+  resume an interrupted epic with `/hydraia:resume`.
+
+Long autonomous runs are kept safe by three deterministic guards: **safety-guard** (blocks
+destructive ops + confines writes to the story's scope), **gateguard** (forces the agent to
+record facts before its first write), and **delivery-gate** (flags rationalization like
+"skip tests for now").
 
 **Two subagents carry the load:**
 

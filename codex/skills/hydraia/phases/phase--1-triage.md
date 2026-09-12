@@ -7,7 +7,8 @@ Explicit commands skip classification and force their route
 review · `/hydraia:perf` → performance · `/hydraia:db` → performance,
 DB-shaped · `/hydraia:architect` → greenfield · `/hydraia:e2e` → E2E suite ·
 `/hydraia:devops` → DevOps config · `/hydraia:observability` → instrumentation ·
-`/hydraia:docs` → docs sync). Plain-language requests are classified by signals:
+`/hydraia:docs` → docs sync · `/hydraia:agile` → any route with **mode = agile**
+forced). Plain-language requests are classified by signals:
 
 | Intent | Signals | Route |
 |---|---|---|
@@ -21,7 +22,37 @@ DB-shaped · `/hydraia:architect` → greenfield · `/hydraia:e2e` → E2E suite
 
 Triage is ONE classification step, not a conversation — at most a single
 routing question, and only when genuinely ambiguous. Route chosen, proceed
-to the start-of-run guards below.
+to the work-mode selection, then the guards below.
+
+### Work mode (after route, before the tier)
+
+The **mode** is a layer over the route — it decides how much decomposition and
+orchestration the run gets, not what kind of work it is. Ask once, via a single
+`AskUserQuestion`, with a computed recommendation pre-selected:
+
+- **Quick** — one small, low-risk change (no new logic, ≤ ~2 files). Minimal ceremony
+  (the `.quick-approved` path). Recommend for trivial mechanical intent.
+- **Plan** — one cohesive goal, the full single-goal pipeline (today's default). Recommend
+  for a normal feature/bug/change.
+- **Agile** — epic-sized work, **multiple independent shippable goals**, or delivery the
+  user wants run in phases/stages. Decompose into Epic → Stories → Tasks → Subtasks + QA,
+  optionally sync to Jira, then execute stage by stage under tiered autonomy. Recommend
+  when ≥2 independent goals are detected, the intent is epic-sized, or the user says "by
+  phases / in stages / step by step".
+
+Skip the ask when forced: `/hydraia:agile` → Agile; `customize.toml` `[agile].mode` set to
+a concrete value → that mode; an already-`.quick-approved` trivial change → Quick.
+
+- **If mode = Agile:** run the guards + Phase 0/1 as usual, then **branch to
+  `phases/phase-2a-decompose.md`** instead of `phases/phase-2-design.md`. Everything from
+  decomposition onward is Agile Mode.
+- **If mode = Quick or Plan:** continue exactly as today (Plan = full pipeline, Quick =
+  trimmed). No Agile phases run.
+
+**Multi-goal is the Agile trigger.** Wherever the pipeline detects multiple independent
+shippable goals (the multi-goal check that today splits to `deferred-work.md`), offer
+"carry all goals as one epic in Agile Mode" as an alternative to splitting — that is the
+intended home for multi-goal work, not deferral.
 
 ### Autonomy tier + cost (after route, before the guards)
 

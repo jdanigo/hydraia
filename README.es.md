@@ -1,7 +1,7 @@
 # Hydraia
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)
-![Plugin version](https://img.shields.io/badge/plugin-v0.19.0-blue.svg)
+![Plugin version](https://img.shields.io/badge/plugin-v0.20.0-blue.svg)
 
 🇬🇧 [English](README.md) · 🇪🇸 Español
 
@@ -447,6 +447,29 @@ model = "opus"
 La puerta de seguridad siempre-activa (`security-scan` + `security-review`, más los
 revisores de seguridad por stack) **no** es personalizable y siempre corre.
 `/hydraia:doctor` reporta qué archivos de override están activos.
+
+**Modos de trabajo — Quick / Plan / Agile.** La Fase -1 pregunta cómo correr el trabajo
+(una capa sobre la ruta, con recomendación pre-seleccionada):
+
+- **Quick** — un cambio chico de bajo riesgo, ceremonia recortada.
+- **Plan** — el default: un objetivo cohesivo, el pipeline completo de una meta.
+- **Agile** — trabajo tamaño épica o multi-goal, o entrega que quieras por fases. Hydraia
+  descompone la idea en **Épica → Historias → Tasks → Subtasks + plan de QA**, ofrece
+  sincronizar todo el árbol a **Jira** (si el MCP de Jira está habilitado — one-way; los
+  artefactos locales son la fuente de verdad), y luego **la ejecuta etapa por etapa, de
+  forma autónoma, con gate por tier de autonomía**: las historias mecánicas corren solas;
+  una historia tier-L / seguridad / migración / pago pausa para tu aprobación. El diseño
+  pesado (arquitectura + threat model) corre una vez a nivel épica; cada historia corre
+  ligera (mini-spec → plan → build → review → verify), y una tier-L escala a ceremonia
+  completa. El routing de modelo sigue la austeridad del run en toda la jerarquía — Opus
+  para juicio, Sonnet/Haiku para lo mecánico — resuelto por task → historia → épica.
+  Arráncalo con `/hydraia:agile <idea grande>` y reanuda una épica interrumpida con
+  `/hydraia:resume`.
+
+Los runs autónomos largos se mantienen seguros con tres guardas deterministas:
+**safety-guard** (bloquea ops destructivas + confina escritura al scope de la historia),
+**gateguard** (obliga a registrar hechos antes de la primera escritura) y **delivery-gate**
+(marca racionalizaciones tipo "skip tests for now").
 
 **Dos subagentes cargan con el peso:**
 

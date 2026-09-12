@@ -13,7 +13,13 @@ jobs:
             python3 -m json.tool "$f" > /dev/null && echo "OK $f"
           done
       - name: Bash syntax
-        run: bash -n hooks/preflight.sh hooks/doctor.sh hooks/gate.sh hooks/plancheck.sh hooks/summary.sh hooks/agents.sh hooks/config.sh
+        run: |
+          bash -n hooks/preflight.sh hooks/doctor.sh hooks/gate.sh hooks/plancheck.sh hooks/summary.sh hooks/agents.sh hooks/config.sh hooks/blastgate.sh hooks/safety-guard.sh hooks/gateguard.sh hooks/delivery-gate.sh
+          bash -n codex/hooks/*.sh
+      - name: Hook fixtures
+        run: |
+          bash hooks/tests/run.sh
+          for t in test-safety-guard test-gateguard test-delivery-gate; do bash hooks/tests/$t.sh; done
       - name: Dashboard server syntax
         run: node -c dashboard/server.js && echo "server.js OK"
       - name: Discovery counts
@@ -111,7 +117,7 @@ jobs:
           echo "phase files byte-identical across hosts"
       - name: customize.toml valid
         run: |
-          python3 -c "import tomllib;tomllib.load(open('skills/hydraia/customize.toml','rb'));print('OK customize.toml')"
+          python3 -c "import tomllib;d=tomllib.load(open('skills/hydraia/customize.toml','rb'));assert 'agile' in d and 'executor' in d and 'e2e' in d;print('OK customize.toml (executor+e2e+agile)')"
       - name: Shell-gate airtight checks
         run: |
           set -euo pipefail

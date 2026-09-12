@@ -61,6 +61,14 @@ file fully, execute it, then load the next only when its `## NEXT` directs you.*
 - **Autonomy tiers (S/M/L):** derived in Phase -1 from files-touched, `gate.yaml`
   risk overlap, new-logic-vs-mechanical, and UI presence → maps to review depth
   and ceremony. `autoTier=off` → always Tier M. **Never removes the security floor.**
+- **Work modes (Quick / Plan / Agile):** a layer over the route, chosen in Phase -1.
+  Quick = trimmed ceremony; Plan = full single-goal pipeline; **Agile** = epic-sized /
+  multi-goal / phased work → decompose into Epic→Stories→Tasks→Subtasks+QA, optional
+  one-way Jira sync, then autonomous stage-by-stage execution gated by autonomy tier
+  (mechanical stories run solo, tier-L/risky pause). Agile branches through
+  `phases/phase-2a-decompose.md` → `phases/agile-orchestrator.md`. On Codex the per-story
+  routing maps onto luna/sol (mechanical → `gpt-5.6-luna`, judgment → `gpt-5.6-sol`).
+  Forced by `/hydraia:agile` (route + `mode = agile`) or `customize.toml` `[agile].mode`.
 - **Model policy (summary):** this orchestrator session stays frontier for
   judgment (triage, design, plan, both reviews). Execution delegates to the
   Phase-4 executor — cheap by default, overridable via `customize.toml`.

@@ -195,6 +195,16 @@ if [ "$MODE" = "--check" ]; then
     [ -f "$_cb2/custom/hydraia.toml" ] && echo "  repo override:   $_cb2/custom/hydraia.toml (active)" || echo "  repo override:   absent"
   fi
   [ -f "$HOME/.config/hydraia/custom/hydraia.toml" ] && echo "  global override: $HOME/.config/hydraia/custom/hydraia.toml (active)" || echo "  global override: absent"
+  echo "-- agile + autonomy hooks --"
+  for h in safety-guard gateguard delivery-gate; do
+    if [ -f "$(dirname "$0")/$h.sh" ]; then
+      st="on"; command -v hy_config >/dev/null 2>&1 && st="$(hy_config ${h//-/} on 2>/dev/null || echo on)"
+      echo "  $h.sh: present"
+    else
+      echo "  $h.sh: MISSING"
+    fi
+  done
+  echo "  agile mode: customize.toml [agile].mode (default ask); Jira sync is offered in-run when the Jira MCP is available"
   echo "-- discovery --"
   local_skills=$(find "$(dirname "$0")/../skills" -name SKILL.md 2>/dev/null | wc -l | tr -d ' ')
   local_agents=$(ls "$(dirname "$0")/../agents"/*.md 2>/dev/null | wc -l | tr -d ' ')
