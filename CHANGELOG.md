@@ -6,6 +6,17 @@ All notable changes to Hydraia are documented here. Format follows
 
 ## [Unreleased]
 
+## 0.21.1 — 2026-09-12 — Language/script lock
+
+### Fixed
+- **CJK drift in pipeline output.** Under token-discipline compression the model could
+  reach for classical-Chinese-flavoured abbreviation (the caveman `wenyan-ultra` style),
+  leaking ideograms like `探索` ("explore") and `索引` ("index") into chapter titles and
+  status lines. `token-discipline` now hard-locks output to the run's language (English or
+  Español) and Latin script, and explicitly forbids `wenyan-ultra` / CJK / non-Latin
+  ideograms — compression changes the style, never the language or script. Cosmetic only
+  (no artifact was affected), but confusing. Mirrored to the Codex port.
+
 ## 0.21.0 — 2026-09-12 — Explainme
 
 ### Added
