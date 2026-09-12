@@ -13,7 +13,7 @@ run(){ ( cd "$tmp" && printf '%s' "$P" | env -u HYDRAIA_ALLOW_DIRECT HYDRAIA_DOC
 printf 'x\n' > "$base/.active-plan"
 run "off" 0 "off-allows"
 run "on"  2 "on-no-facts-blocks"
-rid="$(stat -f %m "$base/.active-plan" 2>/dev/null || stat -c %Y "$base/.active-plan" 2>/dev/null || echo 0)"
+rid="$(stat -c %Y "$base/.active-plan" 2>/dev/null || stat -f %m "$base/.active-plan" 2>/dev/null || echo 0)"
 printf 'facts\n' > "$base/.agents/facts-$rid"
 run "on"  0 "on-with-facts-allows"
 rm -rf "$tmp"

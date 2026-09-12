@@ -90,7 +90,7 @@ NOW="$(date +%s)"
 RUNSTART=0
 newlog="$(ls -t "$abase"/runs/*.md 2>/dev/null | head -n1 || true)"
 if [ -n "$newlog" ] && [ -f "$newlog" ]; then
-  RUNSTART="$(stat -f %m "$newlog" 2>/dev/null || stat -c %Y "$newlog" 2>/dev/null || echo 0)"
+  RUNSTART="$(stat -c %Y "$newlog" 2>/dev/null || stat -f %m "$newlog" 2>/dev/null || echo 0)"
 fi
 
 # Detailed mode enriches with "what shipped". Compute git facts here (the hook already

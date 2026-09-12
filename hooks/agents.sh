@@ -79,7 +79,7 @@ fi
 plan="$hbase/.active-plan"
 adir="$hbase/.agents"
 now="$(date +%s)"
-mtime() { stat -f %m "$1" 2>/dev/null || stat -c %Y "$1" 2>/dev/null || echo 0; }
+mtime() { stat -c %Y "$1" 2>/dev/null || stat -f %m "$1" 2>/dev/null || echo 0; }
 
 # Enforce only during an active run (Phase 3 armed the plan, Phase 6 disarms it).
 [ -f "$plan" ] || exit 0

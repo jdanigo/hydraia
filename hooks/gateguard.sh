@@ -24,7 +24,7 @@ MODE="off"; command -v hy_config >/dev/null 2>&1 && MODE="$(hy_config gateGuard 
 plan="$adir/.active-plan"
 [ -f "$plan" ] || exit 0                 # only meaningful inside an armed run
 adir_agents="$adir/.agents"; mkdir -p "$adir_agents" 2>/dev/null || exit 0
-runid="$(stat -f %m "$plan" 2>/dev/null || stat -c %Y "$plan" 2>/dev/null || echo 0)"
+runid="$(stat -c %Y "$plan" 2>/dev/null || stat -f %m "$plan" 2>/dev/null || echo 0)"
 facts="$adir_agents/facts-$runid"
 
 [ -f "$facts" ] && exit 0                 # facts recorded → allow

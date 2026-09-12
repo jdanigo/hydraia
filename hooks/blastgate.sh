@@ -110,7 +110,7 @@ efile="$acount_dir/edited-files"
 # mtime; when it changes (a new run armed the plan) the previous run's file set is stale,
 # so truncate it and record the new run id before counting. Fail-open on any error.
 rid_file="$acount_dir/edited-files.runid"
-cur_runid="$(stat -f %m "$plan" 2>/dev/null || stat -c %Y "$plan" 2>/dev/null || echo 0)"
+cur_runid="$(stat -c %Y "$plan" 2>/dev/null || stat -f %m "$plan" 2>/dev/null || echo 0)"
 prev_runid="$(cat "$rid_file" 2>/dev/null || echo)"
 if [ "$cur_runid" != "$prev_runid" ]; then
   : > "$efile" 2>/dev/null || true

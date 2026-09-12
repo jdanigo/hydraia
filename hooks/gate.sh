@@ -91,7 +91,7 @@ now="$(date +%s)"
 fresh() { # $1=marker path, $2=max age secs → 0 if present and fresh
   [ -f "$1" ] || return 1
   local m
-  m="$(stat -f %m "$1" 2>/dev/null || stat -c %Y "$1" 2>/dev/null || echo 0)"
+  m="$(stat -c %Y "$1" 2>/dev/null || stat -f %m "$1" 2>/dev/null || echo 0)"
   [ $(( now - m )) -lt "$2" ]
 }
 
