@@ -2,6 +2,7 @@
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)
 ![Plugin version](https://img.shields.io/badge/plugin-v0.21.1-blue.svg)
+[![Discord](https://img.shields.io/badge/Discord-join%20the%20community-5865F2?logo=discord&logoColor=white)](https://discord.gg/gA9TBsjGz)
 
 🇬🇧 English · 🇪🇸 [Español](README.es.md)
 
@@ -682,6 +683,13 @@ runtimes (`git`, Node, Python) a plugin can't install for you.
 ![Running /hydraia:doctor inside the Claude Code CLI — start `claude` in your terminal, then run the slash command at its prompt, and it checks codegraph, markitdown, and git.](docs/diagrams/hydraia-doctor-terminal.svg)
 
 ---
+
+## Community
+
+Questions, ideas, showcases, and release news live in the Hydraia Discord —
+come say hi:
+
+**[💬 Join the Hydraia Discord](https://discord.gg/gA9TBsjGz)**
 
 ## Repo layout
 

@@ -2,6 +2,7 @@
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)
 ![Plugin version](https://img.shields.io/badge/plugin-v0.21.1-blue.svg)
+[![Discord](https://img.shields.io/badge/Discord-únete%20a%20la%20comunidad-5865F2?logo=discord&logoColor=white)](https://discord.gg/gA9TBsjGz)
 
 🇬🇧 [English](README.md) · 🇪🇸 Español
 
@@ -709,6 +710,13 @@ puede instalar por ti.
 ![Corriendo /hydraia:doctor dentro del CLI de Claude Code — arranca `claude` en tu terminal, luego corre el slash command en su prompt, y valida codegraph, markitdown, y git.](docs/diagrams/hydraia-doctor-terminal.svg)
 
 ---
+
+## Comunidad
+
+Dudas, ideas, proyectos y novedades de las releases viven en el Discord de
+Hydraia — pásate a saludar:
+
+**[💬 Únete al Discord de Hydraia](https://discord.gg/gA9TBsjGz)**
 
 ## Estructura del repo
 
