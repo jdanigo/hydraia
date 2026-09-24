@@ -1,7 +1,7 @@
 ---
 name: silent-failure-hunter
 description: Review code for silent failures, swallowed errors, bad fallbacks, and missing error propagation.
-model: opus
+model: sonnet
 tools: [Read, Grep, Glob, Bash]
 ---
 

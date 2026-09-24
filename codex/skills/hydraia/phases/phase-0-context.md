@@ -65,7 +65,30 @@ reading it here guarantees the full file is honored even if that injection was t
    or invent results: fall back to targeted, minimal file reads for exactly the code
    you need, and suggest `/hydraia:doctor` once so it is ready next time. codegraph
    is an accelerator, never a hard requirement — the pipeline runs without it.
-3. If the request references a PDF (spec, ticket export, design doc), convert it
+3. **Clean start + test baseline (so no one "fixes" what was already broken).**
+   - **Working tree.** If `git status --porcelain` shows changes that are not this run's,
+     or the branch obviously does not fit the intent (name, recent history), ask once
+     (`AskUserQuestion`): *continue on this tree* / *stop so I can clean up*.
+   - **Baseline.** For Level 2 and 3 (and Level 1 when the change touches code a test
+     covers), run the project's real test command ONCE, before any edit, with a hard
+     timeout — the bundled helper records what already fails:
+     ```
+     ROOT="$(cat "${HOME}/.cache/hydraia/plugin-root" 2>/dev/null)"
+     [ -n "$ROOT" ] || ROOT="$(ls -d "${HOME}/.claude/plugins/cache/hydraia/hydraia/"*/ 2>/dev/null | sort -V | tail -1)"
+     bash "$ROOT/hooks/baseline.sh" -- <the project's test command>
+     ```
+     It prints one line: `BASELINE: CLEAN`, `BASELINE: <N> pre-existing failure line(s)`
+     (+ the lines), or `BASELINE: TIMEOUT after <s>s` (a hung suite).
+   - **CLEAN** → continue silently.
+   - **Pre-existing failures or TIMEOUT → ask, never decide alone.** One
+     `AskUserQuestion` showing the failing lines (or the hang):
+     *Record and continue (Recommended)* — append each to `<base>/deferred-work.md`; the
+     run never touches them, and the verify-loop hook reports them as PRE-EXISTING
+     instead of counting them · *Fix them first* — a separate, earlier task with its own
+     scope, before this change · *Stop*.
+     For a TIMEOUT, also name the narrower command the run will use instead of the
+     whole suite (e.g. only the test files for the touched area).
+4. If the request references a PDF (spec, ticket export, design doc), convert it
    with markitdown first (`markitdown <file>`), and work from the markdown. Never
    dump raw PDF bytes into context.
 

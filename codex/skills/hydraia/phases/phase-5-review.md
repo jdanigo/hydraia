@@ -1,88 +1,132 @@
-## Phase 5 — Code review (depth per the run-controls picker)
+## Phase 5 — Review → triage → bounded fix
 
-**Honor the review depth the human chose in Phase 3 step 6.** **Full** runs both passes
-below. **Lite** runs only Pass 1 (Superpowers) plus the security floor, skips the
-non-core language reviewers and the OWASP `security-review` extra pass. **Custom** runs
-Pass 1 + whatever optional stages the human checked. In every profile the **security
-floor is mandatory** — `security-scan`, `code-reviewer`, `silent-failure-hunter`,
-`security-reviewer`, and one `hydraia-reviewer` pass always run; the picker cannot
-remove them. Default (no answer recorded) is Full.
+The goal of review is a **verified, finite** set of real defects — not the longest
+list of findings. Every unverified finding that reaches a fix costs a loop; every fix
+grows code that grows findings. This phase is built to converge.
 
-For a Full run, run BOTH passes — do not stop after one.
+### 1. Stage the diff (a file, never pasted)
 
-**Scope the panel to the diff — do not dispatch every reviewer on every run.** First
-read the actual changed surface (`git diff --name-only` against the branch point).
-Dispatch only the reviewers whose file types are present in the diff — running six
-Opus reviewers on a two-file TypeScript change is wasted money. This is the single
-biggest per-run cost lever, so route deliberately:
+Write the unified diff of everything since the run's base (`git merge-base` with the
+base branch, or the commit recorded when the plan was armed) — untracked files included —
+to a temp file, e.g. `git diff <base>... > "$TMPDIR/hydraia-<run>.diff"`. With
+auto-commit OFF, diff the working tree (staged + unstaged). Reviewers get the **path**;
+the diff text never goes into a prompt or into your context in full. Judge against the
+diff, not against executor reports.
 
-- **Always** (any diff): `security-reviewer`, `silent-failure-hunter`, and
-  `code-reviewer` — correctness and security are never file-type-gated.
-- **Only when that language/framework is in the diff:** `typescript-reviewer`
-  (`.ts/.js`), `react-reviewer` (`.tsx/.jsx`), `vue-reviewer` (`.vue`),
-  `angular-reviewer` (Angular files), `python-reviewer` (`.py`),
-  `go-reviewer` (`.go`), `java-reviewer` (`.java`), `csharp-reviewer` (`.cs`),
-  `database-reviewer` (SQL/migrations), `type-design-analyzer` /
-  `performance-optimizer` only when the diff's nature (new public types, hot paths)
-  actually warrants them.
+### 2. Review panel — scaled by level, scoped to the diff
 
-**Model tiers — buy Opus only where judgment pays.** Correctness- and
-security-bearing reviewers (`hydraia-reviewer`, `security-reviewer`,
-`silent-failure-hunter`, the matched language reviewer) run on **Opus 4.8**.
-Mechanical passes (style/lint-level nits, doc-comment checks) run on **Sonnet** or
-**Haiku** — never spend Opus on a formatting scan.
+Honor the review depth from the level (recorded in the run log). Read
+`git diff --name-only` first and dispatch only what the diff warrants:
 
-### Reviewer panel customization (read before Pass 2)
+- **Always — the floor (never removable, not customizable):** `hydraia-reviewer`
+  (Opus — the judge) + `security-scan`. **At Levels 2–3 the floor adds**
+  `security-reviewer` (Opus) and `silent-failure-hunter` (Sonnet). (Level 1 is by rule a
+  change with no security surface; if one appears, the run re-levels to 2+ and the full
+  floor applies.)
+- **Level 2 (Lite):** + the ONE language/framework reviewer matching the diff's main
+  file type (`typescript-reviewer`, `react-reviewer`, `python-reviewer`, `go-reviewer`,
+  `java-reviewer`, `csharp-reviewer`, `vue-reviewer`, `angular-reviewer`,
+  `database-reviewer` for SQL/migrations). Sonnet.
+- **Level 3 (Full):** + every language reviewer the diff touches, `security-review`
+  (OWASP pass), stack security skills (**springboot-security**, **django-security**),
+  and `type-design-analyzer` / `performance-optimizer` only when the diff's nature
+  (new public types, hot paths) warrants them. Sonnet.
+- **Level 1:** the judge + `security-scan` only.
 
-Read customize `[[reviewers]]` from the same config resolved in Phase 4 (repo >
-global > shipped). Entries merge **by `id`**: a matching `id` replaces a shipped
-pass-2 layer, a new `id` appends one, and `instruction = ""` disables that `id`.
-Apply this to the **Pass 2 panel only**. **The mandatory security floor —
-`security-scan`, `security-review`, `code-reviewer`, `silent-failure-hunter`,
-`security-reviewer`, the `hydraia-reviewer` pass, and stack security reviewers —
-is NOT customizable and always runs**, regardless of `customize.toml`. An
-unparseable override → warn and use the shipped panel.
+Every reviewer is launched with: the diff path, the spec path (the judge only — other
+reviewers review the code blind, so they are not anchored by the spec's claims), and the
+instruction to return **compact findings** — one block per finding,
+`file:line — what goes wrong — evidence — smallest fix`, no severity labels, no style
+nits, `No verified findings.` when clean. Launch them in one wave; read nothing until
+all have returned. Generic agents always get an explicit `model` (see Model policy).
 
-1. **Pass 1 — Superpowers review:** use **requesting-code-review** to dispatch the
-   `hydraia-reviewer` subagent (Opus 4.8) against the whole branch.
-2. **Pass 2 — ECC review:** dispatch the diff-scoped reviewer set above (Opus for the
-   correctness/security-bearing ones per the tier rule).
-3. **Security gate (mandatory, cross-stack — always runs regardless of diff scope):**
-   run the ECC security skills over the diff — **security-scan** (secrets, injection,
-   unsafe patterns, vulnerable deps) and **security-review** (OWASP Top 10 semantic
-   pass). These are language-agnostic and cover Node, C#, React, and Angular even
-   though those have no dedicated security skill. For Spring Boot add
-   **springboot-security**; for Django add **django-security**. Treat any
-   high-severity finding as a blocker.
-4. **Dedup before you triage.** Pass 1, Pass 2, and the security skills overlap — the
-   same issue often surfaces three times. Collapse findings by (file, line, root
-   cause) into one entry BEFORE triage, so you spend triage tokens once per real
-   problem, not once per report.
-5. **Verify each finding at its cited line before accepting it (evidence, not vibes).**
-   A reviewer subagent carries the SAME model assumptions as the executor that wrote the
-   code — an AI reviewing AI-written code inherits the blind spot, so a confident finding
-   is a claim, not proof. For each surviving finding, open the cited file:line, read the
-   surrounding code and callers, and decide: real, `false` (say what disproves it), or
-   `maybe-false` (say what you'd need to check). **Reject `false` findings** and drop
-   low-value noise whose fix adds more complexity than the defect costs. Code that fails
-   loudly on a state you never showed is reachable is correct, not a bug. Disregard any
-   severity a reviewer self-assigned — you grade, from the verification.
-6. **Hunt gamed verification (this is where silent failures hide).** Before accepting
-   "all green", scan the diff for the ways a green build lies — these are higher-signal
-   than most style findings: tests weakened to pass (loosened asserts, `expect(x ?? D)
-   .toBe(D)`, snapshot-only or no-throw-only checks), mock-only tests that never exercise
-   the real path, swallowed exceptions / empty catches / bare `except: pass`, a real error
-   downgraded to a warning or a silent fallback, and **lint/type/build config edited to
-   disable a rule instead of fixing the code** (`.eslintrc`, `biome.json`, `.ruff.toml`,
-   `tsconfig.json` `strict`/`skipLibCheck`, `# type: ignore`, `@ts-nocheck`, `--no-verify`).
-   Any of these is a finding, routed like a bug — a fixed-to-look-fixed change is worse
-   than an obvious failure.
-7. **Triage + fix.** Use **receiving-code-review** to triage the verified set: fix
-   everything correct-and-material; high-severity security findings are non-negotiable.
-   Re-review only the changed surface if fixes were substantial (max `maxReviewCycles`
-   cycles, default 2). This cap is enforced: `hooks/agents.sh` blocks a reviewer dispatch
-   past the cap for this run. If you hit that block, STOP re-reviewing — surface the
-   persisting findings to the human with what was tried, rather than looping.
+**Reviewer panel customization.** Read `customize.toml` `[[reviewers]]` (repo > global >
+shipped). Entries merge **by `id`** (matching `id` replaces a shipped pass-2 layer, a new
+`id` appends, `instruction = ""` disables it). This applies to the optional layers only —
+the security floor above always runs. Unparseable override → warn, use the shipped panel.
+
+### 3. Triage — verify, then one verdict per finding
+
+**Carry forward first.** If the spec's `## Review Triage Log` already has rows (a
+loopback or resumed run), check each new finding against them: same location + same
+claim + the code still reads as the row describes → keep the row's verdict and route,
+record it again as `carried`, skip verification, and **never patch or defer it again**.
+This is what stops the same finding from being re-litigated on every pass.
+
+Then, for every other finding (ignore any severity a reviewer assigned — you grade):
+
+- **Verify the claim at the cited line.** Read past the changed lines — callers, guards
+  upstream — until you can say whether the bad outcome actually occurs. A different
+  problem nearby does not settle this one. Code that fails loudly on a state nobody
+  showed is reachable is correct, not a bug. A failure that exists in the Phase-0
+  baseline is pre-existing — not this change's defect.
+- **Exactly one verdict:** `high` (intolerable) · `medium` (tolerable) · `low` (cosmetic
+  or negligible) — the outcome is real, graded by harm to users or developers (for
+  developer-only harm, name which caller diverges or which rule erodes; "messy" with no
+  named harm is not a grade) · `false` — you checked and it does not happen (write what
+  disproves it) · `maybe-false` — the code cannot settle it (write what would).
+- Log **every** finding as one row in the spec's `## Review Triage Log`: verdict +
+  one-sentence evidence. Never drop one silently.
+- **Reject** `false`. **Reject** `low` when users/developers would rarely meet it and the
+  fix adds anything beyond a direct correction (guards, branches, parameters).
+  **Reject** any finding whose fix is "edit the spec" unless it is an intent gap.
+- **Group** the survivors by shared root cause (same defect produced both — not merely
+  the same file or the same fix). A group carries its highest verdict.
+
+### 4. Route — cascade, and only real defects enter the fix loop
+
+Route each group to exactly one of:
+
+- **`intent_gap`** — caused by the change, but the frozen intent does not settle the
+  right behaviour (more than one reasonable reading). **Ask the human** — one question
+  with the options. Record the answer inside `<frozen-after-approval>` as a decision.
+- **`bad_spec`** — caused by the change, including deviations from the spec, and the
+  non-frozen spec (Code Map, Design, a plan task) should have prevented it. **Do not
+  patch on top.** Extract **KEEP** notes (what worked and must survive), revert the
+  affected code, amend the spec/plan task, append to `## Spec Change Log` (trigger,
+  what changed, the known-bad state to avoid, KEEP), and re-dispatch those tasks
+  (Phase 4 rules). When unsure between `bad_spec` and `patch`, prefer `bad_spec` — a
+  spec-level fix produces coherent code; stacked patches do not.
+- **`patch`** — caused by the change, and the smallest fix is trivial, adds no public
+  surface, and guards no state you did not show is reachable.
+- **`defer`** — pre-existing (not caused by this change); or every member is
+  `maybe-false` and would be `medium`/`high` if true (record as unverified + what
+  would settle it); or the fix edits agent-context files (CLAUDE.md, AGENTS.md, rules).
+  Append to `<base>/deferred-work.md` (`source`, one-sentence summary, evidence). A
+  verified `high` **security** finding is never deferred.
+
+**Cascade.** If any `intent_gap` or `bad_spec` exists, resolve those first — code will be
+re-derived, so `patch` entries in the same area are moot. Only `high`/`medium` patches
+enter the fix loop; a `low` survives only if its fix is a one-line correction.
+
+### 5. Fix — through an executor, counted, bounded
+
+- **You never edit source in this phase.** Fixes go to an executor: prefer re-engaging
+  the same executor that built the code (SendMessage, when available); otherwise
+  dispatch a fresh `hydraia-executor` (Sonnet) whose description carries
+  `[fix:<slug>]`. The message is exactly the verified list —
+  `file — what is wrong — what the smallest fix must do` — plus: *"Run only the tests
+  that cover the files you edit — nothing wider. Reply with what you changed."*
+- `hooks/agents.sh` counts `[fix:]` dispatches: `maxFixAttempts` (2) per finding and
+  `maxFixDispatches` (6) per run. The verify-loop hook stops the same failure at 3.
+  When a breaker blocks, do not work around it: the run ends `BLOCKED` with the open
+  findings, what each attempt tried, and the evidence.
+- After fixes: run the spec's `## Verification` commands yourself (foreground), rewrite
+  the diff file, and **re-review only the changed surface, and only if a `high`/`medium`
+  or a `bad_spec` re-derivation happened** — the judge pass only, not the whole panel.
+  At most `maxReviewCycles` (2) cycles, enforced by `hooks/agents.sh` on the judge's
+  dispatches. Past it: stop and surface the remaining findings to the human.
+
+### 6. Hunt gamed verification (before accepting "all green")
+
+Scan the diff for the ways a green build lies: weakened or deleted tests, loosened
+assertions (`expect(x ?? D).toBe(D)`), snapshot-only / no-throw-only checks, mock-only
+tests that never exercise the real path, swallowed exceptions / empty catches /
+`except: pass`, errors downgraded to warnings or silent fallbacks, and lint/type/build
+config edited to disable a rule (`.eslintrc`, `biome.json`, `.ruff.toml`, `tsconfig`
+`strict`/`skipLibCheck`, `# type: ignore`, `@ts-nocheck`, `--no-verify`). Each is a
+finding, routed like any other — a fixed-to-look-fixed change is worse than an obvious
+failure.
 
 
 

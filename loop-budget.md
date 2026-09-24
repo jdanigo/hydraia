@@ -17,3 +17,20 @@ Token caps act on **completed-run** telemetry: `summary.sh` writes spend only at
 
 ## Estimate
 Phase -1 prints a per-route estimate from `patterns/cost.yaml`. Edit that file to retune anchors.
+
+## Convergence breakers (v0.22, on by default)
+| Key / env | Default | Meaning |
+|-----|---------|---------|
+| `maxSameFailure` / `HYDRAIA_MAX_SAME_FAILURE` | 3 | Same failure signature N× in a run → STALLED: verify commands blocked (NO PROGRESS warning at 2×). `hooks/verifyloop.sh` |
+| `verifyPattern` / `HYDRAIA_VERIFY_PATTERN` | built-in | Regex for what counts as a verify command (tests/builds/lints). |
+| `maxFixAttempts` / `HYDRAIA_MAX_FIX_ATTEMPTS` | 2 | `[fix:<slug>]` dispatches per finding. `hooks/agents.sh` |
+| `maxFixDispatches` / `HYDRAIA_MAX_FIX_DISPATCHES` | 6 | Total fix dispatches per run. |
+| `maxReviewCycles` / `HYDRAIA_MAX_REVIEW_CYCLES` | 2 | Judge (`hydraia-reviewer`) passes per run. |
+| `opusGate` / `HYDRAIA_OPUS_GATE` | strict | Opus only for judges (+ executors under Max quality). `warn` / `off`. Bypass `HYDRAIA_ALLOW_OPUS=1`. |
+| `scopeGate` / `HYDRAIA_SCOPE_GATE` | strict | Edits outside the frozen plan's `**Files:**` blocked. `warn` / `off`. `hooks/blastgate.sh` |
+| `planContract` / `HYDRAIA_PLAN_CONTRACT` | strict | Every task needs `**Files:**` + a Verify line to arm. `hooks/plancheck.sh` |
+| `HYDRAIA_BASELINE_TIMEOUT` | 600 s | Hard timeout for the Phase-0 baseline run (`hooks/baseline.sh`). |
+
+Also always on: a verify command sent to the background without `timeout`/`gtimeout` is
+blocked. Clear a STALLED run (human only): `rm <base>/.agents/verify.json`.
+`HYDRAIA_ALLOW_DIRECT=1` lifts every gate.

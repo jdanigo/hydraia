@@ -1,4 +1,4 @@
-## Phase 4 — Execution (delegated → Sonnet 5)
+## Phase 4 — Execution (delegated → Sonnet)
 
 ### Executor routing (read before dispatch)
 
@@ -37,9 +37,34 @@ blocker — never silently upgrade its model mid-run without noting it in the ru
 The wave caps, watchdog, and verification below are otherwise unchanged by routing.
 
 Use **subagent-driven-development**. Dispatch a fresh `hydraia-executor` subagent
-per task (these run on Sonnet 5). Give each exactly the context it needs from the
-plan and the graph — never your session history. Execute all tasks continuously.
+per task (Sonnet) — each starts with a clean context. Execute all tasks continuously.
 TDD where the plan calls for it. Commit frequently.
+
+**Keep the dispatch thin — this is what keeps YOUR context from filling up.** Every
+word you put in a dispatch prompt stays in this session's context, multiplied by the
+number of tasks. So a dispatch carries only pointers, never the task body:
+
+    plan: <absolute plan path> · task: "## Task 3 — <title>" · base: <artifacts base>
+    auto-commit: on|off · [task:<slug>]
+
+and the `model` parameter from the routing table above. The executor reads its own
+task from the plan file. Its report comes back short by design (status, files, Verify
+result) — do not ask for narration, and do not re-read files it already verified
+unless the git check below disagrees.
+
+**Opus gate.** `hooks/agents.sh` blocks a dispatch that would run on Opus unless it is
+a judge (`hydraia-reviewer`, `security-reviewer`) or the recorded routing is
+`max-quality`. Generic agents (`general-purpose`, `Explore`, `Plan`) must always get an
+explicit `model` (`sonnet` / `haiku`) — without one they inherit this session's Opus
+and are blocked. If you are blocked, re-dispatch with the right model; never ask the
+human to lift the gate just to proceed.
+
+**`NEEDS_DECISION` from an executor** means the task hit something the plan did not
+settle (a gap the user would notice, an irreversible step, a file outside its Files, a
+Verify that cannot pass honestly). Do not improvise an answer: if the plan, spec, or
+repo settles it, amend the task (inside its declared scope) and re-dispatch; if only
+the human can, ask them — one question, with the executor's options — then continue.
+
 Tag each executor dispatch's description with a machine-readable `[task:<slug>]` marker
 (the same `<slug>` the executor uses for its heartbeat file). The circuit-breaker hook
 (`hooks/agents.sh`) reads this tag to count per-task attempts; without it the breaker
@@ -50,7 +75,7 @@ loads its own context, so N parallel agents multiply token cost by ~N. Send at m
 `HYDRAIA_MAX_CONCURRENT` (default 6) executors at a time; as they finish, send the
 next wave. A whole run is also capped at `HYDRAIA_MAX_AGENTS` (default 30) total
 dispatches. These limits are enforced at runtime by the agent-budget hook
-(`hooks/agents.sh`) — a `Task` call past the cap is BLOCKED, not throttled silently,
+(`hooks/agents.sh`) — an `Agent` (legacy `Task`) call past the cap is BLOCKED, not throttled silently,
 so respect the waves rather than firing 100 tasks and retrying blocked ones. If a
 plan truly needs more than the ceiling, that is the human's call to raise
 (`export HYDRAIA_MAX_AGENTS=…`), never a reason to loop on blocked dispatches. This

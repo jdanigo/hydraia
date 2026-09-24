@@ -1,5 +1,8 @@
 ## Phase 3 — Plan + self-review loop (the "todo bien hechesito" gate)
 
+Level 1 skips this phase (its one-file spec-plan was written at Phase -1). Levels 2 and 3
+run it as written; the only difference is the run-controls step at the end.
+
 0. **Precondition:** the Phase 2 spec file must already exist. If it does not, go
    back and write it — do not plan without a spec. **UI gate:** if the change touches
    any UI, the spec's *UX / visual direction* section must already be filled from
@@ -21,8 +24,14 @@
      (`HYDRAIA_MAX_AGENTS`, default 30) will hard-stop it. Aim well under that
      ceiling by design.
    - **Per-task blocks**, each with:
-     - `Files:` — `Create: exact/path`, `Modify: exact/path:line-range`,
-       `Test: exact/path`. Exact paths, never "the relevant file".
+     - `**Files:**` — `Create: exact/path`, `Modify: exact/path`, `Test: exact/path`
+       (a `dir/` prefix or a glob is allowed when the set is genuinely open). Exact
+       paths, never "the relevant file". **This list is the task's scope boundary:** at
+       run time the plan-scope gate blocks edits to anything not declared in some task's
+       Files — so declare every file the task may legitimately touch, tests included.
+     - `**Verify:**` — the exact command + expected result that proves the task done
+       (e.g. `` `pnpm vitest run src/cart` → 12 passed ``). It is the executor's stop
+       condition. `plancheck.sh` blocks arming a plan whose tasks lack Files or Verify.
      - `Interfaces:` — Consumes (signatures it uses from earlier tasks) and Produces
        (exact function names, parameter and return types later tasks rely on).
      - `Exec class:` — one of **mechanical** | **logic** | **ui** | **qa**. This is
@@ -41,9 +50,9 @@
          executor.
        A task that lands on `logic` only because it is under-specified is a planning
        smell — specify it further so it can drop to `mechanical`, or accept the cost.
-     - **Bite-sized TDD steps** (2–5 min each): write failing test → run it, expect
-       fail → minimal implementation → run, expect pass → commit. With the exact
-       test command and expected result per step.
+     - **Steps** for TDD tasks: failing test → run (expect fail) → implementation →
+       run (expect pass) → commit, with the exact test command. Keep them few and real —
+       the narrowest test command that covers the task's files, never the whole suite.
    Assume the implementer has zero prior context and cannot see the spec or your
    session — everything they need is in their task block. **Write to the weakest
    plausible executor:** the plan must be detailed enough that a cheaper or weaker
@@ -55,12 +64,20 @@
    executes in one shot on a cheap model; an under-specified one forces a re-dispatch
    or an Opus rescue, which is the expensive path the plan exists to avoid.
 
-   **Literal content, never a description of it.** A task that creates a file MUST
-   embed the file's FULL verbatim content in a code block — never "create the file
-   with the appropriate content". A task that edits a file MUST give the exact
-   `old_string` → `new_string` (or a unique quoted anchor + the exact text to
-   insert) — never "add error handling here". The executor copies; it does not
-   compose.
+   **Task content by Exec class — literal for mechanical, a contract for logic/ui.**
+   - **`mechanical`** tasks carry **literal content**: a created file's FULL verbatim
+     body, an edit's exact `old_string` → `new_string` (or a unique quoted anchor + the
+     exact text). The executor copies; it does not compose. This is what lets Haiku or
+     an external cheap runtime run them in one shot.
+   - **`logic` / `ui`** tasks carry a **contract**, not pre-written code: the intent (2–3
+     lines), a **Code Map** (the verified `file:line` / symbols to reuse and what must
+     not change — from the code graph, not memory), **Always / Never** boundaries, the
+     I/O rows this task must satisfy, and **Verify**. The Sonnet executor writes the code
+     against the real repo with the compiler and tests in the loop. Why: code written
+     inside a plan never meets a compiler — that is where invented APIs and wrong
+     signatures are born, and each one later costs a fix loop. Do not pre-write logic you
+     have not compiled.
+   Both shapes must be **self-contained** — the rules below apply to both.
 
    **Never point at the spec (or any other document/code) for content the executor
    must produce.** This is the single most common self-containment failure. A task
@@ -129,18 +146,21 @@
    - The plan must contain the test tasks that implement these cases (see the Phase 4
      QA automation rule). The frozen-plan condition below includes "the QA case doc
      exists and is committed."
-2. **Self-review the plan (always TWO passes):**
-   - Pass A: critique your own plan hard. **The Haiku test — apply it to every
-     task:** could a model with zero context and no permission to make decisions
-     produce EXACTLY the intended result from this task block alone? If any step
-     needs the executor to infer, deduce, or invent, the task is under-specified —
-     reject and push the decision up into the plan. Concretely, **reject and revise
+2. **Self-review the plan (Pass A, plus Pass B only when needed):**
+   - Pass A: critique your own plan hard. **The executor test, per task:** for a
+     `mechanical` task — could a model with zero context and no permission to make
+     decisions produce EXACTLY the intended result from this block alone? For a
+     `logic`/`ui` task — could a capable engineer with the repo but no session
+     context implement it from this contract without having to ask something the user
+     would notice? If a task needs the executor to guess intent, it is under-specified —
+     push that decision up into the plan. Concretely, **reject and revise
      if ANY task:**
      - lacks exact `Files:` paths, `Interfaces:`, or independently testable steps,
        or says vaguely "edit the code / update the component";
-     - **describes content instead of embedding it** — a create-file task without the
-       full verbatim file, or an edit task without the exact `old_string`→`new_string`
-       / quoted anchor + literal insert;
+     - **a `mechanical` task describes content instead of embedding it** (full verbatim
+       file / exact `old_string`→`new_string`), or **a `logic`/`ui` task lacks its contract**
+       (intent, Code Map with verified `file:line`, Always/Never, Verify) — or pre-writes
+       uncompiled logic instead of specifying it;
      - **references the spec, another document, or other code for content it must
        produce** — "follow spec §X", "see the design", "as in the spec", "match the
        existing X" — instead of inlining that content into the task (the
@@ -161,18 +181,17 @@
      QA case (in the qa-functional doc) and an implementing task in the plan. Also
      hunt gaps, hidden coupling (check the graph), missing tests, unstated
      assumptions, over-broad changes, and drift from the spec. Revise.
-   - Pass B: run a **second full pass regardless** — even if Pass A found nothing,
-     re-audit the whole plan against the same checklist with fresh eyes (Pass A can
-     miss on the first read, and its own revisions introduce new gaps). Revise again
-     if it finds anything.
-   - Both passes always run. Stop after the two even if minor nits remain — do not
-     loop forever.
+   - Pass B: only if Pass A made a **material** revision (a task added, split, or its
+     contract changed) — re-audit just the revised tasks and their neighbours, since
+     revisions introduce new gaps. If Pass A changed nothing material, there is no
+     Pass B.
+   - At most two passes. Stop after them even if minor nits remain — do not loop.
 3. The plan is frozen only after the self-review loop converges AND every task has
    file-level detail AND — when `qaFunctional` is on — the QA case doc exists and is
    committed AND (when ACs exist) every AC maps to at least one QA case and one plan
    task. If it does not, it is not frozen.
 4. **Open a run log.** Create `docs/hydraia/runs/YYYY-MM-DD-HHMM-<feature>.md` with
-   the original request, the plan path, and a phase checklist
+   the original request, the plan path, the level, and a phase checklist
    (`- [ ] Phase 0` … `- [ ] Phase 6`). Update it at each phase boundary — check
    the box as each phase completes — so an interrupted run leaves a durable trail
    of where it stopped. `/hydraia:resume` reads this file.
@@ -186,106 +205,67 @@
    marker — planning must never authorize edits.) **A second hook
    (`plancheck.sh`) fires on this arm command and scans the plan's task bodies for
    reference smells ("follow spec §X", "see the design", etc.); if the plan is not
-   self-contained it BLOCKS the arm — so a plan that would fail on a cheap executor
-   cannot reach Phase 4. If it blocks, inline the referenced content and re-arm.**
-6. **Run-controls picker (LAST interactive step — the human sets the depth before the
-   autonomous half runs).** This picker runs for **every route that reaches Phase 3** —
-   `feature`, `perf`, `db`, `architect`, `story`, `plan` — so the routing, E2E, and
-   review controls are available from all those commands, not just `feature`. (The
-   `review` route runs only Phases 5–6, so it skips this picker and instead honors the
-   `customize.toml` `[[reviewers]]` panel.) The autonomous half (Phases 4–6) must not
-   pause, so ask here, once, via a single `AskUserQuestion` with these questions:
+   self-contained, or a task lacks its contract (`**Files:**` + a Verify line), it
+   BLOCKS the arm — so a plan that would fail on an executor cannot reach Phase 4. If it
+   blocks, fix the named tasks and re-arm.**
+6. **Run controls — computed, announced, asked only when it matters.** The autonomous
+   half (Phases 4–6) must not pause, so settle its controls here. Compute each one,
+   then **announce them in one line** — ask a question only in the Level-3 case below.
+   Routes that reach Phase 3 (`feature`, `perf`, `db`, `architect`, `story`, `plan`) all
+   do this; `review` runs only Phases 5–6 and honors `customize.toml` `[[reviewers]]`.
 
-   **(a) Review depth** — how much of the Phase 5/6 ceremony to run on this change:
-   - **Full** — double review, all matched language reviewers, security gates, QA,
-     E2E, docs sync. (Default; pick when unsure.)
-   - **Lite** — a single review pass, skip the non-core language reviewers and the
-     docs-sync step; QA and the E2E gate still run per the repo's surface.
-   - **Custom** — then a second `AskUserQuestion` (multiSelect) over the OPTIONAL
-     stages only: `2nd review pass`, `language/framework reviewers`,
-     `type-design / performance reviewers`, `docs sync`, `extra OWASP pass`.
+   **(a) Review depth — derived from the level, never asked.** Level 3 → **Full**
+   (judge + diff-scoped language reviewers + security floor + QA + E2E per surface);
+   Level 2 → **Lite** (judge + security floor + the language reviewer matching the diff);
+   Level 1 → judge + `security-scan`. **Floor, never removable:** `hydraia-reviewer` +
+   `security-scan` always; `security-reviewer` + `silent-failure-hunter` at Levels 2–3.
+   Only the human's explicit `securityGates=false` config can switch them off, which is a
+   separate act.
 
-   **Security floor (never offered as removable):** regardless of profile,
-   `security-scan`, `code-reviewer`, `silent-failure-hunter`, `security-reviewer`, and
-   one `hydraia-reviewer` pass ALWAYS run. The picker cannot switch these off — only
-   the human's explicit `securityGates=false` config can, which is a separate act.
+   **(b) Execution routing — computed.** Options (what each gets / costs vs Balanced):
+   - **Balanced — Sonnet for every task.** Baseline ≈ 1×.
+   - **Economy — Haiku for `mechanical`, Sonnet for `logic`/`ui`, `qa-automation` for
+     `qa`.** ≈ 0.3–0.6× on mechanical-heavy plans; a borderline Haiku task is retried by
+     the breaker, it does not stall.
+   - **Max quality — Sonnet for `mechanical`, Opus for `logic`/`ui`.** ≈ 2–4×. The only
+     routing under which executors may run on Opus.
+   - **Hand-off — freeze the plan, do not execute here** (external cheap runtime later
+     via `/hydraia:resume` or `$hydraia` in Codex).
+   Recommendation: ≥ ~60% `mechanical` and no `gate.yaml` risk → **Economy**; the user
+   asked for lowest cost / async, or the `plan` route → **Hand-off**; otherwise
+   **Balanced**. Max quality is never auto-picked — it is the human's choice.
+   **Record it for the runtime:** `mkdir -p <base>/.agents && printf '%s\n' <routing>
+   > <base>/.agents/routing` (`balanced|economy|max-quality|handoff`). The Opus gate in
+   `hooks/agents.sh` reads this file; without `max-quality` there, an executor dispatch
+   on Opus is blocked.
 
-   **(b) Closing summary depth** — `Brief` (compact box) or `Detailed` (adds what
-   shipped, per-agent-type counts, main-vs-sub token split, per-model in/out/cache).
+   **(c) E2E strategy — computed.** No user-facing/service surface → **None**. UI with
+   no real-service integration → **Playwright**. DB/queue/external-service integration
+   → **Playwright + Testcontainers** (needs Docker; verified at the Phase-6 gate, BLOCKED
+   with the recovery if absent — never a silent skip). Honor `customize.toml`
+   `[e2e].strategy` when concrete.
 
-   **(c) Execution routing** — which model executes each Phase-4 task, or whether to
-   hand the frozen plan off for cheap external execution. **Compute a recommendation
-   first** (logic below), pre-select it as the recommended option, and for EACH option
-   state plainly what the user gets: the models used, a rough cost band vs the Balanced
-   baseline (from `patterns/cost.yaml` `routes` × the `models:` weights and the plan's
-   task-class mix), and the quality/risk trade. Options:
-   - **Balanced — Sonnet 5 for every task.** Predictable quality, moderate cost. No
-     per-class splitting; every executor task on Sonnet. Baseline ≈ 1×.
-   - **Economy (mixed) — Haiku for `mechanical`, Sonnet for `logic`/`ui`,
-     `qa-automation` for `qa`.** The boring tasks run on the cheapest capable model
-     while judgment tasks stay on Sonnet. Biggest in-Claude saving on mechanical-heavy
-     plans (≈ 0.3–0.6× depending on the mechanical share). Risk: Haiku may need a retry
-     on a borderline task — the watchdog + circuit breaker (`hooks/agents.sh`) catch and
-     re-dispatch it, they do not stall.
-   - **Max quality — Sonnet for `mechanical`, Opus 4.8 for `logic`/`ui`.** Judgment
-     tasks get the strongest model. Most expensive (≈ 2–4×). Pick for high-risk /
-     security-critical / Tier-L changes.
-   - **Hand-off (plan only) — freeze the plan, do NOT execute here.** Phases 4–6 do not
-     run in this session; the user receives a self-contained portable plan and the exact
-     command to run it on a cheap external runtime (Codex `gpt-5.6-luna`, Gemini Flash,
-     or a second Claude session on Haiku/Sonnet). Lowest cost in THIS session, fully
-     async. Runs later via `/hydraia:resume` (Claude) or `$hydraia` after
-     `bash codex/setup.sh` (Codex).
+   **(d) Closing summary** — `brief` unless the human asked for detail.
 
-   **Recommendation logic (compute, then pre-select the winner):**
-   - High risk (a task touches `gate.yaml` denylist paths — auth, payments, migrations,
-     secrets) OR Tier L OR `logic`-heavy plan (≥ ~50% logic tasks) → **Balanced** (or
-     **Max quality** when the change is security-critical).
-   - Tier S/M AND mechanical-heavy (≥ ~60% `mechanical` tasks) AND low risk → **Economy**.
-   - User asked for lowest cost / async / a different runtime, or the run is the `plan`
-     route → **Hand-off**.
-   - Otherwise → **Balanced**.
-   Always show the one-line reason ("recommended: Tier S, 8/10 tasks mechanical, no
-   high-risk paths → Economy ≈ 0.4×").
+   **Announce** (Levels 1–2): one line, e.g. *"Run controls: Lite review · Economy
+   (7/9 mechanical) · E2E none · brief summary."* The human can override by replying;
+   otherwise continue.
 
-   **Non-interactive override:** if `customize.toml` `[executor].routing` is a concrete
-   value (not `ask`), SKIP this question and use it (keeps autonomous/CI runs silent).
-   `routing = "ask"` (default) means ask here. After the answer, offer ONCE to remember
-   it — "Save as the default for this repo?" → on yes, write `[executor].routing` (plus
-   `[executor.by_class]` for Economy/Custom) to `<artifacts-base>/custom/hydraia.toml`.
+   **Ask once (Level 3 only)** — a single `AskUserQuestion` with the computed values
+   pre-selected: routing (Balanced / Economy / Max quality / Hand-off), E2E strategy,
+   and **where to execute**: *Continue here* / *Continue in a fresh session* (the
+   frozen plan + run log carry everything; `/hydraia:resume` picks up at Phase 4 with a
+   clean context — recommended after a long design dialogue, because the orchestrator's
+   context is what fills up, not the executors'). Honor `customize.toml`
+   `[executor].routing` / `[e2e].strategy` when concrete (then skip those questions).
 
-   **If Hand-off is chosen:** finalize the plan, do NOT arm `.active-plan` for local
-   execution, and STOP after Phase 3 — print the hand-off block (plan path + the resume
-   command for each supported runtime) and end the run cleanly. This is the one case
-   where "Phases 4–6 run next" does not apply; the external runtime does them.
+   **If Hand-off or fresh session:** finalize the plan, record the choices in the run
+   log, and STOP after Phase 3 with the exact resume command. Hand-off does NOT arm
+   `.active-plan` for local execution; a fresh-session continuation leaves it armed.
 
-   **(d) E2E strategy** — ask ONLY when the change has a user-facing or service surface
-   (UI, API, or backing-service integration); skip for pure library/internal changes and
-   note the skip. Pre-select the recommendation and state what each option gets/costs:
-   - **None** — no E2E this run (rely on unit/integration). Recommended for pure
-     logic/library changes with no user journey.
-   - **Playwright (browser)** — critical-flow browser tests against the app with external
-     deps stubbed. Recommended default when there is a UI and no real-service integration
-     is under test.
-   - **Playwright + Testcontainers** — critical flows against the app wired to REAL
-     backing services (Postgres, Redis, queues, …) spun up ephemerally in Docker; highest
-     fidelity, catches integration/schema/wiring bugs that stubs hide. **Requires Docker**
-     (verified at the Phase-6 gate; absent Docker → `e2e-runner` reports BLOCKED with the
-     recovery, never a silent skip). The generated suite is **CI-runnable** (Docker is
-     available on standard CI runners). Recommended when the change touches DB/queue/
-     external-service integration.
-   Record the choice; Phase 6's `e2e-runner` honors it (Testcontainers → it provisions the
-   containers, wires Playwright to them, and emits/updates a CI-runnable e2e job).
-   Non-interactive override: `customize.toml` `[e2e].strategy` (concrete value ≠ `ask`
-   skips this question).
-
-   Record all answers in the run log and honor them in Phases 4–6. On dismissal, default
-   to **Full** + **Brief** + the **computed routing recommendation** + **E2E = Playwright
-   when a UI/service surface exists, else None**. This picker is the only interactive
-   moment in the autonomous half's run-up — after it, Phases 4–6 run to completion
-   without pausing (unless Hand-off was chosen).
-
-
+   Record every value in the run log (`level`, `review`, `routing`, `e2e`, `summary`) and
+   honor them in Phases 4–6. On dismissal of the Level-3 question, use the computed
+   values.
 
 ## NEXT
 

@@ -5,8 +5,20 @@ and test commands (e.g. `ng build`, `npm test`, `go build ./...`, `pytest`) and
 read their output. Reviewing logic "inline" or "checking the math by hand" is NOT
 verification — if a build/test command exists, you must run it and report the real
 result. Confirm the feature meets the spec from Phase 2 (including the threat-model
-mitigations), and summarize what shipped. If a build or test fails, the run is not
-done — fix and re-run.
+mitigations), and summarize what shipped.
+
+**Bounded, not "until green".** A failing check is handled like a Phase-5 finding:
+- **Pre-existing** (in the Phase-0 baseline — the verify-loop hook says PRE-EXISTING) →
+  not this run's to fix; it is already in `deferred-work.md` per the human's Phase-0
+  decision.
+- **New** → verify the cause, then fix through an executor (`[fix:<slug>]`, Phase 5
+  §5 rules), running only the tests covering the touched files, then re-run the check.
+- **Same failure again** → the verify-loop hook reports NO PROGRESS (2×) and STALLED
+  (3×, further verify commands blocked). The fix budget in `agents.sh` bounds the
+  dispatches. When either trips, the run ends `BLOCKED` with the evidence — do not
+  look for another way to keep trying.
+Run checks in the foreground with the narrowest command that proves the point; a
+background suite needs a `timeout` wrapper (the hook blocks it otherwise).
 
 **Mechanical checks first, then judgment.** Run the deterministic gate (build → type →
 lint → tests) BEFORE leaning on any LLM judgment: a mechanical failure is a found bug
@@ -15,8 +27,9 @@ code and then "reviews" it carries the same assumption into both steps — the m
 not, so it is the more trustworthy verifier. Never treat green CI alone as "correct"; it
 means nothing broke that a test watches, not that the behavior is right.
 
-**Regression test every bug you fixed.** For each defect fixed in Phase 5 or here, add a
-test that fails on the old behavior and passes on the fix, named after the bug (e.g.
+**Regression test every real bug you fixed.** For each verified `high`/`medium` defect
+fixed in Phase 5 or here, add a test that fails on the old behavior and passes on the
+fix, named after the bug (e.g.
 `test_<bug>_regression`). Test where bugs were actually found, not code that already
 works — the same regressions recur (path/schema drift, dropped SELECT fields, stale
 state, missing rollback) and a named test is what stops the fourth reintroduction.
@@ -24,15 +37,16 @@ state, missing rollback) and a named test is what stops the fourth reintroductio
 **QA matrix check (when `qaFunctional` is on and a QA case doc exists):**
 dispatch `qa-automation` (mode: verify) against the case doc. Every case must be
 either automated — its `Test ref` points at a real test that ran green in the
-build above — or explicitly `manual — <reason>`. Any `pending`, missing ref, or
-red case means the run is NOT done: fix and re-verify before closing.
+build above — or explicitly `manual — <reason>`. A `pending`, missing ref, or red case
+is a failing check: handle it under the bounded rules above (fix via executor, or end
+`BLOCKED` with the evidence).
 
 **E2E gate (when `e2eGate` is on AND the repo has an E2E surface):** dispatch
 `e2e-runner` (mode: verify), passing the **E2E strategy chosen in the Phase-3 picker**
 (`none` / `playwright` / `playwright-testcontainers`, or `customize.toml` `[e2e].strategy`).
 It runs the critical-flow suite with the real e2e command; every non-quarantined critical
-flow must pass green. A failing critical flow means the run is NOT done — fix and
-re-verify. If the strategy is `none`, or the repo has no E2E surface, the gate is skipped
+flow must pass green. A failing critical flow is a failing check: handle it under the
+bounded rules above. If the strategy is `none`, or the repo has no E2E surface, the gate is skipped
 (note it in the run log); never fabricate a suite to satisfy it.
 
 - **`playwright-testcontainers`:** `e2e-runner` first verifies Docker is available and the
@@ -83,10 +97,21 @@ so emitting once per command is correct, never inflating. Only the pure utilitie
 `dashboard` and `doctor` skip it (no model work to record). The credits line below is
 separate: it is printed only for `feature`, `review`, and `resume`.
 
-**Pre-close security gate (mandatory):** run **repo-scan** and **production-audit**
-to confirm no hardcoded secrets, no vulnerable dependencies, and no obvious
-production-readiness gaps were introduced. Do not report done while a high-severity
-item is open. Only then report done. As the very last line of the run summary,
+**Pre-close security gate (mandatory, Levels 2–3; Level 1 relies on its
+`security-scan`):** run **repo-scan** and **production-audit** over the change. They are
+**report-only**, except: a hardcoded secret or a high-severity vulnerable dependency
+introduced by this change blocks `DONE` (fix it, or end `BLOCKED`). Everything else they
+raise goes to `deferred-work.md` — it does not reopen the fix loop.
+
+**Close with exactly one status** (first line of the summary):
+- `DONE` — every check green, nothing deferred.
+- `DONE_WITH_FOLLOWUPS` — green, and `<base>/deferred-work.md` has entries from this run
+  (list them in one line each).
+- `BLOCKED(<condition>)` — a breaker tripped, a fix budget ran out, a STALLED failure, or
+  a genuine blocker; include the evidence (failing lines / open findings / what was
+  tried) and leave `.active-plan` armed so `/hydraia:resume` can continue.
+BLOCKED is a normal, useful outcome: it hands the human a precise decision instead of
+hours of looping. As the very last line of the run summary,
 print the credits exactly:
 
     — Harness By José Daniel Garcés Ospina | Spec Drive Design First —
