@@ -6,6 +6,13 @@ All notable changes to Hydraia are documented here. Format follows
 
 ## [Unreleased]
 
+## 0.22.1 — 2026-09-24 — Wording cleanup
+
+### Changed
+- Documentation and phase-prose wording cleanup: references to external projects were
+  removed from the phase files (`epic-context`, `phase-2a-decompose`), historical design
+  specs/plans, and older CHANGELOG entries. No behavior change. Mirrored to the Codex port.
+
 ## 0.22.0 — 2026-09-24 — Convergence
 
 Runs on current Opus models (5 / 5.5) stopped converging: hours in `fix → test → fix`
@@ -133,8 +140,8 @@ every stop condition an exit code, enforced by Hydraia's hooks.
   over the route, with a computed recommendation. Quick = trimmed ceremony; Plan = today's
   full single-goal pipeline; **Agile** = the new multi-stage orchestrator.
 - **Agile Mode — autonomous multi-stage delivery.** Decomposes an epic-sized or multi-goal
-  request into **Epic → User Stories → Tasks → Subtasks + a QA plan** (BMAD-style
-  discipline: independently completable stories, no forward deps, create-only-what-the-story-
+  request into **Epic → User Stories → Tasks → Subtasks + a QA plan** (strict
+  decomposition discipline: independently completable stories, no forward deps, create-only-what-the-story-
   needs, single-dev-agent sizing), then executes the tree **sequentially by dependency,
   autonomously, gated by autonomy tier** — mechanical stories run on their own, tier-L /
   security / migration / payment stories pause for approval. Heavy design (architecture +
@@ -164,7 +171,7 @@ every stop condition an exit code, enforced by Hydraia's hooks.
 ## 0.19.0 — 2026-09-11 — Step-Files, Model Routing & Review-Hardening
 
 ### Added
-- **Step-file architecture (BMAD-inspired).** `skills/hydraia/SKILL.md` is now a thin
+- **Step-file architecture.** `skills/hydraia/SKILL.md` is now a thin
   dispatcher (~50 lines) that loads the pipeline body from `skills/hydraia/phases/*.md`
   just-in-time — one phase file at a time, never two at once. The orchestrator (Opus 4.8)
   no longer carries all seven phases in context every turn; peak context on the most

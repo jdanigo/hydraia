@@ -19,7 +19,7 @@ hard gate as Phase 2.
 
 ### 2. Decompose into a story tree
 
-Adopt the decomposition discipline (from BMAD `create-epics-and-stories`) as the standard:
+Adopt this decomposition discipline as the standard:
 
 - **Stories are independently completable, in dependency order.** **No forward
   dependencies within the epic** — story N may depend only on stories before it, never a
