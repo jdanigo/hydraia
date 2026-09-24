@@ -33,7 +33,8 @@ Adopt the decomposition discipline (from BMAD `create-epics-and-stories`) as the
   Phase-4 executor units, each carrying an `Exec class` (mechanical/logic/ui/qa) at
   orchestration time.
 
-Compute each story's **autonomy tier** (S/M/L) from its likely files, `gate.yaml` overlap,
+Compute each story's **autonomy tier** (S/M/L — the same rule as the Phase -1 levels:
+S = Level 1, M = Level 2, L = Level 3) from its likely files, `gate.yaml` overlap,
 new-logic-vs-mechanical, and UI presence — the same signals Phase -1 uses. Record it; the
 orchestrator re-checks it before running the story.
 

@@ -6,6 +6,95 @@ All notable changes to Hydraia are documented here. Format follows
 
 ## [Unreleased]
 
+## 0.22.0 — 2026-09-24 — Convergence
+
+Runs on current Opus models (5 / 5.5) stopped converging: hours in `fix → test → fix`
+loops, invented defects, "fixes" to failures that predated the run, scope widened without
+asking, and Opus used where Sonnet belonged. This release makes every loop finite and
+every stop condition an exit code, enforced by Hydraia's hooks.
+
+### Fixed (critical)
+- **Agent caps were silently dead on current Claude Code.** The sub-agent tool is named
+  `Agent` now; `hooks.json` matched only `Task`, so the total/concurrency caps, the
+  circuit breaker and the review-cycle limit never fired (0 blocks across 6.5k `Agent`
+  calls in local transcripts, against 800+ blocks from the other gates). Matcher is now
+  `Task|Agent`; `summary.sh` counts both names.
+- **Review cycles were never counted:** `subagent_type` arrives namespaced
+  (`hydraia:hydraia-reviewer`) and the classifier compared the raw value.
+- **plancheck skipped every `## Task` plan:** it only matched `### Task` headings, so the
+  self-containment and UI-direction checks never ran on level-2 plans.
+
+### Added
+- **`hooks/verifyloop.sh` — verify-loop breaker.** Each failed test/build/lint run is
+  reduced to a failure signature (timings, paths, addresses stripped). Same failure 2× →
+  NO PROGRESS feedback; 3× (`maxSameFailure`) → STALLED, further verify commands blocked
+  until the human clears it. Failures present in the Phase-0 baseline are reported as
+  PRE-EXISTING and never counted. A verify command sent to the background without a
+  `timeout`/`gtimeout` wrapper is blocked (a hung background suite has no ceiling).
+- **`hooks/baseline.sh` — Phase-0 test baseline** with a hard timeout that kills the
+  whole process tree; pre-existing failures or a hung suite are **asked about**
+  (record & continue / fix first / stop), never fixed silently.
+- **Opus gate** (`agents.sh`, `opusGate`): Opus only for the judges (`hydraia-reviewer`,
+  `security-reviewer`). Blocks explicit Opus models and unpinned generic agents that would
+  inherit the session's Opus; executors use Opus only under Max-quality routing.
+- **Fix budget** (`agents.sh`): `[fix:<slug>]` dispatches capped per finding
+  (`maxFixAttempts`, 2) and per run (`maxFixDispatches`, 6).
+- **Plan-scope gate** (`blastgate.sh`, `scopeGate`): edits outside the frozen plan's
+  `**Files:**` are blocked → the executor reports `NEEDS_DECISION` and the human decides.
+- **Plan contract** (`plancheck.sh`, `planContract`): every task needs `**Files:**` and a
+  Verify line before the plan can be armed.
+- **Three auto-selected levels** (1 Light / 2 Standard / 3 Deep) derived by rule from
+  intent gaps, irreversibles and footprint — announced, not asked. Replaces the separate
+  quick-mode offer, tier confirmation and review-depth picker. Security surface forces
+  Level ≥2. Pin with `customize.toml` `[pipeline].level`.
+- **Evidence-bound triage in Phase 5:** verify each finding → one verdict (high / medium /
+  low / false / maybe-false) → route `intent_gap` (ask) / `bad_spec` (revert + amend spec
+  + re-derive, with a Spec Change Log of KEEP and known-bad states) / `patch` / `defer`
+  (`deferred-work.md`). A carried Review Triage Log stops the same finding from being
+  re-litigated on every pass. Only verified high/medium defects enter the fix loop.
+- **Terminal statuses:** every run ends `DONE`, `DONE_WITH_FOLLOWUPS` or
+  `BLOCKED(evidence)`.
+
+### Changed
+- **Opus judges, Sonnet builds.** Every agent except `hydraia-reviewer` and
+  `security-reviewer` is now pinned to Sonnet (was: 16 of 27 on Opus). Model policy and
+  guard are generation-agnostic (no more hardcoded "Opus 4.8").
+- **Plan tasks by class:** `mechanical` keeps literal content; `logic`/`ui` carry a
+  contract (intent, verified Code Map, Always/Never, Verify) and the Sonnet executor
+  writes the code with the compiler in the loop — no more uncompiled logic pre-written
+  inside plans.
+- **Thin orchestrator:** dispatches carry the plan path + task heading instead of the
+  task body; reviewers read the diff from a file; executor reports are short; Level 3
+  offers to continue execution in a fresh session.
+- **Fixes never run inline** in the orchestrator — they go through executors, counted.
+- **Review floor composition:** judge + `security-scan` at every level;
+  `security-reviewer` + `silent-failure-hunter` join at Levels 2–3; `code-reviewer`
+  left the floor (the judge covers correctness). A change touching security surface is
+  Level ≥2 by rule, so it always gets the full security review.
+- **Phase 6 is bounded:** no more "fix and re-run until green". `repo-scan` /
+  `production-audit` are report-only except secrets / high-severity vulnerable deps.
+- **Prompt diet for current models:** removed anti-laziness compensations that
+  overshoot on persistent models ("second pass regardless", "not done until green");
+  absolute imperatives 46 → 33.
+- Codex port: phase prose mirrored; the new runtime hooks are Claude-only for now.
+- **Breaker state is hook-owned:** the model can no longer delete or overwrite
+  `.agents/verify.json` / `ledger.json` / dispatch counters (safety-guard + blastgate);
+  resetting a STALLED run or a spent budget is the human's action.
+
+### Upgrade notes
+- `plancheck` now requires every task to carry `**Files:**` and a Verify line, and now also
+  scans `## Task` plans. Arming an older plan that lacks them is blocked; add the lines or
+  set `planContract=off` for that run. Already-armed runs are unaffected.
+- The Opus gate is on by default in opted-in repos: generic sub-agents (`general-purpose`,
+  `Explore`, `Plan`) need an explicit `model`. `opusGate=warn` makes it advisory.
+
+### Known limitations
+- `.agents/routing` stays writable by the model (Phase 3 records the human's routing there),
+  so the Max-quality Opus allowance relies on the pipeline honoring the human's choice.
+- `verify.json` is updated without a lock; parallel executors can lose an increment (the
+  breaker then trips one failure later — it fails open, never closed).
+- Codex port: the new runtime hooks are not wired there yet.
+
 ## 0.21.1 — 2026-09-12 — Language/script lock
 
 ### Fixed

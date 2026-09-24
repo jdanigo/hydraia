@@ -50,6 +50,21 @@ case "$cmd" in
   *"curl "*"| sh"*|*"curl "*"| bash"*|*"wget "*"| sh"*|*"wget "*"| bash"*) block="curl|wget pipe-to-shell" ;;
 esac
 
+# Breaker state (verify-loop ledger, agent ledger, dispatch counters) is written only by
+# the hooks. A command that deletes/overwrites/moves it would let the model clear its own
+# STALLED run or spent budget — that reset belongs to the human.
+if [ -z "$block" ]; then
+  case "$cmd" in
+    *.agents/verify.json*|*.agents/ledger.json*|*.agents/dispatched*|*.agents/finished*|*.agents/runid*)
+      case "$cmd" in
+        *"rm "*|*">"*|*"mv "*|*"cp "*|*"truncate"*|*"tee "*|*"sed -i"*|*"unlink"*|*"python"*|*"perl"*)
+          block="writing Hydraia breaker state (.agents/*) — resetting a breaker is the human's call" ;;
+      esac ;;
+    *"rm "*".agents"*)
+      block="deleting Hydraia breaker state (.agents/) — resetting a breaker is the human's call" ;;
+  esac
+fi
+
 if [ -n "$block" ]; then
   {
     echo "[hydraia] BLOCKED: safety-guard — $block."

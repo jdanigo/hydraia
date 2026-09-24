@@ -231,7 +231,7 @@ for fp in files:
                 for b in content:
                     if not (isinstance(b, dict) and b.get("type") == "tool_use"):
                         continue
-                    if b.get("name") == "Task":
+                    if b.get("name") in ("Task", "Agent"):
                         n_tasks += 1
                         st = (b.get("input") or {}).get("subagent_type") or "agent"
                         agents[st] = agents.get(st, 0) + 1

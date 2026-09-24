@@ -7,11 +7,12 @@
 
 [executor]
 # Execution routing for Phase 4. One of:
-#   "ask"          — the Phase-3 picker asks the user (default; shows options +
-#                    a computed recommendation + what each option costs/gets).
+#   "ask"          — default: Phase 3 computes a recommendation and ANNOUNCES it at
+#                    Levels 1–2; it asks (with the recommendation pre-selected) only
+#                    at Level 3.
 #   "balanced"     — Sonnet 5 for every task.
 #   "economy"      — Haiku for mechanical tasks, Sonnet for logic/ui, qa-automation for qa.
-#   "max-quality"  — Sonnet for mechanical, Opus 4.8 for logic/ui.
+#   "max-quality"  — Sonnet for mechanical, Opus for logic/ui (the only routing under which executors may use Opus).
 #   "handoff"      — freeze the plan and stop; execute later on a cheap external runtime.
 # A concrete value (not "ask") makes the run non-interactive — the picker is skipped.
 routing = "ask"
@@ -30,6 +31,12 @@ handoff = ""
 mechanical = "sonnet"
 logic = "sonnet"
 ui = "sonnet"
+
+[pipeline]
+# Ceremony level. "auto" (default): Phase -1 derives it by rule (intent gaps,
+# irreversibles, footprint, security surface) and announces it. "1" | "2" | "3" pins it
+# (1 Light · 2 Standard · 3 Deep). Security surface still forces >= 2.
+level = "auto"
 
 # Agile Mode (work-mode selection + epic-level routing).
 [agile]

@@ -51,7 +51,7 @@ carry a clean, conventional message and NOTHING else. NEVER add a `Co-Authored-B
 trailer for Claude, Hydraia, or any AI; never add a `🤖 Generated with…` line; never
 add any AI-attribution footer. This overrides any default harness commit-trailer
 behavior and applies everywhere a commit is made — executor per-task commits,
-qa-automation, spec/plan commits, quick-mode, and any final commit. (The run-summary
+qa-automation, spec/plan commits, Level-1 runs, and any final commit. (The run-summary
 credits line is separate and unaffected — it is printed to the user, not written into
 git.)
 
@@ -65,13 +65,12 @@ the absolute base so the executor writes its heartbeat and any artifacts to the 
 place. The shown `docs/hydraia/...` paths below are the default; substitute the
 resolved base when the user chose external storage.
 
-**Model guard.** Check the model this session is running on. If it is NOT Opus 4.8
-(e.g. Sonnet 5), print this once, then continue anyway — never block:
+**Model guard.** Check the model this session is running on. If it is NOT an Opus model
+(any current generation), print this once, then continue anyway — never block:
 
-> ⚠️ Hydraia runs best with the **main session on Opus 4.8**. Opus does the
-> planning and both review passes, and is smart enough to delegate execution to
-> Sonnet 5 sub-agents on its own — you don't switch models yourself. Consider
-> restarting the session on Opus 4.8 for full quality. Continuing anyway.
+> ⚠️ Hydraia runs best with the **main session on Opus**. Opus plans and judges; it
+> delegates execution to Sonnet sub-agents on its own — you don't switch models yourself.
+> Continuing anyway.
 
 **Two modes: design dialogue, then continuous execution.** The pipeline has a
 conversational half and an autonomous half, split at the frozen plan.
@@ -93,40 +92,20 @@ In short: **pause to get the design right; never pause once you're building it.*
 (`/hydraia:plan` stops at the boundary — after Phase 3 — so you can review before the
 autonomous half begins.)
 
-**No proportionality escape (non-negotiable).** Token cost, change size, or "this
-looks trivial / it's just a mirror of existing code" are NEVER reasons for YOU to
-skip, compress, or inline a phase on your own. Whether a change is small enough to
-skip the ceremony is the **human's** decision — never yours to make unilaterally. If
-you are running the pipeline, run it in full: write the spec, write the plan,
-delegate execution, run both review passes, run the real build/tests. A runtime gate
-(`hooks/gate.sh`) enforces this — editing source code before Phase 3 freezes a plan
-is blocked — so "compressing the ceremony" does not save effort, it just fails the
-gate. The two sanctioned ways to skip are the human bypass and Quick-mode below.
+**Ceremony follows the level — never your own shortcut.** Phase -1 picks the level
+(1 Light / 2 Standard / 3 Deep) from stated facts by rule. Within a level, run every
+step it lists: token cost or "this looks trivial" is NEVER a reason to skip, compress or
+inline a step on your own. Wanting less ceremony than the rule gives is the human's call
+(they say so, or pin `[pipeline].level`). A runtime gate (`hooks/gate.sh`) enforces the
+core of this — editing source before a plan (or a Level-1 spec-plan) is armed is blocked.
 
-**Quick-mode (human-gated shortcut, opt-in per change).** When a change is genuinely
-trivial you MAY *offer* to skip the design ceremony — but the human decides, not you.
-
-- **Eligibility (ALL must hold, else do NOT offer — run the full pipeline):** no new
-  business logic; no new file; small, localized diff; a mirror of behavior that
-  already exists and works; and it does **NOT** touch any security surface
-  (authN/authZ, PII/financial data, untrusted/external input, secrets). If security
-  surface is touched, Quick-mode is never eligible — the threat model is not
-  skippable.
-- **Ask, honestly.** Call `AskUserQuestion` once with a neutral pro/con:
-  *"Found a simple, low-risk fix. Skip the spec/plan/double-review ceremony?"* —
-  options `Run full pipeline` and `Quick-mode`. State plainly: **pro** — far fewer
-  tokens, faster; **con** — no spec-drive record, no double review. Do not lead with
-  the token savings or nudge toward skipping.
-- **On `Run full pipeline` (or dismissal):** run Phases 0–6 normally. Default to this
-  whenever unsure.
-- **On `Quick-mode`:** write the approval marker with a one-line reason
-  (`printf 'reason\n' > docs/hydraia/.quick-approved`), make the edit, then — always,
-  non-negotiable — **run the project's real build/tests** and confirm they pass, and
-  **commit with a clear message**. Remove the marker afterward
-  (`rm -f docs/hydraia/.quick-approved`). Never write this marker without an explicit
-  human "yes".
-
-
+**Convergence — how a run ends.** A run ends in exactly one of: `DONE`,
+`DONE_WITH_FOLLOWUPS` (deferred items recorded in `<base>/deferred-work.md`), or
+`BLOCKED(<condition + evidence>)`. BLOCKED is a normal, expected outcome — surfacing a
+stuck point to the human in minutes beats hours of patching. The runtime enforces it: the
+verify-loop breaker (same failure 2× → NO PROGRESS, 3× → STALLED), the fix budget
+(`[fix:<slug>]` dispatches), and the review-cycle cap all end in BLOCKED, never in "try
+again". Never clear a breaker's state yourself — that is the human's action.
 
 ## NEXT
 

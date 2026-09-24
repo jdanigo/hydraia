@@ -15,7 +15,9 @@
 # It BLOCKS the arm only when ALL hold:
 #   - the command writes to docs/hydraia/.active-plan, AND
 #   - the human bypass is NOT set (HYDRAIA_ALLOW_DIRECT empty/unset), AND
-#   - the referenced plan file exists and its task bodies contain a reference smell.
+#   - the referenced plan file exists and its task bodies contain a reference smell,
+#     a UI task without visual direction, or a task missing its contract
+#     (**Files:** + a Verify line).
 #
 # On any internal error it ALLOWS (fail-open) — it must never wedge the pipeline.
 set -uo pipefail
@@ -57,7 +59,10 @@ plan="$(printf '%s' "$cmd" | grep -oE '[^"'"'"' ]*/plans/[^"'"'"' ]+\.md' | head
 [ -n "$plan" ] || exit 0
 [ -f "$plan" ] || exit 0
 
-smells="$(awk '/^### +Task/{t=1} t' "$plan" 2>/dev/null | grep -nEi \
+# Task headings are "## Task <n>" or "### Task <n>" (plans use both; "## Tasks" / "## Task list"
+# section titles are not tasks). Matching only "###" silently skipped every level-2 plan.
+# Fenced code blocks are skipped (a heading inside an example is not a task).
+smells="$(awk '/^```/{f=!f; next} f{next} /^###? +Task +[0-9A-Z]/{t=1} t' "$plan" 2>/dev/null | grep -nEi \
   'follow (it|the skeleton|the above)|(see|per|refer to|copy from|copy the|as in|as described in|as defined in|as shown in) (the )?(spec|design)|the skeleton (in|from) the spec|§[0-9]|see (the )?design doc' \
   2>/dev/null || true)"
 
@@ -67,7 +72,9 @@ smells="$(awk '/^### +Task/{t=1} t' "$plan" 2>/dev/null | grep -nEi \
 # interaction states, …) will fall back to a generic look on a weak executor. Per-task,
 # conservative: flag only strong UI signals with zero visual direction. Fail-open.
 ui_smells="$(awk '
-  /^### +Task/ { if (inblock) evaluate(); inblock=1; buf=""; title=$0; next }
+  /^```/ { fence=!fence; next }
+  fence { next }
+  /^###? +Task +[0-9A-Z]/ { if (inblock) evaluate(); inblock=1; buf=""; title=$0; next }
   inblock { buf = buf "\n" tolower($0) }
   END { if (inblock) evaluate() }
   function evaluate(   isui, hasdir) {
@@ -78,7 +85,28 @@ ui_smells="$(awk '
   }
 ' "$plan" 2>/dev/null || true)"
 
-[ -z "$smells" ] && [ -z "$ui_smells" ] && exit 0
+# Plan-as-contract: every task declares the files it may touch (**Files:** — also what the
+# blastgate plan-scope gate enforces) and how it proves itself done (a Verify line: exact
+# command + expected result — the executor's stop condition). A task without them is how a
+# run drifts and never knows when to stop. planContract=off (HYDRAIA_PLAN_CONTRACT) disables.
+PCONTRACT="strict"
+command -v hy_config >/dev/null 2>&1 && PCONTRACT="$(hy_config planContract strict HYDRAIA_PLAN_CONTRACT)"
+contract_missing=""
+if [ "$PCONTRACT" != "off" ]; then
+  contract_missing="$(awk '
+    /^```/ { fence=!fence; next }
+    fence { next }
+    /^###? +Task +[0-9A-Z]/ { if (inblock) evaluate(); inblock=1; files=0; verify=0; title=$0; next }
+    inblock && /\*\*Files:?\*\*:?/ { files=1 }
+    inblock && /[Vv]erif(y|ies|ication)/ { verify=1 }
+    END { if (inblock) evaluate() }
+    function evaluate() {
+      if (!files || !verify) print title "  (missing:" (files ? "" : " **Files:**") (verify ? "" : " Verify") ")"
+    }
+  ' "$plan" 2>/dev/null || true)"
+fi
+
+[ -z "$smells" ] && [ -z "$ui_smells" ] && [ -z "$contract_missing" ] && exit 0
 
 {
   echo "[hydraia] BLOCKED: plan is not ready to freeze."
@@ -113,6 +141,20 @@ section into each UI task body (exact style, palette values, type scale, spacing
 interaction states, WCAG floor). The executor implements these inline values directly —
 it has no Skill tool and does not invoke ui-ux-pro-max; that skill runs once at Phase 2
 design time and the inlined direction IS the visual system.
+EOF
+    echo
+  fi
+  if [ -n "$contract_missing" ]; then
+    cat <<EOF
+Tasks without a contract — every task must declare the files it may touch and how it
+proves itself done:
+
+$contract_missing
+
+Fix: add to each task
+  **Files:** Create \`path/new.ts\`, Modify \`path/old.ts\`   (paths, dir/ prefixes or globs)
+  **Verify:** \`<exact command>\` → <expected result>
+The Files list is also the plan-scope boundary: edits outside it are blocked at run time.
 EOF
     echo
   fi
