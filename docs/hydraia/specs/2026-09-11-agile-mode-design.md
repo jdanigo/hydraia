@@ -49,7 +49,7 @@ spec-drive gate, telemetry, the step-file architecture, and `/hydraia:resume`.
    *wraps* any route (feature/bug/perf/db/architect). The existing multi-goal check (today
    splits to `deferred-work.md`) now offers "carry this as an epic in Agile Mode" instead
    of deferring.
-5. **Execution = sequential by dependency.** Stories run in dependency order (BMAD rule:
+5. **Execution = sequential by dependency.** Stories run in dependency order (rule:
    no forward dependencies within an epic), one at a time; tasks within a story still
    parallelize via the existing bounded waves (`HYDRAIA_MAX_CONCURRENT`). Parallel
    independent stories are deferred to v2.
@@ -78,15 +78,14 @@ Agile Mode keeps the 0.19 austerity and orchestrates it across the agile tree:
 - **Mode selector** — Phase -1 `AskUserQuestion` (Quick/Plan/Agile) with a computed
   recommendation (Agile when multiple independent shippable goals are detected, the intent
   is epic-sized, or the user asks for phased/staged delivery). Plus `/hydraia:agile`.
-- **Decomposer** — new epic-level phase. Adopts BMAD `create-epics-and-stories` discipline:
+- **Decomposer** — new epic-level phase. Adopts a strict decomposition discipline:
   stories independently completable, **no forward dependencies within the epic**, "create
   only the tables/entities the story needs", each story sized for a single dev-agent, a QA
   plan per story, Given/When/Then acceptance. Produces the artifact tree. Interactive +
   human-approved (this is the one heavy approval).
 - **Epic-context distiller** — writes `epic-context.md` (800–1500 tokens, cached,
   invalidated by mtime), the distilled planning context each story loads instead of raw
-  PRD/architecture docs. **This is what makes running N stories economical.** (Ported from
-  BMAD `compile-epic-context`.)
+  PRD/architecture docs. **This is what makes running N stories economical.**
 - **Orchestration loop** — new `agile-orchestrator` phase. For each story in dependency
   order: tier-gate check → (pause if required) → load `epic-context.md` + the story →
   mini-spec → plan → build (per resolved routing) → review (depth per tier) → verify →

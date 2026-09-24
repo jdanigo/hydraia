@@ -118,7 +118,7 @@ routes to `phase-2a-decompose.md` instead of the normal Phase 2.
   - Run the normal Phase 2 design **at epic scope**: architecture spec + threat model for
     the whole epic, written to `<base>/epics/<slug>/epic.md`. This is the one heavy,
     human-approved design.
-  - Decompose using BMAD `create-epics-and-stories` discipline (adopt these rules
+  - Decompose using a strict decomposition discipline (adopt these rules
     verbatim as the standard): stories independently completable **in dependency order**,
     **no forward dependencies within the epic**, "create only the tables/entities the
     story needs" (never one story that builds all schema), each story sized for a single
@@ -130,7 +130,7 @@ routes to `phase-2a-decompose.md` instead of the normal Phase 2.
   - **CHECKPOINT (the one heavy approval):** present the epic design + the story map;
     HALT for human approval before any execution. On approval, arm the run.
   - `## NEXT` → after approval + epic-context distillation → `agile-orchestrator.md`.
-- [ ] Write `epic-context.md` — distiller instructions (port BMAD `compile-epic-context`):
+- [ ] Write `epic-context.md` — distiller instructions:
   produce `<base>/epics/<slug>/epic-context.md`, 800–1500 tokens, cached, invalidated when
   any planning doc is newer (mtime). Describe-by-purpose, no full copies, nothing derivable
   from code. This is the context each story loads instead of raw planning docs.

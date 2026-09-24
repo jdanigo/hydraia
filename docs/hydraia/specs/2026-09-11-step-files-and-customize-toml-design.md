@@ -10,9 +10,9 @@ spec_version: 1
 
 ## Goal
 
-Two BMAD-inspired upgrades to the Hydraia orchestrator, chosen for token economy
-and extensibility **without sacrificing the runtime guarantees Hydraia already has
-over BMAD** (loop-hardening, spec-drive gate, telemetry, three security gates):
+Two upgrades to the Hydraia orchestrator, chosen for token economy
+and extensibility **without sacrificing the runtime guarantees Hydraia already has**
+(loop-hardening, spec-drive gate, telemetry, three security gates):
 
 1. **Step-file architecture (#1).** Split the 806-line monolith
    `skills/hydraia/SKILL.md` into a thin **dispatcher** plus per-phase files
@@ -25,8 +25,7 @@ over BMAD** (loop-hardening, spec-drive gate, telemetry, three security gates):
    **Phase-5 reviewer panel** per repo — without editing the skill or forking.
    This is the mechanism that turns Hydraia's fixed Sonnet executor into
    "pin Haiku for mechanical work" or "route the executor to Codex/Gemini/an
-   external CLI", which is precisely the lever behind BMAD's cheap-execution
-   reputation.
+   external CLI", which is precisely the lever behind cheap execution.
 
 ### Non-goals (YAGNI)
 
@@ -35,7 +34,7 @@ over BMAD** (loop-hardening, spec-drive gate, telemetry, three security gates):
   read, not a rewrite of the pipeline.
 - No new runtime dependency in the fail-open bash hooks. The override values are
   consumed by the orchestrator (an LLM reading a file), never parsed in bash.
-- Not shipping the full BMAD `customize.toml` surface (`activation_steps`,
+- Not shipping a larger `customize.toml` surface (`activation_steps`,
   `persistent_facts`, `on_complete`, `open_spec`). Those are largely already
   covered in Hydraia by `constraints.md` + hooks; the schema reserves their
   tables for later but the resolver ignores unknown keys.
@@ -67,7 +66,7 @@ skills/hydraia/
   unchanged, this is the plugin skill entry), a short preamble, the small
   **always-loaded global facts** (route→phase map, autonomy-tier definitions,
   model policy pointer), and the **JIT loader rule**: read one phase file fully,
-  execute it, load the next only when directed. Mirrors BMAD `workflow.md`.
+  execute it, load the next only when directed.
 - **Phase files** hold the heavy execution detail, moved **verbatim** from the
   current SKILL.md line ranges. `NEVER load two phase files simultaneously`.
 - **Codex side mirrors per-phase.** `codex/skills/hydraia/phases/*.md` are
@@ -80,7 +79,7 @@ skills/hydraia/
   implements "Codex espeja … CI drift compara por-fase".
 
 **Global facts stay in the dispatcher** precisely because Hydraia's phases are
-not as independent as BMAD's steps (Phase -1's route/tier choice conditions later
+not fully independent steps (Phase -1's route/tier choice conditions later
 phases; model policy is global). Keeping those few small facts always-loaded, and
 only the heavy per-phase bodies JIT, preserves correctness while capturing the
 context saving. Phase 3 alone is ~200 lines that no longer sit in context during
@@ -101,7 +100,7 @@ skills/hydraia/customize.toml           # defaults, "DO NOT EDIT — overwritten
 - **Consumed by the orchestrator only.** Phase 4 reads `[executor]` before
   dispatching; Phase 5 reads `[[reviewers]]` before building the panel. The bash
   hooks never read this file → no TOML parser in bash, no new fail-open dep.
-- **Merge rules** (documented in the file header, same as BMAD): strings replace;
+- **Merge rules** (documented in the file header): strings replace;
   lists append; tables merge key-by-key; arrays-of-tables merge by `id`
   (matching `id` replaces a default layer, new `id` appends).
 
@@ -147,7 +146,7 @@ model = "opus"
   facts risks the orchestrator losing route/tier/model context mid-run. Rejected:
   correctness risk for Hydraia's coupled phases.
 - **#2 JSON in existing `config.json`** — would reuse `hy_config` with zero new
-  files, but the user explicitly wants `customize.toml` (BMAD parity) and TOML is
+  files, but the user explicitly wants `customize.toml` and TOML is
   already CI-validated with `tomllib`. Array-of-tables reviewer panels read far
   better in TOML. Kept JSON's precedence model, chose TOML's surface.
 - **#2 bash TOML parser** — rejected outright: adds a hard dep to fail-open hooks.

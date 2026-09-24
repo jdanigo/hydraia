@@ -3,7 +3,7 @@
 Produces `<base>/epics/<epic-slug>/epic-context.md` — the single distilled context each
 story loads at orchestration time **instead of** the raw `epic.md` and planning docs. This
 is the token-economy lever that makes running N stories affordable: a story executor reads
-one 800–1500-token file, not the whole epic design. (Ported from BMAD `compile-epic-context`.)
+one 800–1500-token file, not the whole epic design.
 
 ### Task
 
