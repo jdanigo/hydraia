@@ -1,7 +1,7 @@
 # Hydraia
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)
-![Plugin version](https://img.shields.io/badge/plugin-v0.21.1-blue.svg)
+![Plugin version](https://img.shields.io/badge/plugin-v0.22.0-blue.svg)
 [![Discord](https://img.shields.io/badge/Discord-join%20the%20community-5865F2?logo=discord&logoColor=white)](https://discord.gg/gA9TBsjGz)
 
 🇬🇧 English · 🇪🇸 [Español](README.es.md)
@@ -15,9 +15,10 @@ no choosing which model or skill to use.
 /hydraia:feature add rate limiting to the public REST API
 ```
 
-You stay on Opus 4.8; Hydraia decides the rest — when to brainstorm, when to
-plan, when to drop to Sonnet for execution, which reviewers to run, which
-security gates to enforce.
+You stay on Opus; Hydraia decides the rest — how much ceremony the change needs
+(three auto-selected levels), when to drop to Sonnet for execution, which reviewers
+to run, which security gates to enforce — and every run ends `DONE`,
+`DONE_WITH_FOLLOWUPS`, or `BLOCKED` with evidence, never in an endless fix loop.
 
 ![One Hydraia command runs the whole pipeline: interactive design, a frozen-plan gate, then autonomous build, review and verify.](docs/diagrams/hydraia-flow-en.svg)
 
@@ -34,11 +35,11 @@ made, and a **security gate that is always on and never configurable**.
 
 | Phase | What happens | Model |
 |-------|--------------|-------|
-| Design | Brainstorm → spec + threat model | Opus 4.8 |
-| Plan | Detailed plan + self-review, then **frozen** | Opus 4.8 |
-| Execute | Fresh sub-agent per task | Sonnet 5 |
-| Review | Whole-branch + diff-scoped reviewers + security gate | Opus (+ Sonnet/Haiku) |
-| Verify | Tests, spec check, secrets/deps scan | Opus 4.8 |
+| Design | Brainstorm → spec + threat model (scaled by level) | Opus |
+| Plan | Plan-as-contract (Files + Verify per task), then **frozen** | Opus |
+| Execute | Fresh sub-agent per task, scope-gated | Sonnet (Haiku for mechanical) |
+| Review | Judge + diff-scoped reviewers + security gate → verified triage | Opus judges, Sonnet reviewers |
+| Verify | Baseline-aware tests, spec check, secrets/deps scan — bounded | Opus |
 
 ---
 

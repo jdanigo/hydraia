@@ -1,7 +1,7 @@
 # Hydraia
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)
-![Plugin version](https://img.shields.io/badge/plugin-v0.21.1-blue.svg)
+![Plugin version](https://img.shields.io/badge/plugin-v0.22.0-blue.svg)
 [![Discord](https://img.shields.io/badge/Discord-únete%20a%20la%20comunidad-5865F2?logo=discord&logoColor=white)](https://discord.gg/gA9TBsjGz)
 
 🇬🇧 [English](README.md) · 🇪🇸 Español
@@ -15,9 +15,10 @@ elegir qué modelo o skill usar.
 /hydraia:feature add rate limiting to the public REST API
 ```
 
-Tú te quedas en Opus 4.8; Hydraia decide lo demás — cuándo hacer lluvia de ideas,
-cuándo planificar, cuándo bajar a Sonnet para ejecutar, qué revisores correr, qué
-gates de seguridad exigir.
+Tú te quedas en Opus; Hydraia decide lo demás — cuánta ceremonia necesita el cambio
+(tres niveles autoelegidos), cuándo bajar a Sonnet para ejecutar, qué revisores
+correr, qué gates de seguridad exigir — y cada corrida termina en `DONE`,
+`DONE_WITH_FOLLOWUPS` o `BLOCKED` con evidencia, nunca en un loop infinito de fixes.
 
 ![Un comando de Hydraia corre todo el pipeline: diseño interactivo, un gate de plan congelado, y luego construcción, revisión y verificación autónomas.](docs/diagrams/hydraia-flow-es.svg)
 
@@ -34,11 +35,11 @@ tomada, y un **gate de seguridad siempre activo y no configurable**.
 
 | Fase | Qué pasa | Modelo |
 |------|----------|--------|
-| Diseño | Lluvia de ideas → spec + threat model | Opus 4.8 |
-| Plan | Plan detallado + auto-revisión, luego **congelado** | Opus 4.8 |
-| Ejecuta | Sub-agente nuevo por tarea | Sonnet 5 |
-| Revisa | Revisores de rama completa + por-diff + gate de seguridad | Opus (+ Sonnet/Haiku) |
-| Verifica | Tests, chequeo contra spec, scan de secrets/deps | Opus 4.8 |
+| Diseño | Lluvia de ideas → spec + threat model (según el nivel) | Opus |
+| Plan | Plan-contrato (Files + Verify por tarea), luego **congelado** | Opus |
+| Ejecuta | Sub-agente nuevo por tarea, acotado a su alcance | Sonnet (Haiku para lo mecánico) |
+| Revisa | Juez + revisores por-diff + gate de seguridad → triage verificado | Opus juzga, Sonnet revisa |
+| Verifica | Tests contra la línea base, chequeo contra spec, scan de secrets/deps — acotado | Opus |
 
 ---
 
