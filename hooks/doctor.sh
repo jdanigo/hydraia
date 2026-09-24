@@ -205,6 +205,14 @@ if [ "$MODE" = "--check" ]; then
     fi
   done
   echo "  agile mode: customize.toml [agile].mode (default ask); Jira sync is offered in-run when the Jira MCP is available"
+  echo "-- convergence (v0.22) --"
+  for h in verifyloop baseline; do
+    if [ -f "$(dirname "$0")/$h.sh" ]; then echo "  $h.sh: present"; else echo "  $h.sh: MISSING"; fi
+  done
+  [ -f "$(dirname "$0")/lib/failsig.py" ] && echo "  lib/failsig.py: present" || echo "  lib/failsig.py: MISSING"
+  if command -v hy_config >/dev/null 2>&1; then
+    echo "  opusGate=$(hy_config opusGate strict HYDRAIA_OPUS_GATE) scopeGate=$(hy_config scopeGate strict HYDRAIA_SCOPE_GATE) planContract=$(hy_config planContract strict HYDRAIA_PLAN_CONTRACT) maxSameFailure=$(hy_config maxSameFailure 3 HYDRAIA_MAX_SAME_FAILURE) maxFixDispatches=$(hy_config maxFixDispatches 6 HYDRAIA_MAX_FIX_DISPATCHES)"
+  fi
   echo "-- explainme (visual code explanation) --"
   if command -v node >/dev/null 2>&1; then
     nv="$(node --version 2>/dev/null)"; maj="$(printf '%s' "$nv" | sed 's/^v//; s/\..*//')"

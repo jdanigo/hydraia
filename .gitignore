@@ -9,3 +9,5 @@ docs/hydraia/.agents/
 .codegraph/
 docs/superpowers/
 docs/hydraia/.heartbeats/
+docs/hydraia/.baseline-failures
+__pycache__/
